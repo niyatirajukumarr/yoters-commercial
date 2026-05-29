@@ -11,7 +11,6 @@ export default function LandingPage() {
   const [isChecking, setIsChecking] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
 
   const { scrollY: scrollYProgress } = useScroll()
@@ -60,23 +59,11 @@ export default function LandingPage() {
   useEffect(() => {
     const onScroll = () => {
       setScrollY(window.scrollY)
-      setProfileOpen(false)
     }
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close profile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (!target.closest('.profile-avatar') && !target.closest('.profile-menu')) {
-        setProfileOpen(false)
-      }
-    }
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [])
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -287,25 +274,9 @@ export default function LandingPage() {
           <div className="lp-nav-right">
             {user && (
               <div style={{ position: 'relative' }}>
-                <div className="profile-avatar" onClick={() => setProfileOpen(!profileOpen)}>
+                <div className="profile-avatar" onClick={() => router.push('/profile')}>
                   {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                 </div>
-                {profileOpen && (
-                  <div className="profile-menu">
-                    <div style={{ padding: '12px 16px', fontSize: '12px', color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      {user.name || 'User'}
-                    </div>
-                    <Link href="/student" style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div className="profile-menu-item">📱 My Orders</div>
-                    </Link>
-                    <Link href="/student" style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div className="profile-menu-item">👤 Profile</div>
-                    </Link>
-                    <div className="profile-menu-item logout" onClick={handleLogout}>
-                      🚪 Logout
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             <button
