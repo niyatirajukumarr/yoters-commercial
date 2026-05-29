@@ -116,7 +116,7 @@ export default function ProfilePage() {
                 <button onClick={openEdit} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   Edit Profile
                 </button>
-                <button style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <button onClick={() => { setMenuOpen(false); router.push('/profile/settings') }} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   Settings
                 </button>
                 <button onClick={handleLogout} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left' }}>
@@ -137,15 +137,19 @@ export default function ProfilePage() {
       {/* Quick tiles */}
       <div style={{ margin: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {[
-          { icon: CreditCard, label: 'Payment Modes' },
-          { icon: RotateCcw, label: 'My Refunds' },
-          { icon: Ticket, label: 'My Vouchers' },
-          { icon: Heart, label: 'Favourites' },
-        ].map(({ icon: Icon, label }) => (
-          <div key={label} style={{ background: 'white', borderRadius: 14, padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          { icon: CreditCard, label: 'Payment Modes', href: '/profile/payment-modes' },
+          { icon: RotateCcw, label: 'My Refunds', href: '/profile/refunds' },
+          { icon: Ticket, label: 'My Vouchers', href: '/profile/vouchers' },
+          { icon: Heart, label: 'Favourites', href: '#' },
+        ].map(({ icon: Icon, label, href }) => (
+          <button
+            key={label}
+            onClick={() => href !== '#' && router.push(href)}
+            style={{ background: 'white', borderRadius: 14, padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, cursor: href !== '#' ? 'pointer' : 'default', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: 'none', opacity: href === '#' ? 0.6 : 1 }}
+          >
             <Icon size={24} color="#444" strokeWidth={1.5} />
             <span style={{ fontSize: 13, fontWeight: 500, color: '#222' }}>{label}</span>
-          </div>
+          </button>
         ))}
       </div>
 
