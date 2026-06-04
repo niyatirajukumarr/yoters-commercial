@@ -255,6 +255,17 @@ export default function AuthPage() {
                 </div>
               )}
 
+              {mode === 'login' && (
+                <div style={{ textAlign: 'right', marginTop: -8 }}>
+                  <button
+                    onClick={() => { setMode('forgot'); setError(''); setPassword(''); setEmail('') }}
+                    style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0, textDecoration: 'none' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
               {mode === 'signup' && (
                 <div>
                   <label style={lbl}>Phone *</label>
@@ -295,17 +306,10 @@ export default function AuthPage() {
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
             {mode === 'login' ? (
               <>
-                <div style={{ marginBottom: 10 }}>
-                  Don't have an account?{' '}
-                  <button onClick={() => { setMode('signup'); setError(''); setEmail('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
-                    Sign up free
-                  </button>
-                </div>
-                <div>
-                  <button onClick={() => { setMode('forgot'); setError(''); setPassword(''); setEmail('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
-                    Forgot password?
-                  </button>
-                </div>
+                Don't have an account?{' '}
+                <button onClick={() => { setMode('signup'); setError(''); setEmail('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
+                  Sign up free
+                </button>
               </>
             ) : mode === 'signup' ? (
               <>
