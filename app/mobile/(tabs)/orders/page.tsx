@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { Clock, CheckCircle, ChefHat, Loader, ChevronDown, ChevronUp } from 'lucide-react'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
+import { PrepTimeCountdown } from '@/components/PrepTimeCountdown'
 import { Order } from '@/lib/types'
 
 interface CafeteriaInfo {
@@ -184,6 +185,11 @@ export default function MobileOrders() {
                         Queue position: #{order.queue_position}
                       </div>
                     )}
+                    {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
+                      <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>
+                        Prep time: ~{order.prep_time_minutes} min
+                      </div>
+                    )}
                   </div>
 
                   {/* Items */}
@@ -215,6 +221,9 @@ export default function MobileOrders() {
                 {/* Expanded Roadmap View */}
                 {isExpanded && (
                   <div style={{ marginTop: 8, padding: 'var(--mobile-spacing)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--mobile-radius)' }}>
+                    {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
+                      <PrepTimeCountdown order={order} />
+                    )}
                     <OrderTrackingRoadmap order={order} cafeteriaName={cafe?.name} />
 
                     <div style={{ marginTop: 16, display: 'flex', gap: 8, flexDirection: 'column' }}>

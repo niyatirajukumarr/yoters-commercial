@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria } from '@/lib/types'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
+import { PrepTimeCountdown } from '@/components/PrepTimeCountdown'
 
 export default function OrderTrackingPage() {
   const router = useRouter()
@@ -262,6 +263,13 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
+        {/* Prep Time Countdown */}
+        {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
+          <div style={{ marginBottom: 24 }}>
+            <PrepTimeCountdown order={order} />
+          </div>
+        )}
+
         {/* Tracking Roadmap */}
         <OrderTrackingRoadmap order={order} cafeteriaName={cafeteria?.name} />
 
@@ -279,6 +287,12 @@ export default function OrderTrackingPage() {
             <div className="detail-row">
               <span className="detail-label">Approved At</span>
               <span className="detail-value">{new Date(order.approved_at).toLocaleTimeString()}</span>
+            </div>
+          )}
+          {order.prep_time_minutes && (
+            <div className="detail-row">
+              <span className="detail-label">Prep Time</span>
+              <span className="detail-value">⏱️ {order.prep_time_minutes} minutes</span>
             </div>
           )}
           {order.ready_at && (
