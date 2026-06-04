@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-type AuthMode = 'login' | 'signup'
+type AuthMode = 'login' | 'signup' | 'forgot'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -17,6 +17,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
 
   async function handleLogin() {
     if (!email || !password) { setError('Enter your email and password.'); return }
@@ -53,7 +54,22 @@ export default function AuthPage() {
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
   }
 
-  const handleSubmit = mode === 'login' ? handleLogin : handleSignup
+  async function handleForgotPassword() {
+    if (!email) { setError('Enter your email address.'); return }
+    setLoading(true); setError('')
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset`,
+      })
+      if (resetError) { setError(resetError.message); setLoading(false); return }
+      setForgotSent(true)
+      setSuccess('Password reset link sent to your email! Check your inbox.')
+      setLoading(false)
+      setTimeout(() => { setMode('login'); setForgotSent(false); setSuccess('') }, 4000)
+    } catch { setError('Connection error. Check your internet.'); setLoading(false) }
+  }
+
+  const handleSubmit = mode === 'login' ? handleLogin : (mode === 'signup' ? handleSignup : handleForgotPassword)
 
   const inp: React.CSSProperties = {
     width: '100%',
@@ -171,14 +187,24 @@ export default function AuthPage() {
           <div className="auth-inner" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '28px 28px', boxShadow: '0 4px 32px rgba(0,0,0,0.06)' }}>
 
             {/* Tab toggle */}
-            <div style={{ display: 'flex', gap: 4, background: 'var(--surface2)', borderRadius: 11, padding: 4, marginBottom: 24 }}>
-              <button className={`tab-pill ${mode === 'login' ? 'active' : 'inactive'}`} onClick={() => { setMode('login'); setError(''); setSuccess('') }}>
-                Sign In
-              </button>
-              <button className={`tab-pill ${mode === 'signup' ? 'active' : 'inactive'}`} onClick={() => { setMode('signup'); setError(''); setSuccess('') }}>
-                Create Account
-              </button>
-            </div>
+            {mode !== 'forgot' && (
+              <div style={{ display: 'flex', gap: 4, background: 'var(--surface2)', borderRadius: 11, padding: 4, marginBottom: 24 }}>
+                <button className={`tab-pill ${mode === 'login' ? 'active' : 'inactive'}`} onClick={() => { setMode('login'); setError(''); setSuccess('') }}>
+                  Sign In
+                </button>
+                <button className={`tab-pill ${mode === 'signup' ? 'active' : 'inactive'}`} onClick={() => { setMode('signup'); setError(''); setSuccess('') }}>
+                  Create Account
+                </button>
+              </div>
+            )}
+
+            {/* Forgot password header */}
+            {mode === 'forgot' && (
+              <div style={{ marginBottom: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>Reset Password</h2>
+                <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>We'll send a reset link to your email</p>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {mode === 'signup' && (
@@ -196,34 +222,38 @@ export default function AuthPage() {
                 </div>
               )}
 
-              <div>
-                <label style={lbl}>Email *</label>
-                <input
-                  className="auth-input"
-                  type="email"
-                  placeholder="you@college.edu"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  style={inp}
-                />
-              </div>
+              {(mode === 'login' || mode === 'signup' || mode === 'forgot') && (
+                <div>
+                  <label style={lbl}>Email *</label>
+                  <input
+                    className="auth-input"
+                    type="email"
+                    placeholder="you@college.edu"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                    style={inp}
+                  />
+                </div>
+              )}
 
-              <div>
-                <label style={lbl}>Password *</label>
-                <input
-                  className="auth-input"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  style={inp}
-                />
-                {mode === 'signup' && (
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>Minimum 6 characters</div>
-                )}
-              </div>
+              {(mode === 'login' || mode === 'signup') && (
+                <div>
+                  <label style={lbl}>Password *</label>
+                  <input
+                    className="auth-input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                    style={inp}
+                  />
+                  {mode === 'signup' && (
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>Minimum 6 characters</div>
+                  )}
+                </div>
+              )}
 
               {mode === 'signup' && (
                 <div>
@@ -254,8 +284,8 @@ export default function AuthPage() {
 
               <button className="submit-btn" onClick={handleSubmit} disabled={loading} style={{ marginTop: 2 }}>
                 {loading
-                  ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
-                  : (mode === 'login' ? 'Sign In →' : 'Create Account →')
+                  ? (mode === 'login' ? 'Signing in...' : mode === 'signup' ? 'Creating account...' : 'Sending reset link...')
+                  : (mode === 'login' ? 'Sign In →' : mode === 'signup' ? 'Create Account →' : 'Send Reset Link →')
                 }
               </button>
             </div>
@@ -265,26 +295,43 @@ export default function AuthPage() {
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
             {mode === 'login' ? (
               <>
-                Don't have an account?{' '}
-                <button onClick={() => { setMode('signup'); setError('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
-                  Sign up free
+                <div style={{ marginBottom: 10 }}>
+                  Don't have an account?{' '}
+                  <button onClick={() => { setMode('signup'); setError(''); setEmail('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
+                    Sign up free
+                  </button>
+                </div>
+                <div>
+                  <button onClick={() => { setMode('forgot'); setError(''); setPassword(''); setEmail('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
+                    Forgot password?
+                  </button>
+                </div>
+              </>
+            ) : mode === 'signup' ? (
+              <>
+                Already have an account?{' '}
+                <button onClick={() => { setMode('login'); setError(''); setName(''); setPhone('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
+                  Sign in
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{' '}
-                <button onClick={() => { setMode('login'); setError('') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
-                  Sign in
+                <button onClick={() => { setMode('login'); setError(''); setForgotSent(false) }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 12, padding: 0 }}>
+                  ← Back to Sign In
                 </button>
               </>
             )}
-            <br />
-            <span style={{ fontSize: 11 }}>
-              By continuing you agree to our{' '}
-              <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Terms</span>
-              {' & '}
-              <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Privacy Policy</span>
-            </span>
+            {mode !== 'forgot' && (
+              <>
+                <br />
+                <span style={{ fontSize: 11 }}>
+                  By continuing you agree to our{' '}
+                  <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Terms</span>
+                  {' & '}
+                  <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Privacy Policy</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
