@@ -5,11 +5,18 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { orderId, vendorEmail } = body
+    const { orderId, vendorEmail, prepTimeMinutes } = body
 
     if (!orderId || !vendorEmail) {
       return NextResponse.json(
         { error: 'Missing orderId or vendorEmail' },
+        { status: 400 }
+      )
+    }
+
+    if (!prepTimeMinutes || prepTimeMinutes < 1 || prepTimeMinutes > 120) {
+      return NextResponse.json(
+        { error: 'Prep time must be between 1 and 120 minutes' },
         { status: 400 }
       )
     }
@@ -43,12 +50,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Update order status to 'approved'
+    // Update order status to 'approved' with prep time
     const { error: updateError } = await supabase
       .from('orders')
       .update({
         status: 'approved',
         approved_at: new Date().toISOString(),
+        prep_time_minutes: prepTimeMinutes,
       })
       .eq('id', orderId)
 

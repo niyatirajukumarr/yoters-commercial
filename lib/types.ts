@@ -58,6 +58,7 @@ export interface Order {
   created_at: string
   ready_at?: string
   collected_at?: string
+  prep_time_minutes?: number
 }
 
 export type WaitLevel = 'low' | 'mid' | 'high'

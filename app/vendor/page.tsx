@@ -28,6 +28,7 @@ export default function VendorDashboard() {
   const [approvalModal, setApprovalModal] = useState<Order | null>(null)
   const [denialReason, setDenialReason] = useState('')
   const [approveLoading, setApproveLoading] = useState(false)
+  const [prepTime, setPrepTime] = useState('10')
 
   const fetchOrders = useCallback(async (cafId: string) => {
     const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).eq('payment_status', 'paid').in('status', ['paid', 'preparing', 'ready']).order('queue_position')
@@ -171,7 +172,10 @@ export default function VendorDashboard() {
   async function logout() { await supabase.auth.signOut(); router.push('/vendor/login') }
 
   async function approveOrder(order: Order) {
-    if (!cafeteria) return
+    if (!cafeteria || !prepTime) {
+      setMsg('Please enter preparation time')
+      return
+    }
     setApproveLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -183,12 +187,14 @@ export default function VendorDashboard() {
         body: JSON.stringify({
           orderId: order.id,
           vendorEmail: session.user.email,
+          prepTimeMinutes: parseInt(prepTime),
         }),
       })
       const result = await response.json()
       if (response.ok) {
-        setMsg('✅ Order approved! Student has been notified.')
+        setMsg('✅ Order approved! Student notified of prep time.')
         setApprovalModal(null)
+        setPrepTime('10')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
         setMsg(`Error: ${result.error}`)
@@ -748,6 +754,30 @@ export default function VendorDashboard() {
                   <span style={{ fontSize: 20, fontFamily: 'var(--font-head)', fontWeight: 800, color: 'var(--accent)' }}>₹{approvalModal.total_amount}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Prep Time Section */}
+            <div style={{ marginBottom: 18, padding: 14, background: '#7c5cfc15', borderRadius: 12 }}>
+              <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8, display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>⏱️ Preparation Time (minutes) *</label>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={prepTime}
+                onChange={e => setPrepTime(e.target.value)}
+                placeholder="e.g., 7 for coffee, 20 for burger"
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: '1px solid #7c5cfc',
+                  borderRadius: 8,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: 'var(--text)',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Student will see: "Ready in ~{prepTime} minutes"</div>
             </div>
 
             {/* Decision Section */}
