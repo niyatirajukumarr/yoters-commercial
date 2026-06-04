@@ -58,8 +58,13 @@ export default function AuthPage() {
     if (!email) { setError('Enter your email address.'); return }
     setLoading(true); setError('')
     try {
+      // Use production URL for password reset link
+      const resetUrl = process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset`
+        : `${window.location.origin}/auth/reset`
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+        redirectTo: resetUrl,
       })
       if (resetError) { setError(resetError.message); setLoading(false); return }
       setForgotSent(true)
