@@ -183,7 +183,7 @@ export default function StudentHome() {
                     {/* Menu Image with Tilt Effect */}
                     <div className="cafe-menu-image">
                       <img
-                        src={c.image_url || c.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
+                        src={c.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
                         alt={c.name}
                       />
                     </div>
