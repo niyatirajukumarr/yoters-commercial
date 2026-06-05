@@ -34,7 +34,7 @@ export default function VendorDashboard() {
   const prevOrderCount = useState({ count: 0 })
 
   const fetchOrders = useCallback(async (cafId: string, notify = false) => {
-    const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).eq('payment_status', 'paid').in('status', ['pending', 'paid', 'preparing', 'ready']).order('created_at', { ascending: false })
+    const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).in('status', ['pending', 'paid', 'preparing', 'ready']).order('created_at', { ascending: false })
     if (data) {
       if (notify && data.length > prevOrderCount[0].count) {
         const newest = data[data.length - 1]
