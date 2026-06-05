@@ -66,34 +66,45 @@ export default function StudentHome() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes tilt { 0% { transform: perspective(1000px) rotateX(0) rotateY(0); } 100% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg); } }
+
         .browse-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); z-index:100; }
         .browse-hero { padding:32px 20px 20px; }
-        .browse-stats { padding:0 20px; }
-        .browse-list { padding:24px 20px 100px; }
-        .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); overflow:hidden; }
-        .stat-cell { padding:16px 12px; text-align:center; }
-        .stat-cell:not(:last-child) { border-right:1px solid var(--border); }
-        .stat-val { font-family:var(--font-head); font-size:24px; font-weight:700; }
-        .stat-label { font-size:10px; color:var(--muted); margin-top:2px; line-height:1.3; }
-        .cafe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px; }
-        .search-input { width:100%; padding:13px 18px; margin-bottom:20px; background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); font-size:15px; }
-        @media (max-width: 768px) {
-          .browse-hero { padding:24px 16px 16px; }
-          .browse-stats { padding:0 16px; }
-          .browse-list { padding:20px 16px 90px; }
-          .stat-cell { padding:14px 8px; }
-          .stat-val { font-size:20px; }
-          .stat-label { font-size:9px; }
-          .cafe-grid { grid-template-columns:1fr; gap:12px; }
-          .cafe-card-inner { display:flex; align-items:center; gap:14px; padding:14px; }
-          .cafe-card-emoji { width:60px; height:60px; font-size:30px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-          .cafe-card-img { display:none; }
-          .cafe-card-body { flex:1; }
-          .h1-browse { font-size:26px !important; letter-spacing:-0.5px !important; }
+        .browse-list { padding:40px 20px 100px; }
+        .search-input { width:100%; padding:13px 18px; margin-bottom:40px; background:var(--surface); border:1px solid var(--border2); border-radius:var(--radius); font-size:15px; }
+
+        .newspaper-grid { display:flex; flex-direction:column; gap:60px; max-width:1100px; margin:0 auto; }
+
+        .cafe-newspaper-card { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+        .cafe-newspaper-card.reversed { direction:rtl; }
+        .cafe-newspaper-card.reversed > * { direction:ltr; }
+
+        .cafe-menu-image { position:relative; height:400px; border-radius:12px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.1); cursor:pointer; transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style:preserve-3d; }
+        .cafe-menu-image:hover { box-shadow:0 30px 60px rgba(0,0,0,0.15); transform:translateY(-8px) rotateX(2deg) rotateY(2deg); }
+        .cafe-menu-image img { width:100%; height:100%; object-fit:cover; }
+
+        .cafe-info { display:flex; flex-direction:column; justify-content:center; padding:20px; }
+        .cafe-name { font-family:'Allura', cursive; font-size:64px; font-weight:400; color:var(--accent); margin-bottom:12px; line-height:1; }
+        .cafe-location { font-size:14px; color:var(--muted); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
+        .cafe-description { font-size:15px; color:var(--text2); line-height:1.7; margin-bottom:24px; }
+        .cafe-see-menu-btn { display:inline-block; padding:12px 28px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.3s; text-decoration:none; }
+        .cafe-see-menu-btn:hover { transform:scale(1.05); box-shadow:0 8px 20px rgba(232,51,74,0.3); }
+
+        @media (max-width: 900px) {
+          .cafe-newspaper-card { grid-template-columns:1fr; gap:20px; }
+          .cafe-newspaper-card.reversed { direction:ltr; }
+          .cafe-menu-image { height:280px; }
+          .cafe-name { font-size:48px; }
+          .browse-list { padding:20px 20px 90px; }
         }
-        @media (min-width: 769px) {
-          .cafe-card-inner { display:none; }
+        @media (max-width: 480px) {
+          .newspaper-grid { gap:40px; }
+          .cafe-menu-image { height:220px; }
+          .cafe-name { font-size:36px; }
+          .cafe-info { padding:0; }
+          .h1-browse { font-size:26px !important; }
         }
       `}</style>
 
@@ -151,7 +162,7 @@ export default function StudentHome() {
       </div>
 
       {/* LIST */}
-      <div className="browse-list" style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div className="browse-list">
         <input
           className="search-input"
           placeholder="Search cafeteria or location..."
@@ -163,47 +174,38 @@ export default function StudentHome() {
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>Loading cafeterias...</div>
         ) : (
           <>
-            {/* DESKTOP grid */}
-            <div className="cafe-grid">
-              {filtered.map((c, idx) => {
-                const wait = c.queue?.avg_wait_mins ?? 0
-                const level = getWaitLevel(wait)
-                const wc = waitColor(level)
-                return (
-                  <div key={c.id} className="card" style={{ overflow: 'hidden' }}>
-                    {/* Desktop image header */}
-                    <div className="cafe-card-img" style={{ height: 120, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, position: 'relative' }}>
-                      {c.image_emoji}
-                      <div style={{ position: 'absolute', top: 12, right: 12, background: wc.bg, color: wc.color, border: `1.5px solid ${wc.color}`, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>
-                        {formatWait(wait)}
-                      </div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No cafeterias found for &quot;{search}&quot;</div>
+            ) : (
+              <div className="newspaper-grid">
+                {filtered.map((c, idx) => (
+                  <div key={c.id} className={`cafe-newspaper-card ${idx % 2 === 1 ? 'reversed' : ''}`}>
+                    {/* Menu Image with Tilt Effect */}
+                    <div className="cafe-menu-image">
+                      <img
+                        src={c.image_url || c.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
+                        alt={c.name}
+                      />
                     </div>
-                    {/* Mobile row layout */}
-                    <div className="cafe-card-inner">
-                      <div className="cafe-card-emoji" style={{ background: wc.bg }}>
-                        {c.image_emoji}
+
+                    {/* Restaurant Info */}
+                    <div className="cafe-info">
+                      <h2 className="cafe-name">{c.name}</h2>
+                      <div className="cafe-location">
+                        📍 {c.location}
                       </div>
-                      <div className="cafe-card-body">
-                        <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 2 }}>{c.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>📍 {c.location}</div>
-                        <div />
-                      </div>
-                    </div>
-                    {/* Desktop body */}
-                    <div style={{ padding: 18 }}>
-                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, marginBottom: 3, color: 'var(--navy)' }}>{c.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>📍 {c.location}</div>
-                      {c.description && <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 14 }}>{c.description}</div>}
-                      <Link href={`/student?cafeteria=${c.id}`} style={{ display: 'block', marginTop: 12 }}>
-                        <button className="btn-primary" style={{ padding: '8px 18px', fontSize: 13 }}>Pre-order →</button>
+                      <p className="cafe-description">
+                        {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
+                      </p>
+                      <Link href={`/mobile/order/${c.id}`}>
+                        <button className="cafe-see-menu-btn">
+                          See Full Menu →
+                        </button>
                       </Link>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-            {filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No cafeterias found for &quot;{search}&quot;</div>
+                ))}
+              </div>
             )}
           </>
         )}
