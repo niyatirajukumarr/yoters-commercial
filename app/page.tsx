@@ -424,37 +424,42 @@ export default function LandingPage() {
                 Real-time queue visibility across every cafeteria on campus. Pre-order from any, skip the line at all.
               </motion.p>
             </motion.div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 40 }}>
-              {restaurants.map((r, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22,1,0.36,1] }}
-                  style={{ position: 'relative', height: 320, borderRadius: 20, overflow: 'hidden', cursor: 'pointer' }}>
-                  {/* Background Image */}
-                  <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
 
-                  {/* Dark Overlay Gradient */}
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)' }} />
+            {/* Horizontal Scrolling Carousel */}
+            <div style={{ overflow: 'hidden', marginBottom: 40 }}>
+              <div style={{ display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 16, scrollBehavior: 'smooth' }}>
+                {restaurants.map((r, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity: 0, x: 40 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22,1,0.36,1] }}
+                    style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+                    {/* Background Image */}
+                    <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
 
-                  {/* Content */}
-                  <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 24, color: 'white' }}>
-                    {/* Restaurant Name */}
-                    <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, lineHeight: 1.2, maxWidth: '90%' }}>
-                      {r.name}
-                    </h3>
+                    {/* Dark Overlay Gradient */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)' }} />
 
-                    {/* CTA Button */}
-                    <Link href="/browse" style={{ alignSelf: 'flex-start', padding: '12px 20px', background: '#E8334A', color: 'white', borderRadius: 8, fontWeight: 600, fontSize: 13, textDecoration: 'none', transition: 'all 0.3s', border: 'none', cursor: 'pointer', letterSpacing: 0.5 }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(232,51,74,0.3)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
-                      Wanna know more? Start ordering →
-                    </Link>
-                  </div>
-                </motion.div>
-              ))}
+                    {/* Content - Just the name */}
+                    <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 28, color: 'white' }}>
+                      <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxWidth: '90%' }}>
+                        {r.name}
+                      </h3>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
+
+            {/* CTA Button - Separate Below */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+              <Link href="/browse" style={{ display: 'inline-block', padding: '14px 32px', background: '#E8334A', color: 'white', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none', transition: 'all 0.3s', letterSpacing: 0.5 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(232,51,74,0.3)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
+                Wanna know more? Start ordering →
+              </Link>
+            </motion.div>
           </div>
         </section>
 
