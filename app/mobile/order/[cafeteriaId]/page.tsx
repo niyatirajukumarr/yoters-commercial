@@ -148,7 +148,6 @@ export default function MobileOrderPage() {
     setPaymentState('waiting')
     const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
-    setManualPayEnabled(false)
 
     // Poll every 2s for faster confirmation
     pollRef.current = setInterval(async () => {
