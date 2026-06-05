@@ -21,6 +21,7 @@ function PaymentPageContent() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const [sdkLoaded, setSdkLoaded] = useState(false)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const razorpayOrderIdRef = useRef<string | null>(null)
@@ -109,13 +110,15 @@ function PaymentPageContent() {
 
         if (order && order.payment_status === 'paid') {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-          console.log('[Payment] Payment confirmed')
+          setProcessing(false)
+          setPaymentConfirmed(true)
           if (window.opener) {
             window.opener.postMessage({ type: 'PAYMENT_SUCCESS', orderId }, '*')
-            setTimeout(() => window.close(), 1500)
-          } else {
-            router.push(`/mobile/track/${orderId}`)
           }
+          setTimeout(() => {
+            if (window.opener) window.close()
+            else router.push(`/mobile/track/${orderId}`)
+          }, 4000)
           return
         }
       } catch (err) {
@@ -229,7 +232,17 @@ function PaymentPageContent() {
           width: '100%',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}>
-          {loading ? (
+          {paymentConfirmed ? (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1f2e', margin: '0 0 8px' }}>
+                Payment Confirmed!
+              </h2>
+              <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
+                Redirecting to your order...
+              </p>
+            </div>
+          ) : loading ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 12, animation: 'spin 2s linear infinite' }}>📱</div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
