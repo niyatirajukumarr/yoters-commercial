@@ -9,7 +9,8 @@ import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { TokenTicket } from '@/components/TokenTicket'
-import { ChevronLeft, Plus, Minus, QrCode } from 'lucide-react'
+import { ChevronLeft, Plus, Minus, QrCode, Heart } from 'lucide-react'
+import { useFavourites } from '@/lib/hooks/useFavourites'
 
 interface MenuItem {
   id: string
@@ -44,6 +45,7 @@ export default function MobileOrderPage() {
   const [orderId, setOrderId] = useState<string>('')
 
   const { cart, addItem, updateQuantity, removeItem, clear: clearCart, total, itemCount } = useCart()
+  const { isFavourite, toggleFavourite } = useFavourites()
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
@@ -261,8 +263,29 @@ export default function MobileOrderPage() {
                     <div style={{ width: 70, height: 70, borderRadius: 8, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0 }}>🍱</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3, color: isOutOfStock ? 'var(--muted)' : 'var(--text)' }}>
-                      {item.name}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4 }}>
+                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3, color: isOutOfStock ? 'var(--muted)' : 'var(--text)' }}>
+                        {item.name}
+                      </div>
+                      <button
+                        onClick={() => toggleFavourite({
+                          menuId: item.id,
+                          name: item.name,
+                          description: item.description,
+                          price: item.price,
+                          category: item.category,
+                          cafeteriaId,
+                          cafeteriaName: cafeteria?.name ?? '',
+                        })}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}
+                        aria-label={isFavourite(item.id) ? 'Remove from favourites' : 'Add to favourites'}
+                      >
+                        <Heart
+                          size={18}
+                          fill={isFavourite(item.id) ? '#E8334A' : 'none'}
+                          color={isFavourite(item.id) ? '#E8334A' : 'var(--muted)'}
+                        />
+                      </button>
                     </div>
                     {item.description && (
                       <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>

@@ -5,11 +5,13 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { useCart } from '@/lib/hooks/useCart'
-import { Edit2, Trash2 } from 'lucide-react'
+import { Edit2, Trash2, Heart, Trash } from 'lucide-react'
+import { useFavourites } from '@/lib/hooks/useFavourites'
 
 export default function MobileProfile() {
   const { user, updateUser, isLoaded } = useUserInfo()
   const { clear: clearCart } = useCart()
+  const { favourites, removeFavourite, isLoaded: favsLoaded } = useFavourites()
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
   const [notifications, setNotifications] = useState(true)
@@ -187,6 +189,52 @@ export default function MobileProfile() {
             </span>
           </label>
         </div>
+      </div>
+
+      {/* Favourites */}
+      <div className="mobile-card" style={{ padding: 'var(--mobile-spacing)', marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <Heart size={18} color="#E8334A" fill="#E8334A" />
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+            Favourites
+          </h3>
+        </div>
+        {!favsLoaded ? (
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}>Loading...</div>
+        ) : favourites.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', padding: '12px 0' }}>
+            No favourites yet. Tap the ♡ on any menu item to save it here.
+          </div>
+        ) : (
+          favourites.map(fav => (
+            <div
+              key={fav.menuId}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 0',
+                borderBottom: '1px solid rgba(26,31,46,0.06)',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  {fav.name}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {fav.cafeteriaName} · ₹{fav.price}
+                </div>
+              </div>
+              <button
+                onClick={() => removeFavourite(fav.menuId)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'var(--muted)' }}
+                aria-label="Remove from favourites"
+              >
+                <Trash size={16} />
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Danger Zone */}
