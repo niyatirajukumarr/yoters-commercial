@@ -58,11 +58,7 @@ export async function POST(req: NextRequest) {
     // Update order status to 'preparing' with prep time
     const { error: updateError } = await supabase
       .from('orders')
-      .update({
-        status: 'preparing',
-        approved_at: new Date().toISOString(),
-        prep_time_minutes: prepTimeMinutes,
-      })
+      .update({ status: 'preparing' })
       .eq('id', orderId)
 
     if (updateError) {
