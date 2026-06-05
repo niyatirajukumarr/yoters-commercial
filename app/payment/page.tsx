@@ -21,7 +21,9 @@ function PaymentPageContent() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sdkLoaded, setSdkLoaded] = useState(false)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const razorpayOrderIdRef = useRef<string | null>(null)
 
   // Initialize payment on mount
   useEffect(() => {
@@ -33,6 +35,8 @@ function PaymentPageContent() {
       }
 
       try {
+        console.log('[Payment] Initializing payment for order:', orderId)
+
         // Get user email from Supabase session
         const { data: { session } } = await supabase.auth.getSession()
         const email = session?.user?.email || `student-${orderId}@yoters.local`
@@ -57,15 +61,15 @@ function PaymentPageContent() {
 
         const data = await response.json()
         console.log('[Payment] Razorpay order created:', data.razorpayOrderId)
+        razorpayOrderIdRef.current = data.razorpayOrderId
 
+        setLoading(false)
         setProcessing(true)
 
         // Start polling for payment confirmation
         startPaymentPolling(orderId)
-
-        setLoading(false)
       } catch (err: any) {
-        console.error('Payment initialization error:', err)
+        console.error('[Payment] Initialization error:', err)
         setError(err.message || 'Failed to initialize payment')
         setLoading(false)
       }
@@ -80,6 +84,14 @@ function PaymentPageContent() {
     }
   }, [orderId, amount, name])
 
+  // When SDK is loaded AND order is ready, open the modal
+  useEffect(() => {
+    if (sdkLoaded && processing && razorpayOrderIdRef.current) {
+      console.log('[Payment] Both SDK and order ready, opening modal')
+      openRazorpayModal()
+    }
+  }, [sdkLoaded, processing])
+
   // Poll for payment confirmation
   const startPaymentPolling = (orderId: string) => {
     let pollCount = 0
@@ -91,18 +103,20 @@ function PaymentPageContent() {
       try {
         const { data: order } = await supabase
           .from('orders')
-          .select('payment_status, status')
+          .select('payment_status')
           .eq('id', orderId)
           .single()
 
         if (order && order.payment_status === 'paid') {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-          console.log('[Payment] Payment confirmed, redirecting to track page')
-          // Redirect to track order page immediately on payment success
-          router.push(`/mobile/track/${orderId}`)
+          console.log('[Payment] Payment confirmed, redirecting')
+          setTimeout(() => {
+            router.push(`/mobile/track/${orderId}`)
+          }, 1000)
+          return
         }
       } catch (err) {
-        console.error('Payment polling error:', err)
+        console.error('[Payment] Polling error:', err)
       }
 
       if (pollCount >= maxPolls) {
@@ -113,29 +127,11 @@ function PaymentPageContent() {
     }, 2000)
   }
 
-  // Handle SDK loaded and open Razorpay checkout
-  const handleSDKLoad = async () => {
-    console.log('[Payment] Razorpay SDK loaded')
-
-    if (!orderId || !amount || !name || !processing) {
-      return
-    }
-
+  // Open Razorpay modal
+  const openRazorpayModal = async () => {
     try {
-      // Fetch the order details to get razorpay_order_id
-      const { data: order } = await supabase
-        .from('orders')
-        .select('razorpay_order_id')
-        .eq('id', orderId)
-        .single()
-
-      if (!order?.razorpay_order_id) {
-        setError('Failed to get payment order ID')
-        setProcessing(false)
-        return
-      }
-
       const Razorpay = (window as RazorpayWindow).Razorpay
+
       if (!Razorpay) {
         console.error('[Payment] Razorpay SDK not available')
         setError('Payment SDK failed to load')
@@ -143,38 +139,41 @@ function PaymentPageContent() {
         return
       }
 
-      console.log('[Payment] Opening Razorpay checkout...')
+      if (!razorpayOrderIdRef.current) {
+        console.error('[Payment] No Razorpay order ID')
+        setError('Payment order not created')
+        setProcessing(false)
+        return
+      }
+
+      console.log('[Payment] Creating Razorpay instance')
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        order_id: order.razorpay_order_id,
+        order_id: razorpayOrderIdRef.current,
         name: 'Yoters',
         description: 'Food Order',
         prefill: {
-          name: name,
-          email: `student-${orderId}@yoters.local`,
+          name: name || 'Student',
+          email: `student@yoters.local`,
           contact: '9999999999',
         },
         theme: {
           color: '#E8334A',
         },
-        // UPI ONLY - Disable all other payment methods
+        // UPI Only
         method: {
           upi: true,
           card: false,
           netbanking: false,
           wallet: false,
-          emandate: false,
-          paylater: false,
         },
         handler: function (response: any) {
-          console.log('[Payment] UPI payment successful:', response)
-          // Payment is already being handled by webhook
-          // Just show a message and let polling detect the confirmation
+          console.log('[Payment] Payment response:', response)
         },
         modal: {
           ondismiss: function () {
-            console.log('[Payment] Payment modal closed by user')
+            console.log('[Payment] Modal closed')
             setProcessing(false)
             setError('Payment cancelled. Please try again.')
           },
@@ -182,9 +181,10 @@ function PaymentPageContent() {
       }
 
       const razorpayInstance = new Razorpay(options)
+      console.log('[Payment] Opening Razorpay modal')
       razorpayInstance.open()
     } catch (err: any) {
-      console.error('[Payment] Checkout error:', err)
+      console.error('[Payment] Error opening modal:', err)
       setError(`Payment error: ${err.message}`)
       setProcessing(false)
     }
@@ -195,7 +195,10 @@ function PaymentPageContent() {
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="afterInteractive"
-        onLoad={handleSDKLoad}
+        onLoad={() => {
+          console.log('[Payment] Razorpay SDK script loaded')
+          setSdkLoaded(true)
+        }}
         onError={() => {
           console.error('[Payment] Failed to load Razorpay SDK')
           setError('Failed to load payment SDK')
