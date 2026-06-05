@@ -4,6 +4,7 @@ export interface Cafeteria {
   description?: string
   location: string
   image_emoji: string
+  image_url?: string
   is_open: boolean
   vendor_email: string
   upi_id?: string
