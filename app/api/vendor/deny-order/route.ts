@@ -76,16 +76,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Send notification to student
-    await notifyStudentOrderDenied(
-      order.student_phone,
-      orderId,
-      cafeteria.name,
-      denialReason
-    )
-
-    // Notify manager
-    await notifyManagerVendorDenied(orderId, cafeteria.name, denialReason)
+    // Send notifications (non-blocking)
+    notifyStudentOrderDenied(order.student_phone, orderId, cafeteria.name, denialReason).catch(() => {})
+    notifyManagerVendorDenied(orderId, cafeteria.name, denialReason).catch(() => {})
 
     return NextResponse.json(
       {

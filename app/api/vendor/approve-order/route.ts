@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Send notification to student
-    await notifyStudentOrderApproved(order.student_phone, orderId, cafeteria.name)
+    // Send notification (non-blocking)
+    notifyStudentOrderApproved(order.student_phone, orderId, cafeteria.name).catch(() => {})
 
     return NextResponse.json(
       {
