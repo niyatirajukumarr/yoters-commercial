@@ -34,7 +34,7 @@ export default function VendorDashboard() {
   const prevOrderCount = useState({ count: 0 })
 
   const fetchOrders = useCallback(async (cafId: string, notify = false) => {
-    const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).eq('payment_status', 'paid').in('status', ['paid', 'preparing', 'ready']).order('queue_position')
+    const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).eq('payment_status', 'paid').in('status', ['pending', 'paid', 'preparing', 'ready']).order('created_at', { ascending: false })
     if (data) {
       if (notify && data.length > prevOrderCount[0].count) {
         const newest = data[data.length - 1]
@@ -75,9 +75,13 @@ export default function VendorDashboard() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders(caf.id, true))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu' }, () => fetchMenuItems(caf.id))
         .subscribe()
+
+      // Fallback poll every 10s in case realtime misses events
+      const poll = setInterval(() => fetchOrders(caf.id), 10_000)
+      return () => { clearInterval(poll) }
     }
-    init()
-    return () => { if (channel) channel.unsubscribe() }
+    const cleanup = init()
+    return () => { if (channel) channel.unsubscribe(); cleanup?.then(fn => fn?.()) }
   }, [router, fetchOrders])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
