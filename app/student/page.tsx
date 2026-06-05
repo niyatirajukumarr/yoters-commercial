@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, MenuItem, Order, OrderItem, formatWait } from '@/lib/types'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { TokenTicket } from '@/components/TokenTicket'
+import { useFavourites } from '@/lib/hooks/useFavourites'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 type Step = 'menu' | 'details' | 'payment' | 'tracking'
@@ -31,6 +32,7 @@ function StudentPageInner() {
 
   // FIX 4: Prefill from user profile
   const { user: profile } = useUserInfo()
+  const { isFavourite, toggleFavourite } = useFavourites()
 
   // FIX 5: Token ticket state
   const [showTicket, setShowTicket] = useState(false)
@@ -344,6 +346,24 @@ function StudentPageInner() {
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 }}>
+                              {/* Heart / Favourite button */}
+                              <button
+                                onClick={() => toggleFavourite({
+                                  menuId: item.id,
+                                  name: item.name,
+                                  description: item.description,
+                                  price: item.price,
+                                  category: item.category,
+                                  cafeteriaId: cafeteriaId!,
+                                  cafeteriaName: cafeteria?.name ?? '',
+                                })}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
+                                aria-label={isFavourite(item.id) ? 'Remove from favourites' : 'Add to favourites'}
+                              >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavourite(item.id) ? '#E8334A' : 'none'} stroke={isFavourite(item.id) ? '#E8334A' : '#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                </svg>
+                              </button>
                               {isOutOfStock ? (
                                 <button disabled style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--muted)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'not-allowed', opacity: 0.5 }}>Out of Stock</button>
                               ) : inCart ? (
