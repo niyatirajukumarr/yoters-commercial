@@ -181,6 +181,7 @@ function StudentPageInner() {
     // Open secure payment page (no UPI app redirect)
     const paymentUrl = `/payment?orderId=${myOrder.id}&amount=${myOrder.total_amount}&name=${encodeURIComponent(form.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
+    setTimeout(() => setManualPayEnabled(true), 15_000)
 
     // Poll every 2s for payment confirmation
     pollRef.current = setInterval(async () => {
@@ -221,6 +222,18 @@ function StudentPageInner() {
     }, 300_000)
   }
 
+
+  const [manualPayEnabled, setManualPayEnabled] = useState(false)
+
+  async function markPaidManual() {
+    if (!myOrder) return
+    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', myOrder.id)
+    clearInterval(pollRef.current)
+    setPaymentState('confirmed')
+    setConfirmedOrderId(myOrder.id)
+    setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+    setStep('tracking')
+  }
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
@@ -499,6 +512,11 @@ function StudentPageInner() {
                   Complete the payment in your UPI app.<br />
                   This page will update automatically.
                 </p>
+                {manualPayEnabled && (
+                  <button onClick={markPaidManual} style={{ width: '100%', padding: 14, borderRadius: 12, border: '1px solid var(--green)', background: 'var(--green-bg)', color: 'var(--green)', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
+                    ✅ I&apos;ve Paid
+                  </button>
+                )}
                 <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
                   style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Cancel

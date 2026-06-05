@@ -54,6 +54,7 @@ export default function MobileOrderPage() {
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
+  const [manualPayEnabled, setManualPayEnabled] = useState(false)
 
   // FIX 5: Token ticket
   const [showTicket, setShowTicket] = useState(false)
@@ -148,6 +149,7 @@ export default function MobileOrderPage() {
     setPaymentState('waiting')
     const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
+    setTimeout(() => setManualPayEnabled(true), 15_000)
 
     // Poll every 2s for faster confirmation
     pollRef.current = setInterval(async () => {
@@ -170,6 +172,15 @@ export default function MobileOrderPage() {
 
     // 5 min timeout → show failed
     setTimeout(() => { clearInterval(pollRef.current); setPaymentState(prev => prev === 'waiting' ? 'failed' : prev) }, 300_000)
+  }
+
+  async function handleManualPaid() {
+    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', orderId)
+    clearInterval(pollRef.current)
+    setConfirmedTotal(total)
+    setPaymentState('confirmed')
+    clearCart()
+    setStep('confirmation')
   }
 
   // Cleanup polling on unmount
@@ -490,6 +501,11 @@ export default function MobileOrderPage() {
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
               Complete the payment in your UPI app.<br />This page will update automatically.
             </p>
+            {manualPayEnabled && (
+              <button onClick={handleManualPaid} className="mobile-btn mobile-btn-primary" style={{ marginBottom: 12 }}>
+                ✅ I&apos;ve Paid
+              </button>
+            )}
             <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
               style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               Cancel
