@@ -175,11 +175,14 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
-          // Mark order as paid via server-side API (bypasses RLS)
+          // Mark order as paid via server-side API (bypasses RLS), save payment ID for refunds
           await fetch('/api/confirm-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId }),
+            body: JSON.stringify({
+              orderId,
+              razorpayPaymentId: response.razorpay_payment_id,
+            }),
           })
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)

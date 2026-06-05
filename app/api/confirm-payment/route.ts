@@ -8,12 +8,16 @@ const adminSupabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const { orderId } = await req.json()
+  const { orderId, razorpayPaymentId } = await req.json()
   if (!orderId) return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
 
   const { error } = await adminSupabase
     .from('orders')
-    .update({ payment_status: 'paid', status: 'paid' })
+    .update({
+      payment_status: 'paid',
+      status: 'paid',
+      ...(razorpayPaymentId ? { razorpay_payment_id: razorpayPaymentId } : {})
+    })
     .eq('id', orderId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
