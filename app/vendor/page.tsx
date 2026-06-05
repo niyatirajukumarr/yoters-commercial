@@ -30,9 +30,29 @@ export default function VendorDashboard() {
   const [approveLoading, setApproveLoading] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
 
-  const fetchOrders = useCallback(async (cafId: string) => {
+  const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
+  const prevOrderCount = useState({ count: 0 })
+
+  const fetchOrders = useCallback(async (cafId: string, notify = false) => {
     const { data } = await supabase.from('orders').select('*').eq('cafeteria_id', cafId).eq('payment_status', 'paid').in('status', ['paid', 'preparing', 'ready']).order('queue_position')
-    if (data) setOrders(data as Order[])
+    if (data) {
+      if (notify && data.length > prevOrderCount[0].count) {
+        const newest = data[data.length - 1]
+        setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
+        // Play a beep sound
+        try {
+          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+          const osc = ctx.createOscillator()
+          osc.connect(ctx.destination)
+          osc.frequency.value = 880
+          osc.start()
+          osc.stop(ctx.currentTime + 0.3)
+        } catch {}
+        setTimeout(() => setNewOrderAlert(null), 5000)
+      }
+      prevOrderCount[0].count = data.length
+      setOrders(data as Order[])
+    }
   }, [])
 
   useEffect(() => {
@@ -52,7 +72,7 @@ export default function VendorDashboard() {
         if (data) setMenuItems(data)
       }
       channel = supabase.channel('vendor-realtime-' + caf.id)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders(caf.id))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders(caf.id, true))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu' }, () => fetchMenuItems(caf.id))
         .subscribe()
     }
@@ -261,6 +281,12 @@ export default function VendorDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      {/* New Order Alert Banner */}
+      {newOrderAlert && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#2e9e6b', color: 'white', padding: '14px 20px', textAlign: 'center', fontWeight: 700, fontSize: 15, animation: 'slideDown 0.3s ease', boxShadow: '0 4px 16px rgba(46,158,107,0.4)' }}>
+          {newOrderAlert}
+        </div>
+      )}
       <style>{`
         .v-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
         .v-body { display:flex; flex:1; }
