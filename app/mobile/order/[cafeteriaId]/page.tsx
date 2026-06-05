@@ -53,7 +53,7 @@ export default function MobileOrderPage() {
   // FIX 3: Payment polling
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
-  const [manualPayEnabled, setManualPayEnabled] = useState(false)
+  const [confirmedTotal, setConfirmedTotal] = useState(0)
 
   // FIX 5: Token ticket
   const [showTicket, setShowTicket] = useState(false)
@@ -155,14 +155,13 @@ export default function MobileOrderPage() {
       const { data } = await supabase.from('orders').select('status, payment_status, token_number, items, total_amount').eq('id', orderId).single()
       if (data?.status === 'paid' || data?.payment_status === 'paid') {
         clearInterval(pollRef.current)
+        setConfirmedTotal(data.total_amount)
         setPaymentState('confirmed')
         clearCart()
-        // FIX 5: Show token ticket immediately after payment
         if (data) {
           setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
           setShowTicket(true)
         }
-        // Auto proceed to confirmation after 4 seconds
         setTimeout(() => setStep('confirmation'), 4000)
       } else if (data?.status === 'failed' || data?.status === 'cancelled') {
         clearInterval(pollRef.current)
@@ -170,18 +169,8 @@ export default function MobileOrderPage() {
       }
     }, 3000)
 
-    // 30s delay for manual button
-    setTimeout(() => setManualPayEnabled(true), 30_000)
-    // 5 min timeout
+    // 5 min timeout → show failed
     setTimeout(() => { clearInterval(pollRef.current); setPaymentState(prev => prev === 'waiting' ? 'failed' : prev) }, 300_000)
-  }
-
-  async function handleManualPaid() {
-    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', orderId)
-    clearInterval(pollRef.current)
-    setPaymentState('confirmed')
-    clearCart()
-    setStep('confirmation')
   }
 
   // Cleanup polling on unmount
@@ -496,22 +485,12 @@ export default function MobileOrderPage() {
         )}
 
         {paymentState === 'waiting' && (
-          <div style={{ padding: 24 }}>
+          <div style={{ padding: 24, textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
             <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
               Complete the payment in your UPI app.<br />This page will update automatically.
             </p>
-            {manualPayEnabled && (
-              <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
-                  Tap only after completing payment — our team will verify.
-                </p>
-                <button onClick={handleManualPaid} className="mobile-btn mobile-btn-primary">
-                  ✅ I&apos;ve Paid
-                </button>
-              </div>
-            )}
             <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
               style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               Cancel
@@ -555,7 +534,7 @@ export default function MobileOrderPage() {
               Total Amount
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>
-              ₹{total}
+              ₹{confirmedTotal}
             </div>
           </div>
         </div>
