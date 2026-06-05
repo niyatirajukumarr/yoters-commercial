@@ -1,6 +1,11 @@
-import { supabase } from '@/lib/supabase'
-import { notifyStudentOrderApproved, notifyManagerVendorDenied } from '@/lib/notifications'
+import { createClient } from '@supabase/supabase-js'
+import { notifyStudentOrderApproved } from '@/lib/notifications'
 import { NextRequest, NextResponse } from 'next/server'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,11 +55,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Update order status to 'approved' with prep time
+    // Update order status to 'preparing' with prep time
     const { error: updateError } = await supabase
       .from('orders')
       .update({
-        status: 'approved',
+        status: 'preparing',
         approved_at: new Date().toISOString(),
         prep_time_minutes: prepTimeMinutes,
       })
