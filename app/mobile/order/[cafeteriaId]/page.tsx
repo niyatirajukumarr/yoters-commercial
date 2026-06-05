@@ -54,7 +54,6 @@ export default function MobileOrderPage() {
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
-  const [manualPayEnabled, setManualPayEnabled] = useState(false)
 
   // FIX 5: Token ticket
   const [showTicket, setShowTicket] = useState(false)
@@ -173,24 +172,24 @@ export default function MobileOrderPage() {
     setTimeout(() => { clearInterval(pollRef.current); setPaymentState(prev => prev === 'waiting' ? 'failed' : prev) }, 300_000)
   }
 
-  async function handleManualPaid() {
-    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', orderId)
-    clearInterval(pollRef.current)
-    setConfirmedTotal(total)
-    setPaymentState('confirmed')
-    clearCart()
-    setStep('confirmation')
-  }
-
   // Listen for payment result from popup window
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'PAYMENT_SUCCESS') {
         clearInterval(pollRef.current)
-        setManualPayEnabled(true)  // only now show "I've Paid"
+        supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
+          .then(({ data }) => {
+            if (data) {
+              setConfirmedTotal(data.total_amount)
+              setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
+              setShowTicket(true)
+            }
+          })
+        clearCart()
+        setPaymentState('confirmed')
+        setTimeout(() => setStep('confirmation'), 4000)
       } else if (e.data?.type === 'PAYMENT_FAILED') {
         clearInterval(pollRef.current)
-        setManualPayEnabled(false)
         setPaymentState('failed')
       }
     }
@@ -513,20 +512,9 @@ export default function MobileOrderPage() {
           <div style={{ padding: 24, textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
             <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
-            {manualPayEnabled ? (
-              <>
-                <p style={{ fontSize: 14, color: 'var(--green)', fontWeight: 600, marginBottom: 16 }}>
-                  ✅ Payment received! Tap below to confirm your order.
-                </p>
-                <button onClick={handleManualPaid} className="mobile-btn" style={{ background: 'var(--green)', color: 'white', marginBottom: 12, border: 'none' }}>
-                  ✅ I&apos;ve Paid — Confirm Order
-                </button>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                Complete the payment in your UPI app.<br />This page will update automatically.
-              </p>
-            )}
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+              Complete the payment in your UPI app.<br />This page will update automatically.
+            </p>
             <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
               style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               Cancel

@@ -107,11 +107,15 @@ function StudentPageInner() {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'PAYMENT_SUCCESS') {
         clearInterval(pollRef.current)
-        setManualPayEnabled(true)  // only now show "I've Paid"
+        if (myOrder) {
+          setConfirmedOrderId(myOrder.id)
+          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+        }
+        setPaymentState('confirmed')
+        setStep('tracking')
       } else if (e.data?.type === 'PAYMENT_FAILED') {
         clearInterval(pollRef.current)
         setPaymentState('failed')
-        setManualPayEnabled(false)
       }
     }
     window.addEventListener('message', handler)
@@ -237,18 +241,6 @@ function StudentPageInner() {
     }, 300_000)
   }
 
-
-  const [manualPayEnabled, setManualPayEnabled] = useState(false)
-
-  async function markPaidManual() {
-    if (!myOrder) return
-    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', myOrder.id)
-    clearInterval(pollRef.current)
-    setPaymentState('confirmed')
-    setConfirmedOrderId(myOrder.id)
-    setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
-    setStep('tracking')
-  }
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
@@ -523,21 +515,10 @@ function StudentPageInner() {
               <div style={{ textAlign: 'center', padding: 24 }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
                 <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
-                {manualPayEnabled ? (
-                  <>
-                    <p style={{ fontSize: 14, color: 'var(--green)', fontWeight: 600, marginBottom: 16 }}>
-                      ✅ Payment received! Tap below to confirm your order.
-                    </p>
-                    <button onClick={markPaidManual} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: 'var(--green)', color: 'white', fontSize: 15, fontWeight: 700, marginBottom: 12, cursor: 'pointer' }}>
-                      ✅ I&apos;ve Paid — Confirm Order
-                    </button>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                    Complete the payment in your UPI app.<br />
-                    This page will update automatically.
-                  </p>
-                )}
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                  Complete the payment in your UPI app.<br />
+                  This page will update automatically.
+                </p>
                 <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
                   style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Cancel
