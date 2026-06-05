@@ -109,10 +109,13 @@ function PaymentPageContent() {
 
         if (order && order.payment_status === 'paid') {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-          console.log('[Payment] Payment confirmed, redirecting')
-          setTimeout(() => {
+          console.log('[Payment] Payment confirmed')
+          if (window.opener) {
+            window.opener.postMessage({ type: 'PAYMENT_SUCCESS', orderId }, '*')
+            setTimeout(() => window.close(), 1500)
+          } else {
             router.push(`/mobile/track/${orderId}`)
-          }, 1000)
+          }
           return
         }
       } catch (err) {
@@ -173,9 +176,12 @@ function PaymentPageContent() {
         },
         modal: {
           ondismiss: function () {
-            console.log('[Payment] Modal closed')
+            console.log('[Payment] Modal closed/failed')
             setProcessing(false)
-            setError('Payment cancelled. Please try again.')
+            setError('Payment failed or cancelled.')
+            if (window.opener) {
+              window.opener.postMessage({ type: 'PAYMENT_FAILED', orderId }, '*')
+            }
           },
         },
       }

@@ -183,6 +183,34 @@ export default function MobileOrderPage() {
     setStep('confirmation')
   }
 
+  // Listen for payment result from popup window
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'PAYMENT_SUCCESS') {
+        clearInterval(pollRef.current)
+        setManualPayEnabled(false)
+        setPaymentState('confirmed')
+        // fetch confirmed total from DB then show ticket
+        supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
+          .then(({ data }) => {
+            if (data) {
+              setConfirmedTotal(data.total_amount)
+              setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
+              setShowTicket(true)
+            }
+          })
+        clearCart()
+        setTimeout(() => setStep('confirmation'), 4000)
+      } else if (e.data?.type === 'PAYMENT_FAILED') {
+        clearInterval(pollRef.current)
+        setManualPayEnabled(false)
+        setPaymentState('failed')
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [orderId])
+
   // Cleanup polling on unmount
   useEffect(() => () => clearInterval(pollRef.current), [])
 

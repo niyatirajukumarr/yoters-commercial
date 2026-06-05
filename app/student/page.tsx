@@ -102,6 +102,28 @@ function StudentPageInner() {
     }
   }, [profile])
 
+  // Listen for payment result from popup window
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'PAYMENT_SUCCESS') {
+        clearInterval(pollRef.current)
+        setPaymentState('confirmed')
+        setManualPayEnabled(false)
+        if (myOrder) {
+          setConfirmedOrderId(myOrder.id)
+          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+        }
+        setStep('tracking')
+      } else if (e.data?.type === 'PAYMENT_FAILED') {
+        clearInterval(pollRef.current)
+        setPaymentState('failed')
+        setManualPayEnabled(false)
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [myOrder])
+
   // FIX 3: Cleanup polling on unmount
   useEffect(() => () => clearInterval(pollRef.current), [])
 
