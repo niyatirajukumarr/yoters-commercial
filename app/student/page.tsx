@@ -222,26 +222,6 @@ function StudentPageInner() {
     }, 300_000)
   }
 
-  // Manual "I've Paid" (with 30s delay)
-  const [manualPayEnabled, setManualPayEnabled] = useState(false)
-  useEffect(() => {
-    if (paymentState === 'waiting') {
-      const t = setTimeout(() => setManualPayEnabled(true), 30_000)
-      return () => clearTimeout(t)
-    } else {
-      setManualPayEnabled(false)
-    }
-  }, [paymentState])
-
-  async function markPaidManual() {
-    if (!myOrder) return
-    await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', myOrder.id)
-    clearInterval(pollRef.current)
-    setPaymentState('confirmed')
-    setConfirmedOrderId(myOrder.id)
-    setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
-    setStep('tracking')
-  }
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
@@ -520,16 +500,6 @@ function StudentPageInner() {
                   Complete the payment in your UPI app.<br />
                   This page will update automatically.
                 </p>
-                {manualPayEnabled && (
-                  <div style={{ marginBottom: 16 }}>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
-                      Tap only after completing payment — our team will verify.
-                    </p>
-                    <button onClick={markPaidManual} style={{ width: '100%', padding: 14, borderRadius: 12, border: '1px solid var(--green)', background: 'var(--green-bg)', color: 'var(--green)', fontSize: 15, fontWeight: 700 }}>
-                      ✅ I&apos;ve Paid
-                    </button>
-                  </div>
-                )}
                 <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
                   style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Cancel
