@@ -55,7 +55,7 @@ export default function LandingPage() {
       const { data: cafes } = await supabase
         .from('cafeterias')
         .select('name')
-        .limit(3)
+        .limit(4)
 
       if (cafes) {
         const cafeList = cafes.map(cafe => ({
