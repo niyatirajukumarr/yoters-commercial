@@ -156,16 +156,25 @@ function PaymentPageContent() {
           contact: '9999999999',
         },
         theme: {
-          color: '#667eea',
+          color: '#E8334A',
+        },
+        // UPI ONLY - Disable all other payment methods
+        method: {
+          upi: true,
+          card: false,
+          netbanking: false,
+          wallet: false,
+          emandate: false,
+          paylater: false,
         },
         handler: function (response: any) {
-          console.log('[Payment] Razorpay payment response:', response)
+          console.log('[Payment] UPI payment successful:', response)
           // Payment is already being handled by webhook
           // Just show a message and let polling detect the confirmation
         },
         modal: {
           ondismiss: function () {
-            console.log('[Payment] Razorpay modal closed by user')
+            console.log('[Payment] Payment modal closed by user')
             setProcessing(false)
             setError('Payment cancelled. Please try again.')
           },
@@ -213,12 +222,12 @@ function PaymentPageContent() {
         }}>
           {loading ? (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 12, animation: 'spin 2s linear infinite' }}>💳</div>
+              <div style={{ fontSize: 48, marginBottom: 12, animation: 'spin 2s linear infinite' }}>📱</div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
-                Initializing Payment
+                UPI Payment
               </h2>
               <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
-                Setting up secure payment gateway...
+                Initializing secure UPI payment...
               </p>
               <style>{`
                 @keyframes spin {
@@ -256,10 +265,10 @@ function PaymentPageContent() {
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🔄</div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
-                Processing Payment
+                Waiting for UPI Payment
               </h2>
               <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
-                Please complete payment in the popup...
+                Please complete payment in your UPI app (PhonePe, Google Pay, Paytm, etc.)
               </p>
             </div>
           ) : null}
