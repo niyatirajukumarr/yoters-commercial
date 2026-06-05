@@ -72,16 +72,16 @@ export default function VendorDashboard() {
         if (data) setMenuItems(data)
       }
       channel = supabase.channel('vendor-realtime-' + caf.id)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders(caf.id, true))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu' }, () => fetchMenuItems(caf.id))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchOrders(caf.id, true))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
         .subscribe()
 
-      // Fallback poll every 10s in case realtime misses events
-      const poll = setInterval(() => fetchOrders(caf.id), 10_000)
-      return () => { clearInterval(poll) }
+      // Fallback poll every 5s
+      const poll = setInterval(() => fetchOrders(caf.id), 5_000)
+      return () => { channel?.unsubscribe(); clearInterval(poll) }
     }
-    const cleanup = init()
-    return () => { if (channel) channel.unsubscribe(); cleanup?.then(fn => fn?.()) }
+    init()
+    return () => { channel?.unsubscribe() }
   }, [router, fetchOrders])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
