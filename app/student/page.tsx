@@ -196,11 +196,10 @@ function StudentPageInner() {
   // FIX 3: Payment handler with polling
   async function handlePay() {
     if (!myOrder) return
-    setPaymentState('waiting')
-
-    // Open secure payment page (no UPI app redirect)
+    // Open secure payment page
     const paymentUrl = `/payment?orderId=${myOrder.id}&amount=${myOrder.total_amount}&name=${encodeURIComponent(form.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
+    setPaymentState('waiting')
 
     // Poll every 2s for payment confirmation
     pollRef.current = setInterval(async () => {
@@ -513,11 +512,10 @@ function StudentPageInner() {
 
             {paymentState === 'waiting' && (
               <div style={{ textAlign: 'center', padding: 24 }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
-                <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📱</div>
+                <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Complete payment in the popup</p>
                 <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  Complete the payment in your UPI app.<br />
-                  This page will update automatically.
+                  Once paid, you will be redirected automatically.
                 </p>
                 <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
                   style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>

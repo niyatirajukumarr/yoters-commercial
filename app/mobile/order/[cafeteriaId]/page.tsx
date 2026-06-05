@@ -510,10 +510,10 @@ export default function MobileOrderPage() {
 
         {paymentState === 'waiting' && (
           <div style={{ padding: 24, textAlign: 'center' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
-            <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📱</div>
+            <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Complete payment in the popup</p>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-              Complete the payment in your UPI app.<br />This page will update automatically.
+              Once paid, you will be redirected automatically.
             </p>
             <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
               style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>

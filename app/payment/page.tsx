@@ -174,8 +174,18 @@ function PaymentPageContent() {
           netbanking: false,
           wallet: false,
         },
-        handler: function (response: any) {
-          console.log('[Payment] Payment response:', response)
+        handler: async function (response: any) {
+          // Mark order as paid in Supabase
+          await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', orderId)
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+          setProcessing(false)
+          setPaymentConfirmed(true)
+          if (window.opener) {
+            window.opener.postMessage({ type: 'PAYMENT_SUCCESS', orderId }, '*')
+            setTimeout(() => window.close(), 3000)
+          } else {
+            setTimeout(() => router.push(`/mobile/track/${orderId}`), 3000)
+          }
         },
         modal: {
           ondismiss: function () {
