@@ -13,11 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await adminSupabase
     .from('orders')
-    .update({
-      payment_status: 'paid',
-      status: 'paid',
-      ...(razorpayPaymentId ? { razorpay_payment_id: razorpayPaymentId } : {})
-    })
+    .update({ payment_status: 'paid', status: 'paid' })
     .eq('id', orderId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
