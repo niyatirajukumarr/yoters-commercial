@@ -12,6 +12,7 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
+  const [restaurants, setRestaurants] = useState<{ name: string; image: string }[]>([])
 
   const { scrollY: scrollYProgress } = useScroll()
   const heroY = useTransform(scrollYProgress, [0, 600], [0, -80])
@@ -48,7 +49,25 @@ export default function LandingPage() {
       }
       // If unauthenticated with splash=true, redirect to /auth happens in splash
     }
+
+    // Fetch cafeterias from database
+    const fetchCafeterias = async () => {
+      const { data: cafes } = await supabase
+        .from('cafeterias')
+        .select('name')
+        .limit(3)
+
+      if (cafes) {
+        const cafeList = cafes.map(cafe => ({
+          name: cafe.name,
+          image: `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+        }))
+        setRestaurants(cafeList)
+      }
+    }
+
     checkAuth()
+    fetchCafeterias()
   }, [router])
 
   async function handleLogout() {
@@ -70,11 +89,6 @@ export default function LandingPage() {
     setMenuOpen(false)
   }
 
-  const restaurants = [
-    { name: 'Main Block Cafeteria', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=400&fit=crop' },
-    { name: 'Engineering Block Canteen', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&h=400&fit=crop' },
-    { name: 'North Campus Food Court', image: 'https://media.istockphoto.com/id/639389404/photo/authentic-indian-food.jpg?s=612x612&w=0&k=20&c=gbfAu17L1gtHmuo5biByhfCefAtYUtGQpyxMmi9_Mus=' },
-  ]
 
   const steps = [
     { n: '01', title: 'Browse & Choose', desc: "Open Yoters, pick your cafeteria, browse today's menu and add items to your cart — all before your break starts.", img: '🍽️', bg: '#fff0f2' },
