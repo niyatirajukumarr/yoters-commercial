@@ -175,8 +175,12 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
-          // Mark order as paid in Supabase
-          await supabase.from('orders').update({ payment_status: 'paid', status: 'paid' }).eq('id', orderId)
+          // Mark order as paid via server-side API (bypasses RLS)
+          await fetch('/api/confirm-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+          })
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)
           setPaymentConfirmed(true)
