@@ -149,7 +149,6 @@ export default function MobileOrderPage() {
     setPaymentState('waiting')
     const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
-    setTimeout(() => setManualPayEnabled(true), 15_000)
 
     // Poll every 2s for faster confirmation
     pollRef.current = setInterval(async () => {
@@ -188,19 +187,7 @@ export default function MobileOrderPage() {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'PAYMENT_SUCCESS') {
         clearInterval(pollRef.current)
-        setManualPayEnabled(false)
-        setPaymentState('confirmed')
-        // fetch confirmed total from DB then show ticket
-        supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
-          .then(({ data }) => {
-            if (data) {
-              setConfirmedTotal(data.total_amount)
-              setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
-              setShowTicket(true)
-            }
-          })
-        clearCart()
-        setTimeout(() => setStep('confirmation'), 4000)
+        setManualPayEnabled(true)  // only now show "I've Paid"
       } else if (e.data?.type === 'PAYMENT_FAILED') {
         clearInterval(pollRef.current)
         setManualPayEnabled(false)
@@ -526,13 +513,19 @@ export default function MobileOrderPage() {
           <div style={{ padding: 24, textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
             <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-              Complete the payment in your UPI app.<br />This page will update automatically.
-            </p>
-            {manualPayEnabled && (
-              <button onClick={handleManualPaid} className="mobile-btn mobile-btn-primary" style={{ marginBottom: 12 }}>
-                ✅ I&apos;ve Paid
-              </button>
+            {manualPayEnabled ? (
+              <>
+                <p style={{ fontSize: 14, color: 'var(--green)', fontWeight: 600, marginBottom: 16 }}>
+                  ✅ Payment received! Tap below to confirm your order.
+                </p>
+                <button onClick={handleManualPaid} className="mobile-btn" style={{ background: 'var(--green)', color: 'white', marginBottom: 12, border: 'none' }}>
+                  ✅ I&apos;ve Paid — Confirm Order
+                </button>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                Complete the payment in your UPI app.<br />This page will update automatically.
+              </p>
             )}
             <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
               style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>

@@ -107,13 +107,7 @@ function StudentPageInner() {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'PAYMENT_SUCCESS') {
         clearInterval(pollRef.current)
-        setPaymentState('confirmed')
-        setManualPayEnabled(false)
-        if (myOrder) {
-          setConfirmedOrderId(myOrder.id)
-          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
-        }
-        setStep('tracking')
+        setManualPayEnabled(true)  // only now show "I've Paid"
       } else if (e.data?.type === 'PAYMENT_FAILED') {
         clearInterval(pollRef.current)
         setPaymentState('failed')
@@ -203,7 +197,6 @@ function StudentPageInner() {
     // Open secure payment page (no UPI app redirect)
     const paymentUrl = `/payment?orderId=${myOrder.id}&amount=${myOrder.total_amount}&name=${encodeURIComponent(form.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
-    setTimeout(() => setManualPayEnabled(true), 15_000)
 
     // Poll every 2s for payment confirmation
     pollRef.current = setInterval(async () => {
@@ -530,14 +523,20 @@ function StudentPageInner() {
               <div style={{ textAlign: 'center', padding: 24 }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
                 <p style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: 8 }}>Waiting for payment...</p>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  Complete the payment in your UPI app.<br />
-                  This page will update automatically.
-                </p>
-                {manualPayEnabled && (
-                  <button onClick={markPaidManual} style={{ width: '100%', padding: 14, borderRadius: 12, border: '1px solid var(--green)', background: 'var(--green-bg)', color: 'var(--green)', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-                    ✅ I&apos;ve Paid
-                  </button>
+                {manualPayEnabled ? (
+                  <>
+                    <p style={{ fontSize: 14, color: 'var(--green)', fontWeight: 600, marginBottom: 16 }}>
+                      ✅ Payment received! Tap below to confirm your order.
+                    </p>
+                    <button onClick={markPaidManual} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: 'var(--green)', color: 'white', fontSize: 15, fontWeight: 700, marginBottom: 12, cursor: 'pointer' }}>
+                      ✅ I&apos;ve Paid — Confirm Order
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                    Complete the payment in your UPI app.<br />
+                    This page will update automatically.
+                  </p>
                 )}
                 <button onClick={() => { clearInterval(pollRef.current); setPaymentState('idle') }}
                   style={{ fontSize: 13, color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
