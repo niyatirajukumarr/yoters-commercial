@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
@@ -35,13 +35,14 @@ type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 export default function MobileOrderPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const cafeteriaId = params.cafeteriaId as string
 
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('Meals')
-  const [step, setStep] = useState<Step>('menu')
+  const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
 
   const { cart, addItem, updateQuantity, removeItem, clear: clearCart, total, itemCount } = useCart()

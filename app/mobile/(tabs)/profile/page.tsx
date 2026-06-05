@@ -3,14 +3,16 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { useCart } from '@/lib/hooks/useCart'
-import { Edit2, Trash2, Heart, Trash } from 'lucide-react'
-import { useFavourites } from '@/lib/hooks/useFavourites'
+import { Edit2, Trash2, Heart, Trash, RotateCcw } from 'lucide-react'
+import { useFavourites, FavouriteItem } from '@/lib/hooks/useFavourites'
 
 export default function MobileProfile() {
+  const router = useRouter()
   const { user, updateUser, isLoaded } = useUserInfo()
-  const { clear: clearCart } = useCart()
+  const { clear: clearCart, addItem } = useCart()
   const { favourites, removeFavourite, isLoaded: favsLoaded } = useFavourites()
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
@@ -25,6 +27,17 @@ export default function MobileProfile() {
       })
     }
   }, [user])
+
+  const handleReorder = (fav: FavouriteItem) => {
+    clearCart()
+    addItem(fav.cafeteriaId, {
+      menuId: fav.menuId,
+      name: fav.name,
+      price: fav.price,
+      quantity: 1,
+    })
+    router.push(`/mobile/order/${fav.cafeteriaId}?step=details`)
+  }
 
   const handleSave = () => {
     if (formData.name && formData.phone) {
@@ -210,27 +223,34 @@ export default function MobileProfile() {
             <div
               key={fav.menuId}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 0',
+                padding: '12px 0',
                 borderBottom: '1px solid rgba(26,31,46,0.06)',
               }}
             >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
-                  {fav.name}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                    {fav.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    {fav.cafeteriaName} · ₹{fav.price}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  {fav.cafeteriaName} · ₹{fav.price}
-                </div>
+                <button
+                  onClick={() => removeFavourite(fav.menuId)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'var(--muted)' }}
+                  aria-label="Remove from favourites"
+                >
+                  <Trash size={16} />
+                </button>
               </div>
               <button
-                onClick={() => removeFavourite(fav.menuId)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'var(--muted)' }}
-                aria-label="Remove from favourites"
+                onClick={() => handleReorder(fav)}
+                className="mobile-btn mobile-btn-primary"
+                style={{ padding: '8px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, width: 'auto' }}
               >
-                <Trash size={16} />
+                <RotateCcw size={13} />
+                Reorder · ₹{fav.price}
               </button>
             </div>
           ))
