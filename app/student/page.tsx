@@ -199,7 +199,10 @@ function StudentPageInner() {
     // Open secure payment page
     const paymentUrl = `/payment?orderId=${myOrder.id}&amount=${myOrder.total_amount}&name=${encodeURIComponent(form.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
-    setPaymentState('waiting')
+    // Go straight to tracking — no waiting screen
+    setConfirmedOrderId(myOrder.id)
+    setMyOrder(prev => prev ? { ...prev, payment_status: 'unpaid', status: 'pending' } : null)
+    setStep('tracking')
 
     // Poll every 2s for payment confirmation
     pollRef.current = setInterval(async () => {

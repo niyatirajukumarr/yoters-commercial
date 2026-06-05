@@ -145,9 +145,10 @@ export default function MobileOrderPage() {
 
   // FIX 3: Open payment page (safe payment gateway instead of UPI app redirect)
   function handleOpenUPI() {
-    setPaymentState('waiting')
     const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
+    // Go straight to confirmation polling — no waiting screen
+    setConfirmedTotal(total)
 
     // Poll every 2s for faster confirmation
     pollRef.current = setInterval(async () => {
@@ -169,7 +170,7 @@ export default function MobileOrderPage() {
     }, 3000)
 
     // 5 min timeout → show failed
-    setTimeout(() => { clearInterval(pollRef.current); setPaymentState(prev => prev === 'waiting' ? 'failed' : prev) }, 300_000)
+    setTimeout(() => { clearInterval(pollRef.current) }, 300_000)
   }
 
   // Listen for payment result from popup window
