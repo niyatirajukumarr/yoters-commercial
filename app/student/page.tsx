@@ -75,6 +75,21 @@ function StudentPageInner() {
     return () => { supabase.removeChannel(ch) }
   }, [cafeteriaId, fetchCafeteria, myOrder])
 
+  // Handle reorder from favourites: pre-fill cart and jump to details
+  useEffect(() => {
+    if (!cafeteriaId) return
+    const raw = sessionStorage.getItem('yoters_reorder')
+    if (!raw) return
+    try {
+      const { cafeteriaId: cid, item } = JSON.parse(raw)
+      if (cid === cafeteriaId) {
+        sessionStorage.removeItem('yoters_reorder')
+        setCart([item])
+        setStep('details')
+      }
+    } catch {}
+  }, [cafeteriaId])
+
   // FIX 4: Prefill form from saved profile
   useEffect(() => {
     if (profile) {

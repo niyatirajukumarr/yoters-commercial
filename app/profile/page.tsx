@@ -140,12 +140,12 @@ export default function ProfilePage() {
           { icon: CreditCard, label: 'Payment Modes', href: '/profile/payment-modes' },
           { icon: RotateCcw, label: 'My Refunds', href: '/profile/refunds' },
           { icon: Ticket, label: 'My Vouchers', href: '/profile/vouchers' },
-          { icon: Heart, label: 'Favourites', href: '#' },
+          { icon: Heart, label: 'Favourites', href: '/profile/favourites' },
         ].map(({ icon: Icon, label, href }) => (
           <button
             key={label}
-            onClick={() => href !== '#' && router.push(href)}
-            style={{ background: 'white', borderRadius: 14, padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, cursor: href !== '#' ? 'pointer' : 'default', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: 'none', opacity: href === '#' ? 0.6 : 1 }}
+            onClick={() => router.push(href)}
+            style={{ background: 'white', borderRadius: 14, padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: 'none' }}
           >
             <Icon size={24} color="#444" strokeWidth={1.5} />
             <span style={{ fontSize: 13, fontWeight: 500, color: '#222' }}>{label}</span>
