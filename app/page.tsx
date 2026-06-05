@@ -12,7 +12,7 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
-  const [restaurants, setRestaurants] = useState<{ name: string; image: string }[]>([])
+  const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
   const { scrollY: scrollYProgress } = useScroll()
   const heroY = useTransform(scrollYProgress, [0, 600], [0, -80])
@@ -54,13 +54,14 @@ export default function LandingPage() {
     const fetchCafeterias = async () => {
       const { data: cafes } = await supabase
         .from('cafeterias')
-        .select('name')
+        .select('name, image_url')
         .limit(4)
 
       if (cafes) {
         const cafeList = cafes.map(cafe => ({
           name: cafe.name,
-          image: `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+          image_url: cafe.image_url,
+          image: cafe.image_url || `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
         }))
         setRestaurants(cafeList)
       }
