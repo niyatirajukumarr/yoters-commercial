@@ -131,7 +131,7 @@ export default function CafeteriaPage() {
     fetch()
   }, [cafeteriaId])
 
-  // Fetch user's orders from this cafe
+  // Fetch user's orders from this cafe with real-time subscription
   useEffect(() => {
     const fetch = async () => {
       if (!user?.phone) return
@@ -148,6 +148,18 @@ export default function CafeteriaPage() {
       }
     }
     fetch()
+
+    // Real-time subscription for cafe orders
+    const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user?.phone}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, (payload) => {
+        console.log('Cafe order change detected:', payload)
+        fetch() // Refetch orders on any change
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [cafeteriaId, user?.phone])
 
   // Populate form with user data
@@ -193,6 +205,17 @@ export default function CafeteriaPage() {
     }
     setShowSharingModal(false)
     setStep('payment')
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase.from('orders').delete().eq('id', orderId)
+      if (!error) {
+        setCafeOrders(cafeOrders.filter(o => o.id !== orderId))
+      }
+    } catch (error) {
+      console.error('Delete failed:', error)
+    }
   }
 
   // Payment modal handler
@@ -536,9 +559,17 @@ export default function CafeteriaPage() {
                       {order.status}
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
                     {new Date(order.created_at).toLocaleDateString()}
                   </div>
+                  {(order.status === 'pending' || order.status === 'cancelled') && (
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      style={{ width: '100%', padding: '10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+                    >
+                      🗑️ Delete Order
+                    </button>
+                  )}
                 </div>
               ))
             )}
