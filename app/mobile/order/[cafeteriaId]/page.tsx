@@ -35,7 +35,7 @@ type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 // Category images mapping
 const CATEGORY_IMAGES: { [key: string]: string } = {
   'Biryani': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/biryani.jpg',
-  'Mandhi': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
+  'Mandhi': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/mandhi.jpg',
   'Combo': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop',
   'Burger': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=400&fit=crop',
   'Roll': 'https://images.unsplash.com/photo-1599599810694-b5ac4dd64761?w=600&h=400&fit=crop',
