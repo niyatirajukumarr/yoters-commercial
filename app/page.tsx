@@ -217,9 +217,9 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; overflow-x: hidden; width: 100%; }
-        body { background: #fdf8f5; overflow-x: hidden; width: 100%; }
-        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'DM Sans', sans-serif; overflow-x: hidden; width: 100%; }
+        html { scroll-behavior: smooth; overflow-x: hidden !important; width: 100vw; max-width: 100%; }
+        body { background: #fdf8f5; overflow-x: hidden !important; width: 100vw; max-width: 100%; }
+        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'DM Sans', sans-serif; overflow-x: hidden !important; width: 100%; max-width: 100vw; }
 
         .glitch { position: relative; display: inline-block; cursor: pointer; transition: color 0.2s; }
         .glitch:hover { color: #E8334A !important; }
@@ -274,8 +274,8 @@ export default function LandingPage() {
         .track-emoji-wrap { width: 72px; height: 72px; border-radius: 50%; background: white; border: 1.5px solid rgba(232,51,74,0.15); display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 4px 16px rgba(26,31,46,0.06); transition: transform 0.2s; }
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
-        .cafe-carousel-wrapper { overflow: hidden; margin-bottom: 40px; width: 100%; max-width: 100vw; }
-        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; animation-play-state: running; }
+        .cafe-carousel-wrapper { overflow: hidden !important; margin-bottom: 40px; width: 100%; max-width: 100vw; position: relative; }
+        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; animation-play-state: running; overflow: hidden; }
         .cafe-carousel-scroll:hover { animation-play-state: paused; }
         @keyframes scrollCafes { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
