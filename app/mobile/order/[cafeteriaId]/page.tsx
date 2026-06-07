@@ -41,7 +41,7 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Roll': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/roll.jpg',
   'Alfaham': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=600&h=400&fit=crop',
   'Fries': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/fries.jpg',
-  'Drinks': 'https://images.unsplash.com/photo-1551182364-8a84ac993676?w=600&h=400&fit=crop',
+  'Drinks': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/drinks.jpg',
   'Momos': 'https://images.unsplash.com/photo-1609501676725-7186f017a4b6?w=600&h=400&fit=crop',
   'Coffee': 'https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=600&h=400&fit=crop',
   'Shakes': 'https://images.unsplash.com/photo-1550434494-dba8d36ae60e?w=600&h=400&fit=crop',
