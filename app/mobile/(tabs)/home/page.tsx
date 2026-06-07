@@ -56,10 +56,20 @@ export default function MobileHome() {
 
   useEffect(() => {
     fetchData()
+
     const ch = supabase.channel('mobile-home')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_queues' }, fetchData)
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_queues' }, (payload) => {
+        console.log('🔄 Queue update detected:', payload)
+        fetchData()
+      })
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status)
+      })
+
+    return () => {
+      console.log('🛑 Removing subscription')
+      supabase.removeChannel(ch)
+    }
   }, [fetchData])
 
   const filtered = cafeterias.filter(c =>
