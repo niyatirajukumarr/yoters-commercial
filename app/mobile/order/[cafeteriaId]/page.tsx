@@ -44,7 +44,8 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Drinks': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/drinks.jpg',
   'Momos': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/momos.jpg',
   'Coffee': 'https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=600&h=400&fit=crop',
-  'Shakes': 'https://images.unsplash.com/photo-1550434494-dba8d36ae60e?w=600&h=400&fit=crop',
+  'Shakes @99': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/shakes%20@99.jpg',
+  'Shakes @79': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/shakes%20@79.jpeg',
   'Juice': 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=600&h=400&fit=crop',
 }
 
@@ -380,6 +381,82 @@ export default function MobileOrderPage() {
 
           {/* Category Cards */}
           {categories.map((category, catIdx) => {
+            // Handle Shakes specially - split by price
+            if (category === 'Shakes') {
+              const shakes99 = menuItems.filter(m => m.category === 'Shakes' && m.price === 99)
+              const shakes79 = menuItems.filter(m => m.category === 'Shakes' && m.price === 79)
+
+              return (
+                <div key={`shakes-wrapper-${catIdx}`} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                  {/* Shakes @99 Card */}
+                  {shakes99.length > 0 && (
+                    <div className="category-card" style={{ animationDelay: `${catIdx * 0.1}s` }}>
+                      <div className="category-header">
+                        <img src={CATEGORY_IMAGES['Shakes @99']} alt="Shakes @99" className="category-image" />
+                        <div className="category-title">Shakes @99</div>
+                      </div>
+                      <div style={{ padding: '16px' }}>
+                        {shakes99.map(item => {
+                          const inCart = itemInCart(item.id)
+                          const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
+                          return (
+                            <div key={item.id} className="menu-item-row" style={{ opacity: isOutOfStock ? 0.6 : 1 }}>
+                              <span className="menu-item-name">{item.name}</span>
+                              <span className="menu-item-price">₹{item.price}</span>
+                              {isOutOfStock ? (
+                                <button disabled className="add-btn-small" style={{ opacity: 0.5, cursor: 'not-allowed' }}>—</button>
+                              ) : inCart ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <button onClick={() => updateQuantity(item.id, Math.max(0, inCart.quantity - 1))} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
+                                  <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{inCart.quantity}</span>
+                                  <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)} className="add-btn-small">+</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shakes @79 Card */}
+                  {shakes79.length > 0 && (
+                    <div className="category-card" style={{ animationDelay: `${(catIdx + 0.5) * 0.1}s` }}>
+                      <div className="category-header">
+                        <img src={CATEGORY_IMAGES['Shakes @79']} alt="Shakes @79" className="category-image" />
+                        <div className="category-title">Shakes @79</div>
+                      </div>
+                      <div style={{ padding: '16px' }}>
+                        {shakes79.map(item => {
+                          const inCart = itemInCart(item.id)
+                          const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
+                          return (
+                            <div key={item.id} className="menu-item-row" style={{ opacity: isOutOfStock ? 0.6 : 1 }}>
+                              <span className="menu-item-name">{item.name}</span>
+                              <span className="menu-item-price">₹{item.price}</span>
+                              {isOutOfStock ? (
+                                <button disabled className="add-btn-small" style={{ opacity: 0.5, cursor: 'not-allowed' }}>—</button>
+                              ) : inCart ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <button onClick={() => updateQuantity(item.id, Math.max(0, inCart.quantity - 1))} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
+                                  <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{inCart.quantity}</span>
+                                  <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)} className="add-btn-small">+</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             const categoryItems = menuItems.filter(m => m.category === category)
             const categoryImage = CATEGORY_IMAGES[category] || categoryItems[0]?.image_url || '🍽️'
 
