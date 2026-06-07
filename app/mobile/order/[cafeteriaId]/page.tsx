@@ -285,7 +285,7 @@ export default function MobileOrderPage() {
         </div>
 
         {/* Content - Category Cards Grid */}
-        <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 100 }}>
+        <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 200 }}>
           <style>{`
             .category-card {
               border: 2px solid rgba(26,31,46,0.1);
