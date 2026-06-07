@@ -275,7 +275,7 @@ export default function LandingPage() {
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
         .cafe-carousel-wrapper { overflow: hidden; margin-bottom: 40px; }
-        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; }
+        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; animation-play-state: running; }
         .cafe-carousel-scroll:hover { animation-play-state: paused; }
         @keyframes scrollCafes { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
@@ -506,8 +506,12 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Horizontal Scrolling Carousel */}
-            <div className="cafe-carousel-wrapper">
-              <div className="cafe-carousel-scroll">
+            <motion.div className="cafe-carousel-wrapper"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: false, margin: '0px' }}
+              transition={{ duration: 0.6 }}>
+              <div className="cafe-carousel-scroll" style={{ animationPlayState: 'running' }}>
                 {[...restaurants, ...restaurants].map((r, i) => (
                   <div key={i}
                     className="cafe-carousel-card"
@@ -527,7 +531,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* CTA Button - Separate Below */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
