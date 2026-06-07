@@ -473,54 +473,6 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* THE PROBLEM */}
-        <section className="lp-section" style={{ padding: '60px 48px', background: '#1a1f2e', overflow: 'hidden' }}>
-          <div className="lp-grid-2" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>The Problem</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(28px,3.5vw,48px)', fontWeight: 700, color: 'white', lineHeight: 1.15, marginBottom: 20 }}>
-                The Hidden Cost of <em style={{ fontStyle: 'italic', color: '#ff8fa3' }}>Waiting in Line</em>
-              </motion.h2>
-              <motion.p variants={fadeUp} style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, marginBottom: 32 }}>
-                Every minute spent queuing is a minute stolen from your break. Students lose up to 20 minutes daily.
-              </motion.p>
-              <motion.div variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {[
-                  { icon: '⏰', title: 'Wasted Break Time', desc: 'Average 15–20 min spent queuing. That\'s your lunch break, gone.' },
-                  { icon: '😤', title: 'Unpredictable Waits', desc: 'No way to know how long it\'ll take. Plans ruined, stress added.' },
-                  { icon: '🗑️', title: 'Overcooked & Wasted Food', desc: 'Cafeterias overprepare without demand data. Food wasted daily.' },
-                  { icon: '📉', title: 'Poor Cafeteria Efficiency', desc: 'Staff overwhelmed at peak hours, slow service, frustrated students.' },
-                ].map((item, i) => (
-                  <motion.div key={i} variants={fadeUp} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <div style={{ width: 36, height: 36, background: 'rgba(232,51,74,0.15)', border: '1px solid rgba(232,51,74,0.3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{item.icon}</div>
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 600, color: 'white', marginBottom: 3 }}>{item.title}</h4>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>{item.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div className="orbit-wrap">
-                <div className="orbit-center">🐧</div>
-                <div className="orbit-ring orbit-ring-1">
-                  <div className="orbit-dot dot-top">⏰</div>
-                  <div className="orbit-dot dot-bottom">🍱</div>
-                </div>
-                <div className="orbit-ring orbit-ring-2">
-                  <div className="orbit-dot dot-top">📱</div>
-                  <div className="orbit-dot dot-right">⚡</div>
-                  <div className="orbit-dot dot-bottom">✅</div>
-                  <div className="orbit-dot dot-left">🎓</div>
-                </div>
-                <div className="orbit-ring orbit-ring-3" />
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
         {/* OUR CAFETERIAS */}
         <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
