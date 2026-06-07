@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 
 export default function LandingPage() {
   const router = useRouter()
+  const videoRef = useRef<HTMLVideoElement>(null)
   const [isChecking, setIsChecking] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -84,6 +85,41 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Enhanced video autoplay for mobile and web
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const playVideo = () => {
+      if (video.paused) {
+        video.play().catch((error) => {
+          console.log('Video autoplay was prevented:', error)
+          // If autoplay fails, try again on first user interaction
+          const playOnInteraction = () => {
+            video.play().catch(() => {})
+            document.removeEventListener('click', playOnInteraction)
+            document.removeEventListener('touchstart', playOnInteraction)
+          }
+          document.addEventListener('click', playOnInteraction, { once: true })
+          document.addEventListener('touchstart', playOnInteraction, { once: true })
+        })
+      }
+    }
+
+    // Try multiple approaches for maximum compatibility
+    video.addEventListener('loadedmetadata', playVideo)
+    video.addEventListener('canplay', playVideo)
+
+    // Also try immediately if already loaded
+    if (video.readyState >= 2) {
+      playVideo()
+    }
+
+    return () => {
+      video.removeEventListener('loadedmetadata', playVideo)
+      video.removeEventListener('canplay', playVideo)
+    }
+  }, [])
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -271,12 +307,14 @@ export default function LandingPage() {
           .lp-footer-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .lp-section { padding-left: 20px !important; padding-right: 20px !important; }
           .lp-hero { padding: 100px 20px 60px !important; }
+          .lp-hero video { width: 100% !important; }
           .orbit-wrap { display: none; }
           .rest-card { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px !important; }
           .lp-footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
         }
         @media (max-width: 480px) {
           .lp-grid-4 { grid-template-columns: 1fr !important; }
+          .lp-hero video { width: 100% !important; opacity: 0.5 !important; }
         }
       `}</style>
 
@@ -337,6 +375,7 @@ export default function LandingPage() {
         <section id="hero" className="lp-hero" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', padding: '120px 48px 80px', background: '#fdf8f5' }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(232,51,74,0.15) 1.5px, transparent 1.5px)', backgroundSize: '36px 36px', maskImage: 'radial-gradient(ellipse 70% 70% at 80% 50%, black 0%, transparent 100%)', zIndex: 0 }} />
           <video
+            ref={videoRef}
             autoPlay
             loop
             muted
@@ -349,9 +388,6 @@ export default function LandingPage() {
               opacity: 0.65,
               maskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)'
-            }}
-            onCanPlay={(e) => {
-              (e.target as HTMLVideoElement).play()
             }}
           >
             <source src="/hero-video.mp4" type="video/mp4" />
