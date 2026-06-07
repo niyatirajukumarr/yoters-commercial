@@ -26,6 +26,7 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
   }
 
   const activeTab = getActiveTab()
+  const isOnCafeteriaPage = pathname.startsWith('/mobile/order')
 
   return (
     <>
@@ -38,21 +39,23 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
         {children}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="mobile-bottom-nav">
-        {tabs.map(tab => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <Link key={tab.id} href={tab.href} className={`mobile-nav-item ${isActive ? 'active' : ''}`}>
-              <div className="mobile-nav-icon">
-                <Icon size={24} strokeWidth={2} />
-              </div>
-              <div className="mobile-nav-label">{tab.label}</div>
-            </Link>
-          )
-        })}
-      </nav>
+      {/* Bottom Navigation - Hidden on cafeteria order pages */}
+      {!isOnCafeteriaPage && (
+        <nav className="mobile-bottom-nav">
+          {tabs.map(tab => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <Link key={tab.id} href={tab.href} className={`mobile-nav-item ${isActive ? 'active' : ''}`}>
+                <div className="mobile-nav-icon">
+                  <Icon size={24} strokeWidth={2} />
+                </div>
+                <div className="mobile-nav-label">{tab.label}</div>
+              </Link>
+            )
+          })}
+        </nav>
+      )}
     </>
   )
 }
