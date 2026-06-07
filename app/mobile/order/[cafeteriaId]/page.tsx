@@ -248,8 +248,41 @@ export default function MobileOrderPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>
-        Loading...
+      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        {/* Header Skeleton */}
+        <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 6, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ width: '60%', height: 18, borderRadius: 6, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite', marginBottom: 8 }} />
+            <div style={{ width: '40%', height: 12, borderRadius: 6, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite' }} />
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 200 }}>
+          <style>{`
+            @keyframes loading {
+              0% { background-position: 200% 0; }
+              100% { background-position: -200% 0; }
+            }
+          `}</style>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', background: 'white', border: '2px solid rgba(26,31,46,0.1)' }}>
+              {/* Image Skeleton */}
+              <div style={{ width: '100%', height: 180, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite' }} />
+
+              {/* Items Skeleton */}
+              <div style={{ padding: '16px' }}>
+                {[1, 2, 3].map(j => (
+                  <div key={j} style={{ marginBottom: j < 3 ? 16 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ flex: 1, height: 14, borderRadius: 4, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite', marginRight: 12 }} />
+                    <div style={{ width: 40, height: 32, borderRadius: 6, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
