@@ -599,6 +599,43 @@ export default function CafeteriaPage() {
       {/* OTHER STEPS - DETAILS, PAYMENT, CONFIRMATION */}
       {step === 'details' && (
         <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 100 }}>
+          {/* Cart Preview with Images and Controls */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Your Order Preview</h3>
+            {cartItem.map(item => {
+              const menuItem = menuItems.find(m => m.id === item.menuId)
+              return (
+                <div key={item.menuId} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                    🍱
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{item.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>₹{item.price}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <button
+                        onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
+                        style={{ width: 24, height: 24, borderRadius: 4, background: '#ccc', color: '#333', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
+                      >
+                        −
+                      </button>
+                      <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                        style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>₹{item.price * item.quantity}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
           {/* Order Details Form */}
           <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Order Details</h3>
           <input
