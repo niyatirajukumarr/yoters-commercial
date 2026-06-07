@@ -548,22 +548,23 @@ export default function LandingPage() {
                 Three steps between you and a hot meal — no queues, no guessing, no wasted time.
               </motion.p>
             </motion.div>
-            <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+            <motion.div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}
+              initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger}>
               {steps.map((step, i) => (
                 <motion.div key={i} className="how-card"
                   style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0 }}
-                  initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: i === 1 ? 24 : i === 2 ? 48 : 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.65, delay: i * 0.15, ease: [0.22,1,0.36,1] }}
-                  whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 6 }}>
+                  variants={{
+                    hidden: { opacity: 0, y: 40, scale: 0.95 },
+                    visible: { opacity: 1, y: i === 1 ? 24 : i === 2 ? 48 : 0, scale: 1, transition: { duration: 0.6, ease: [0.22,1,0.36,1] } }
+                  }}
+                  whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 8, scale: 1.02, transition: { duration: 0.2 } }}>
                   <span style={{ fontSize: 52, marginBottom: 20, display: 'block' }}>{step.img}</span>
                   <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 12 }}>STEP {step.n}</div>
                   <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 10 }}>{step.title}</h3>
                   <p style={{ fontSize: 14, color: '#8a90a8', lineHeight: 1.72 }}>{step.desc}</p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
