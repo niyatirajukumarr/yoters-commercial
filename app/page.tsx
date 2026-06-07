@@ -221,6 +221,10 @@ export default function LandingPage() {
         .track-emoji-wrap { width: 72px; height: 72px; border-radius: 50%; background: white; border: 1.5px solid rgba(232,51,74,0.15); display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 4px 16px rgba(26,31,46,0.06); transition: transform 0.2s; }
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
+        .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .cafe-carousel-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 48px rgba(232,51,74,0.15), 0 0 0 1px rgba(232,51,74,0.1); }
+        .cafe-carousel-card:hover img { filter: brightness(1.1); }
+
         .rest-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 28px 32px; display: flex; align-items: center; gap: 28px; cursor: pointer; }
         .rest-card:hover { border-color: rgba(232,51,74,0.25); box-shadow: 0 12px 48px rgba(232,51,74,0.08); }
         .rest-card-arrow { font-size: 20px; color: #E8334A; opacity: 0; transition: opacity 0.2s; }
@@ -430,6 +434,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 16, scrollBehavior: 'smooth' }}>
                 {restaurants.map((r, i) => (
                   <motion.div key={i}
+                    className="cafe-carousel-card"
                     initial={{ opacity: 0, x: 40 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: '-40px' }}
