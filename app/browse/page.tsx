@@ -16,20 +16,6 @@ export default function StudentHome() {
   const [search, setSearch] = useState('')
   const router = useRouter()
 
-  // Check if user is mobile and redirect to mobile home
-  useEffect(() => {
-    const isMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
-      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
-      return mobileRegex.test(userAgent) || window.innerWidth < 768
-    }
-
-    if (isMobile()) {
-      router.replace('/mobile/home')
-      return
-    }
-  }, [router])
-
   // Check if user is vendor and redirect
   useEffect(() => {
     const checkVendor = async () => {
