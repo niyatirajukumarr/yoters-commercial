@@ -520,38 +520,47 @@ export default function MobileOrderPage() {
           })}
         </div>
 
-        {/* Sticky Cart - Zepto Style */}
+        {/* Sticky Cart - Prominent Card Style */}
         {itemCount > 0 && (
-          <div className="mobile-sticky-bottom" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: 'slideUpMobile 0.3s ease', backdropFilter: 'blur(8px)', background: 'rgba(255,255,255,0.98)', borderTop: '2px solid var(--accent)' }}>
+          <div className="mobile-sticky-bottom" style={{ display: 'flex', gap: 12, alignItems: 'center', animation: 'slideUpMobile 0.3s ease', backdropFilter: 'blur(8px)', background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
+            {/* Left: Order Summary */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>{itemCount} item{itemCount !== 1 ? 's' : ''} in cart</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>Order Total</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)' }}>₹{total}</div>
             </div>
+
+            {/* Right: Cart Card Button */}
             <button
               onClick={() => setStep('details')}
               style={{
-                flex: 1,
-                padding: '14px 16px',
-                background: 'var(--accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--mobile-radius)',
-                fontSize: 15,
-                fontWeight: 700,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                padding: '12px 16px',
+                background: 'var(--surface)',
+                border: '2px solid var(--accent)',
+                borderRadius: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: '0 4px 12px rgba(232, 51, 74, 0.3)'
+                boxShadow: '0 2px 8px rgba(232, 51, 74, 0.15)',
+                minWidth: '120px'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(232, 51, 74, 0.4)'
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(232, 51, 74, 0.25)'
+                e.currentTarget.style.background = 'var(--accent-light)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(232, 51, 74, 0.3)'
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(232, 51, 74, 0.15)'
+                e.currentTarget.style.background = 'var(--surface)'
               }}
             >
-              Go to Cart →
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>Cart</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{itemCount}</div>
+              <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>item{itemCount !== 1 ? 's' : ''}</div>
             </button>
           </div>
         )}
