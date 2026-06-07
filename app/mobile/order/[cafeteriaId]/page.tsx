@@ -395,11 +395,8 @@ export default function MobileOrderPage() {
                   <div className="category-title">{category}</div>
                 </div>
 
-                {/* Menu Items Padding */}
-                <div style={{ padding: '16px 0' }}>
-
                 {/* Menu Items in Category */}
-                <div style={{ padding: '0 16px' }}>
+                <div style={{ padding: '16px' }}>
                 {categoryItems.map(item => {
                   const inCart = itemInCart(item.id)
                   const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
