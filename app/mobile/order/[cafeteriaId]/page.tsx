@@ -67,7 +67,14 @@ export default function MobileOrderPage() {
         supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
       ])
       if (cafRes.data) setCafeteria(cafRes.data as Cafeteria)
-      if (menuRes.data) setMenuItems(menuRes.data as MenuItem[])
+      if (menuRes.data) {
+        setMenuItems(menuRes.data as MenuItem[])
+        // Auto-select first category
+        const categories = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
+        if (categories.length > 0) {
+          setSelectedCategory(categories[0])
+        }
+      }
       setLoading(false)
     }
     fetch()
