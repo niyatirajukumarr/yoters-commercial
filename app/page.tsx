@@ -91,33 +91,50 @@ export default function LandingPage() {
     if (!video) return
 
     const playVideo = () => {
-      if (video.paused) {
-        video.play().catch((error) => {
-          console.log('Video autoplay was prevented:', error)
-          // If autoplay fails, try again on first user interaction
-          const playOnInteraction = () => {
-            video.play().catch(() => {})
-            document.removeEventListener('click', playOnInteraction)
-            document.removeEventListener('touchstart', playOnInteraction)
-          }
-          document.addEventListener('click', playOnInteraction, { once: true })
-          document.addEventListener('touchstart', playOnInteraction, { once: true })
-        })
+      if (video && video.paused) {
+        const playPromise = video.play()
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.log('Video autoplay prevented:', error.name)
+            // If autoplay fails, try again on first user interaction
+            const playOnInteraction = () => {
+              video.play().catch(() => {})
+              document.removeEventListener('click', playOnInteraction)
+              document.removeEventListener('touchstart', playOnInteraction)
+            }
+            document.addEventListener('click', playOnInteraction, { once: true })
+            document.addEventListener('touchstart', playOnInteraction, { once: true })
+          })
+        }
       }
     }
 
     // Try multiple approaches for maximum compatibility
-    video.addEventListener('loadedmetadata', playVideo)
-    video.addEventListener('canplay', playVideo)
+    const handlers = {
+      loadstart: () => { if (video.readyState >= 2) playVideo() },
+      loadeddata: playVideo,
+      loadedmetadata: playVideo,
+      canplay: playVideo,
+      playing: () => { } // Just track when playing
+    }
 
-    // Also try immediately if already loaded
+    Object.entries(handlers).forEach(([event, handler]) => {
+      video.addEventListener(event, handler as EventListener)
+    })
+
+    // Also try immediately with a small delay if already loaded
     if (video.readyState >= 2) {
       playVideo()
+    } else {
+      setTimeout(() => {
+        if (video.readyState >= 2) playVideo()
+      }, 500)
     }
 
     return () => {
-      video.removeEventListener('loadedmetadata', playVideo)
-      video.removeEventListener('canplay', playVideo)
+      Object.entries(handlers).forEach(([event, handler]) => {
+        video.removeEventListener(event, handler as EventListener)
+      })
     }
   }, [])
 
@@ -380,6 +397,7 @@ export default function LandingPage() {
             loop
             muted
             playsInline
+            webkit-playsinline="true"
             preload="auto"
             style={{
               position: 'absolute', right: 0, top: 0,
@@ -387,8 +405,10 @@ export default function LandingPage() {
               objectFit: 'cover', zIndex: 0,
               opacity: 0.65,
               maskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)'
-            }}
+              WebkitMaskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
+              pointerEvents: 'none',
+              display: 'block'
+            } as any}
           >
             <source src="/hero-video.mp4" type="video/mp4" />
           </video>
@@ -414,7 +434,7 @@ export default function LandingPage() {
         </section>
 
         {/* THE PROBLEM */}
-        <section className="lp-section" style={{ padding: '100px 48px', background: '#1a1f2e', overflow: 'hidden' }}>
+        <section className="lp-section" style={{ padding: '60px 48px', background: '#1a1f2e', overflow: 'hidden' }}>
           <div className="lp-grid-2" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>The Problem</motion.p>
@@ -462,7 +482,7 @@ export default function LandingPage() {
         </section>
 
         {/* OUR CAFETERIAS */}
-        <section className="lp-section" style={{ padding: '100px 48px', background: '#fdf8f5' }}>
+        <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Our Cafeterias</motion.p>
@@ -559,7 +579,7 @@ export default function LandingPage() {
         </section>
 
         {/* WHY */}
-        <section className="lp-section" style={{ padding: '100px 48px', background: '#fdf8f5' }}>
+        <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Why Choose Us</motion.p>
