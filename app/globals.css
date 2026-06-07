@@ -45,10 +45,15 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
-  width: 100%;
 }
 
 body {
@@ -58,7 +63,8 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 ::selection { background: rgba(232,51,74,0.15); color: var(--accent); }
