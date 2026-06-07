@@ -473,7 +473,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* OUR CAFETERIAS */}
+        {/* OUR CAFETERIAS - FEATURED RESTAURANTS */}
         <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
