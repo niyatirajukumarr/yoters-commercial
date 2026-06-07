@@ -28,18 +28,24 @@ export default function MobileHome() {
       const result = await Promise.race([
         supabase
           .from('cafeterias')
-          .select('*, queue:cafeteria_queues(*)')
+          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
           .eq('is_open', true)
           .order('name'),
         timeoutPromise
       ]) as any
 
-      console.log('Cafeterias fetched:', result)
+      console.log('Cafeterias with queue data fetched:', result)
 
       if (result.error) {
         console.error('Supabase error:', result.error)
       } else if (result.data) {
-        setCafeterias(result.data as CafeteriaWithQueue[])
+        // Ensure queue data exists, use empty object if no queue data
+        const dataWithQueues = result.data.map((cafe: any) => ({
+          ...cafe,
+          queue: cafe.queue && cafe.queue.length > 0 ? cafe.queue[0] : { cafeteria_id: cafe.id, avg_wait_mins: 0, queue_count: 0 }
+        }))
+        console.log('Processed cafeterias:', dataWithQueues)
+        setCafeterias(dataWithQueues as CafeteriaWithQueue[])
       }
     } catch (error) {
       console.error('Fetch error:', error)
