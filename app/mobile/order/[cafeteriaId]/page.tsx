@@ -619,6 +619,36 @@ export default function CafeteriaPage() {
       {/* OTHER STEPS - DETAILS, PAYMENT, CONFIRMATION */}
       {step === 'details' && (
         <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 100 }}>
+          {/* Order Details Form */}
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Order Details</h3>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
+            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
+          />
+          <input
+            type="tel"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
+          />
+          <input
+            type="email"
+            placeholder="Email (Optional)"
+            value={formData.email}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
+            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
+          />
+          <textarea
+            placeholder="Special requests..."
+            value={formData.notes}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+            style={{ width: '100%', padding: '12px', marginBottom: 24, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, minHeight: 80 }}
+          />
+
           {/* Cart Preview with Images and Controls */}
           <div style={{ marginBottom: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Your Order Preview</h3>
@@ -655,36 +685,6 @@ export default function CafeteriaPage() {
               )
             })}
           </div>
-
-          {/* Order Details Form */}
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Order Details</h3>
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
-          />
-          <input
-            type="tel"
-            placeholder="Phone Number"
-            value={formData.phone}
-            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
-          />
-          <input
-            type="email"
-            placeholder="Email (Optional)"
-            value={formData.email}
-            onChange={e => setFormData({ ...formData, email: e.target.value })}
-            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14 }}
-          />
-          <textarea
-            placeholder="Special requests..."
-            value={formData.notes}
-            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-            style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, minHeight: 80 }}
-          />
 
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
