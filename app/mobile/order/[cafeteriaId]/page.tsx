@@ -309,9 +309,37 @@ export default function CafeteriaPage() {
 
   if (loading) {
     return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-        <style>{`@keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-        <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Loading...</div>
+      <div style={{ minHeight: '100vh', paddingBottom: 80, background: 'var(--bg)' }}>
+        <style>{`
+          @keyframes skeleton { 0% { background-color: #f0f0f0; } 50% { background-color: #e0e0e0; } 100% { background-color: #f0f0f0; } }
+          .skeleton-box { animation: skeleton 1.5s infinite; border-radius: 8px; }
+        `}</style>
+
+        {/* Header Skeleton */}
+        <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="skeleton-box" style={{ width: 24, height: 24 }}></div>
+          <div style={{ flex: 1 }}>
+            <div className="skeleton-box" style={{ height: 20, marginBottom: 8, width: '60%' }}></div>
+            <div className="skeleton-box" style={{ height: 14, width: '40%' }}></div>
+          </div>
+          <div className="skeleton-box" style={{ width: 28, height: 28 }}></div>
+        </div>
+
+        {/* Category Image Skeleton */}
+        <div style={{ padding: '16px', marginBottom: 16 }}>
+          <div className="skeleton-box" style={{ width: '100%', height: 180, marginBottom: 16 }}></div>
+
+          {/* Menu Items Skeleton */}
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div className="skeleton-box" style={{ height: 16, width: '50%' }}></div>
+                <div className="skeleton-box" style={{ height: 16, width: '20%' }}></div>
+              </div>
+              <div className="skeleton-box" style={{ height: 12, width: '80%' }}></div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
