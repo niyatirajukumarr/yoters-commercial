@@ -476,6 +476,7 @@ export default function MobileOrderPage() {
               >
                 Continue →
               </button>
+            </div>
           </div>
         )}
       </div>
