@@ -529,14 +529,14 @@ export default function MobileOrderPage() {
             <div style={{ marginBottom: 10 }}>
               {cartItem.map(item => (
                 <div key={item.menuId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 6, borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
-                  <div style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
-                    {item.name} <span style={{ color: 'var(--muted)' }}>×{item.quantity}</span>
+                  <div style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>{item.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>₹{item.price * item.quantity}</div>
+                    <button onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface2)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                    <span style={{ fontSize: 13, fontWeight: 700, minWidth: 14, textAlign: 'center' }}>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                    <button onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8334A', fontSize: 15, padding: '0 2px' }}>✕</button>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', marginRight: 10 }}>₹{item.price * item.quantity}</div>
-                  <button
-                    onClick={() => removeItem(item.menuId)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8334A', fontSize: 16, padding: '0 4px', lineHeight: 1 }}
-                  >✕</button>
                 </div>
               ))}
             </div>
