@@ -93,7 +93,20 @@ export default function ProfilePage() {
         setLoadingOrders(false)
       }
     }
+
     fetch()
+
+    // Real-time subscription for orders
+    const channel = supabase.channel(`profile-orders-${user.phone}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, (payload) => {
+        console.log('Order change detected:', payload)
+        fetch() // Refetch orders on any change
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [user?.phone, isLoaded])
 
   useEffect(() => {
