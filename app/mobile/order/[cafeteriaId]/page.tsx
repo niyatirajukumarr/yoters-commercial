@@ -261,117 +261,158 @@ export default function MobileOrderPage() {
           <div style={{ fontSize: 28 }}>{cafeteria.image_emoji}</div>
         </div>
 
-        {/* Content */}
+        {/* Content - Category Cards Grid */}
         <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 100 }}>
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', animation: 'slideUpMobile 0.5s 0.1s ease both' }}>
-            {categories.map((cat, idx) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={selectedCategory === cat ? 'mobile-btn-primary' : 'mobile-btn-secondary'}
-                style={{
-                  padding: '8px 14px',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  borderRadius: 'var(--mobile-radius)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s ease',
-                  animation: `slideUpMobile 0.5s ${0.15 + idx * 0.05}s ease both`,
-                }}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          <style>{`
+            .category-card {
+              border: 2px solid rgba(26,31,46,0.1);
+              border-radius: 14px;
+              padding: 16px;
+              background: white;
+              margin-bottom: 16px;
+              animation: slideUpMobile 0.5s ease both;
+            }
+            .category-header {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 16px;
+              padding-bottom: 12px;
+              border-bottom: 2px solid #FFA500;
+            }
+            .category-title {
+              font-family: 'Impact', 'Arial Black', sans-serif;
+              font-size: 20px;
+              font-weight: 900;
+              color: #1a1f2e;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              background: black;
+              color: #FFA500;
+              padding: 6px 12px;
+              border-radius: 4px;
+              white-space: nowrap;
+            }
+            .category-image {
+              width: 80px;
+              height: 80px;
+              border-radius: 8px;
+              object-fit: cover;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .menu-item-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 10px 0;
+              border-bottom: 1px dotted rgba(26,31,46,0.15);
+            }
+            .menu-item-row:last-child {
+              border-bottom: none;
+            }
+            .menu-item-name {
+              font-size: 13px;
+              font-weight: 600;
+              color: #1a1f2e;
+              flex: 1;
+            }
+            .menu-item-price {
+              font-size: 13px;
+              font-weight: 700;
+              color: #E8334A;
+              margin-right: 8px;
+              white-space: nowrap;
+            }
+            .add-btn-small {
+              width: 28px;
+              height: 28px;
+              border-radius: 6px;
+              border: none;
+              background: #E8334A;
+              color: white;
+              font-weight: 700;
+              cursor: pointer;
+              transition: all 0.2s;
+            }
+            .add-btn-small:active {
+              transform: scale(0.95);
+            }
+            .item-added-toast {
+              position: fixed;
+              bottom: 80px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #2e9e6b;
+              color: white;
+              padding: 12px 20px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: 600;
+              z-index: 999;
+              animation: slideUp 0.3s ease;
+            }
+          `}</style>
 
-          {/* Menu Items */}
-          {filtered.map(item => {
-            const inCart = itemInCart(item.id)
-            const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
+          {/* Category Cards */}
+          {categories.map((category, catIdx) => {
+            const categoryItems = menuItems.filter(m => m.category === category)
+            const categoryImage = categoryItems[0]?.image_url || '🍽️'
+
             return (
-              <div key={item.id} className="mobile-card mobile-list-item" style={{ padding: 'var(--mobile-spacing)', marginBottom: 12, opacity: isOutOfStock ? 0.6 : 1 }}>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} style={{ width: 70, height: 70, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+              <div key={category} className="category-card" style={{ animationDelay: `${catIdx * 0.1}s` }}>
+                {/* Category Header with Title and Image */}
+                <div className="category-header">
+                  <div className="category-title">{category}</div>
+                  {typeof categoryImage === 'string' && categoryImage.includes('http') ? (
+                    <img src={categoryImage} alt={category} className="category-image" />
                   ) : (
-                    <div style={{ width: 70, height: 70, borderRadius: 8, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0 }}>🍱</div>
+                    <div style={{ width: 80, height: 80, borderRadius: 8, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
+                      {categoryImage}
+                    </div>
                   )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4 }}>
-                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3, color: isOutOfStock ? 'var(--muted)' : 'var(--text)' }}>
-                        {item.name}
-                      </div>
-                      <button
-                        onClick={() => toggleFavourite({
-                          menuId: item.id,
-                          name: item.name,
-                          description: item.description,
-                          price: item.price,
-                          category: item.category,
-                          cafeteriaId,
-                          cafeteriaName: cafeteria?.name ?? '',
-                        })}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}
-                        aria-label={isFavourite(item.id) ? 'Remove from favourites' : 'Add to favourites'}
-                      >
-                        <Heart
-                          size={18}
-                          fill={isFavourite(item.id) ? '#E8334A' : 'none'}
-                          color={isFavourite(item.id) ? '#E8334A' : 'var(--muted)'}
-                        />
-                      </button>
-                    </div>
-                    {item.description && (
-                      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
-                        {item.description}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)', marginBottom: 4 }}>
-                      ₹{item.price}
-                    </div>
-                    {item.stock_quantity !== null && item.stock_quantity !== undefined && (
-                      <div style={{ fontSize: 11, color: isOutOfStock ? 'var(--red)' : 'var(--green)', fontWeight: 600 }}>
-                        {isOutOfStock ? '❌ Out of Stock' : `✓ ${item.stock_quantity} left`}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
-                {/* Quantity Control */}
-                {isOutOfStock ? (
-                  <button disabled className="mobile-btn" style={{ opacity: 0.5, cursor: 'not-allowed', background: '#f5f5f5' }}>Out of Stock</button>
-                ) : inCart ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'scaleIn 0.2s ease' }}>
-                    <button
-                      onClick={() => updateQuantity(item.id, inCart.quantity - 1)}
-                      className="mobile-btn-secondary"
-                      style={{ flex: 1, padding: '8px 0', fontSize: 12, transition: 'all 0.2s ease' }}
-                    >
-                      <Minus size={14} style={{ margin: '0 auto' }} />
-                    </button>
-                    <div style={{ width: 40, textAlign: 'center', fontSize: 14, fontWeight: 700, transition: 'all 0.2s ease' }}>
-                      {inCart.quantity}
+                {/* Menu Items in Category */}
+                {categoryItems.map(item => {
+                  const inCart = itemInCart(item.id)
+                  const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
+
+                  return (
+                    <div key={item.id} className="menu-item-row" style={{ opacity: isOutOfStock ? 0.6 : 1 }}>
+                      <span className="menu-item-name">{item.name}</span>
+                      <span className="menu-item-price">₹{item.price}</span>
+                      {isOutOfStock ? (
+                        <button disabled className="add-btn-small" style={{ opacity: 0.5, cursor: 'not-allowed' }}>—</button>
+                      ) : inCart ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <button
+                            onClick={() => updateQuantity(item.id, Math.max(0, inCart.quantity - 1))}
+                            className="add-btn-small"
+                            style={{ background: '#ccc', color: '#333' }}
+                          >
+                            −
+                          </button>
+                          <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+                            {inCart.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, inCart.quantity + 1)}
+                            className="add-btn-small"
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddItem(item)}
+                          className="add-btn-small"
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
-                    <button
-                      onClick={() => updateQuantity(item.id, inCart.quantity + 1)}
-                      className="mobile-btn-primary"
-                      style={{ flex: 1, padding: '8px 0', fontSize: 12, transition: 'all 0.2s ease' }}
-                    >
-                      <Plus size={14} style={{ margin: '0 auto' }} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleAddItem(item)}
-                    className="mobile-btn mobile-btn-primary"
-                    style={{ padding: '10px 14px', fontSize: 13, animation: 'scaleIn 0.2s ease', transition: 'all 0.2s ease' }}
-                  >
-                    + Add
-                  </button>
-                )}
+                  )
+                })}
               </div>
             )
           })}
