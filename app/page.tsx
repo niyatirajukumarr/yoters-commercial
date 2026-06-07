@@ -77,7 +77,7 @@ export default function LandingPage() {
           supabase
             .from('cafeterias')
             .select('name, image_url')
-            .limit(4),
+            .order('name'),
           timeoutPromise
         ]) as any
 
@@ -303,7 +303,7 @@ export default function LandingPage() {
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
         .lp-section { overflow-x: hidden; }
-        .cafe-carousel-wrapper { overflow-x: auto; overflow-y: hidden; margin-bottom: 40px; width: 100%; max-width: 100%; position: relative; min-height: 320px; padding: 20px 0; display: block !important; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+        .cafe-carousel-wrapper { overflow-x: auto; overflow-y: hidden; margin-bottom: 20px; width: 100%; max-width: 100%; position: relative; min-height: 320px; padding: 0; display: block !important; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; padding: 0 48px; will-change: transform; }
 
         .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); flex-shrink: 0; }
@@ -473,7 +473,7 @@ export default function LandingPage() {
         </section>
 
         {/* OUR CAFETERIAS - FEATURED RESTAURANTS */}
-        <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
+        <section className="lp-section" style={{ padding: '40px 48px 20px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Our Cafeterias</motion.p>
