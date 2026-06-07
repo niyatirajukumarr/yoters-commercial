@@ -90,6 +90,7 @@ export default function CafeteriaPage() {
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   const [showTicket, setShowTicket] = useState(false)
   const [tokenData, setTokenData] = useState<{ token: number; items: Array<{ name: string; quantity: number }>; total: number; id: string } | null>(null)
@@ -193,20 +194,38 @@ export default function CafeteriaPage() {
   }
 
   const handlePlaceOrder = async () => {
-    if (!formData.name || !formData.phone || !cartItem.length) return
+    if (!formData.name || !formData.phone || !cartItem.length) {
+      alert('Please fill in name and phone, and add items to cart')
+      return
+    }
+    setIsPlacingOrder(true)
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes, is_shared: false }])
         .select()
         .single()
+
+      if (error) {
+        console.error('Order creation error:', error)
+        alert('Failed to create order: ' + (error.message || 'Unknown error'))
+        setIsPlacingOrder(false)
+        return
+      }
+
       if (data) {
+        console.log('Order created successfully:', data.id)
         setOrderId(data.id)
         updateUser({ name: formData.name, phone: formData.phone, email: formData.email })
         setShowSharingModal(true) // Show sharing modal instead of going to payment
+      } else {
+        alert('Failed to create order')
+        setIsPlacingOrder(false)
       }
     } catch (error) {
       console.error('Order creation failed:', error)
+      alert('Error: ' + (error instanceof Error ? error.message : 'Failed to create order'))
+      setIsPlacingOrder(false)
     }
   }
 
@@ -695,10 +714,10 @@ export default function CafeteriaPage() {
 
           <button
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: !formData.name || !formData.phone ? 0.5 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder ? 0.6 : 1 }}
           >
-            Proceed to Payment
+            {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </button>
         </div>
       )}
