@@ -221,7 +221,12 @@ export default function LandingPage() {
         .track-emoji-wrap { width: 72px; height: 72px; border-radius: 50%; background: white; border: 1.5px solid rgba(232,51,74,0.15); display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 4px 16px rgba(26,31,46,0.06); transition: transform 0.2s; }
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
-        .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .cafe-carousel-wrapper { overflow: hidden; margin-bottom: 40px; }
+        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; }
+        .cafe-carousel-scroll:hover { animation-play-state: paused; }
+        @keyframes scrollCafes { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); flex-shrink: 0; }
         .cafe-carousel-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 48px rgba(232,51,74,0.15), 0 0 0 1px rgba(232,51,74,0.1); }
         .cafe-carousel-card:hover img { filter: brightness(1.1); }
 
@@ -430,16 +435,12 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Horizontal Scrolling Carousel */}
-            <div style={{ overflow: 'hidden', marginBottom: 40 }}>
-              <div style={{ display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 16, scrollBehavior: 'smooth' }}>
-                {restaurants.map((r, i) => (
-                  <motion.div key={i}
+            <div className="cafe-carousel-wrapper">
+              <div className="cafe-carousel-scroll">
+                {[...restaurants, ...restaurants].map((r, i) => (
+                  <div key={i}
                     className="cafe-carousel-card"
-                    initial={{ opacity: 0, x: 40 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: '-40px' }}
-                    transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22,1,0.36,1] }}
-                    style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+                    style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer' }}>
                     {/* Background Image */}
                     <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
 
@@ -452,7 +453,7 @@ export default function LandingPage() {
                         {r.name}
                       </h3>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
