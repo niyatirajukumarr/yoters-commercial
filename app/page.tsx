@@ -488,11 +488,7 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Horizontal Scrolling Carousel */}
-            <motion.div className="cafe-carousel-wrapper"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: false, margin: '0px' }}
-              transition={{ duration: 0.1 }}>
+            <div className="cafe-carousel-wrapper">
               <div className="cafe-carousel-scroll" style={{ animationPlayState: 'running' }}>
                 {[...restaurants, ...restaurants].map((r, i) => (
                   <div key={i}
@@ -513,7 +509,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* CTA Button - Separate Below */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
