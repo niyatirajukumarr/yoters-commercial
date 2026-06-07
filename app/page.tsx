@@ -21,50 +21,78 @@ export default function LandingPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if we've already shown splash (splash=true param means user already saw it)
-      const params = new URLSearchParams(window.location.search)
-      const hasSplash = params.get('splash') === 'true'
+      try {
+        // Check if we've already shown splash (splash=true param means user already saw it)
+        const params = new URLSearchParams(window.location.search)
+        const hasSplash = params.get('splash') === 'true'
 
-      const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession()
 
-      if (!session && !hasSplash) {
-        // Unauthenticated & haven't seen splash → show splash
-        router.replace('/splash')
-      } else if (session && !hasSplash) {
-        // Authenticated & haven't seen splash → show splash
-        router.replace('/splash')
-      } else if (session && hasSplash) {
-        // Authenticated & already seen splash → show landing page
-        setIsChecking(false)
-        // Fetch user profile for students
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .eq('id', session.user.id)
-          .single()
-        if (profile) {
-          setUser({ id: session.user.id, name: profile.name, email: profile.email })
-        } else {
-          setUser({ id: session.user.id, email: session.user.email })
+        if (!session && !hasSplash) {
+          // Unauthenticated & haven't seen splash → show splash
+          router.replace('/splash')
+        } else if (session && !hasSplash) {
+          // Authenticated & haven't seen splash → show splash
+          router.replace('/splash')
+        } else if (session && hasSplash) {
+          // Authenticated & already seen splash → show landing page
+          setIsChecking(false)
+          // Fetch user profile for students
+          try {
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+            )
+            const result = await Promise.race([
+              supabase
+                .from('profiles')
+                .select('id, name, email')
+                .eq('id', session.user.id)
+                .single(),
+              timeoutPromise
+            ]) as any
+            if (result.error) {
+              console.error('Profile fetch error:', result.error)
+              setUser({ id: session.user.id, email: session.user.email })
+            } else if (result.data) {
+              setUser({ id: session.user.id, name: result.data.name, email: result.data.email })
+            }
+          } catch (error) {
+            console.error('Profile fetch error:', error)
+            setUser({ id: session.user.id, email: session.user.email })
+          }
         }
+        // If unauthenticated with splash=true, redirect to /auth happens in splash
+      } catch (error) {
+        console.error('Auth check error:', error)
       }
-      // If unauthenticated with splash=true, redirect to /auth happens in splash
     }
 
     // Fetch cafeterias from database
     const fetchCafeterias = async () => {
-      const { data: cafes } = await supabase
-        .from('cafeterias')
-        .select('name, image_url')
-        .limit(4)
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Cafeterias fetch timeout')), 10000)
+        )
+        const result = await Promise.race([
+          supabase
+            .from('cafeterias')
+            .select('name, image_url')
+            .limit(4),
+          timeoutPromise
+        ]) as any
 
-      if (cafes) {
-        const cafeList = cafes.map(cafe => ({
-          name: cafe.name,
-          image_url: cafe.image_url,
-          image: cafe.image_url || `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
-        }))
-        setRestaurants(cafeList)
+        if (result.error) {
+          console.error('Cafeterias fetch error:', result.error)
+        } else if (result.data) {
+          const cafeList = result.data.map((cafe: any) => ({
+            name: cafe.name,
+            image_url: cafe.image_url,
+            image: cafe.image_url || `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+          }))
+          setRestaurants(cafeList)
+        }
+      } catch (error) {
+        console.error('Cafeterias fetch error:', error)
       }
     }
 

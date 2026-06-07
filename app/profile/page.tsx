@@ -44,9 +44,25 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    supabase.from('cafeterias').select('id, name, image_emoji').then(({ data }) => {
-      if (data) setCafeterias(Object.fromEntries(data.map(c => [c.id, c])))
-    })
+    const fetchCafeterias = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Cafeterias fetch timeout')), 10000)
+        )
+        const result = await Promise.race([
+          supabase.from('cafeterias').select('id, name, image_emoji'),
+          timeoutPromise
+        ]) as any
+        if (result.error) {
+          console.error('Cafeterias fetch error:', result.error)
+        } else if (result.data) {
+          setCafeterias(Object.fromEntries(result.data.map((c: any) => [c.id, c])))
+        }
+      } catch (error) {
+        console.error('Cafeterias fetch error:', error)
+      }
+    }
+    fetchCafeterias()
   }, [])
 
   useEffect(() => {
@@ -54,13 +70,28 @@ export default function ProfilePage() {
     if (!user?.phone) { setLoadingOrders(false); return }
 
     const fetch = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('student_phone', user.phone)
-        .order('created_at', { ascending: false })
-      if (data) setOrders(data as Order[])
-      setLoadingOrders(false)
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Orders fetch timeout')), 10000)
+        )
+        const result = await Promise.race([
+          supabase
+            .from('orders')
+            .select('*')
+            .eq('student_phone', user.phone)
+            .order('created_at', { ascending: false }),
+          timeoutPromise
+        ]) as any
+        if (result.error) {
+          console.error('Orders fetch error:', result.error)
+        } else if (result.data) {
+          setOrders(result.data as Order[])
+        }
+      } catch (error) {
+        console.error('Orders fetch error:', error)
+      } finally {
+        setLoadingOrders(false)
+      }
     }
     fetch()
   }, [user?.phone, isLoaded])
