@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Clock, Users } from 'lucide-react'
 
 interface CafeteriaWithQueue extends Cafeteria {
   queue: CafeteriaQueue
@@ -17,6 +17,7 @@ export default function MobileHome() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'wait' | 'name'>('wait')
 
   const fetchData = useCallback(async () => {
     const { data } = await supabase
@@ -41,141 +42,207 @@ export default function MobileHome() {
     c.location.toLowerCase().includes(search.toLowerCase())
   )
 
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'wait') {
+      const waitA = a.queue?.avg_wait_mins ?? 0
+      const waitB = b.queue?.avg_wait_mins ?? 0
+      return waitA - waitB
+    }
+    return a.name.localeCompare(b.name)
+  })
+
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchData()
     setRefreshing(false)
   }
-  const openNow = cafeterias.filter(c => c.is_open).length
 
-  const waitColor = (level: string) => ({
-    low: 'mobile-badge-green',
-    mid: 'mobile-badge-yellow',
-    high: 'mobile-badge-red',
-  }[level] ?? '')
+  const avgWait = cafeterias.length > 0
+    ? Math.round(cafeterias.reduce((sum, c) => sum + (c.queue?.avg_wait_mins ?? 0), 0) / cafeterias.length)
+    : 0
+  const totalWaiting = cafeterias.reduce((sum, c) => sum + (c.queue?.queue_count ?? 0), 0)
+
+  const getQueueColor = (wait: number) => {
+    if (wait <= 10) return { bg: '#edfaf3', color: '#2e9e6b', bar: '#2e9e6b' }
+    if (wait <= 20) return { bg: '#fff8ec', color: '#d4821a', bar: '#d4821a' }
+    return { bg: '#fff0f2', color: '#e8334a', bar: '#e8334a' }
+  }
 
   return (
-    <div style={{ padding: 'var(--mobile-spacing)' }} className="mobile-page-enter">
-      {/* Header */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'slideUpMobile 0.5s ease' }}>
+    <div style={{ paddingBottom: 100 }} className="mobile-page-enter">
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+        .stat-card { padding: 16px; border-radius: 12px; background: white; border: 1px solid rgba(26,31,46,0.07); transition: all 0.2s ease; }
+        .stat-card:active { transform: scale(0.98); }
+        .queue-bar { height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin: 8px 0; }
+        .queue-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+        .cafe-card { border-radius: 14px; overflow: hidden; border: 1px solid rgba(26,31,46,0.08); transition: all 0.2s ease; }
+        .cafe-card:active { transform: scale(0.98); }
+        .cafe-image { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 52px; position: relative; }
+      `}</style>
+
+      {/* Header with Refresh */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'slideUpMobile 0.5s ease' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-            Available Now
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700, color: '#1a1f2e' }}>
+            Order Now
           </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            {openNow} cafeteria{openNow !== 1 ? 's' : ''} open
+          <div style={{ fontSize: 13, color: '#8a90a8', marginTop: 2 }}>
+            Live queue status
           </div>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           style={{
-            width: 48,
-            height: 48,
-            minHeight: '48px',
-            borderRadius: 'var(--mobile-radius)',
-            border: '1px solid rgba(26,31,46,0.15)',
-            background: 'white',
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            border: '1px solid rgba(232,51,74,0.2)',
+            background: '#fff0f2',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            opacity: refreshing ? 0.6 : 1,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            transform: refreshing ? 'scale(0.95)' : 'scale(1)',
-          }}
-          onMouseEnter={(e) => {
-            if (!refreshing) {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(232,51,74,0.15)'
-              e.currentTarget.style.backgroundColor = '#f5f5f5'
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'
-            e.currentTarget.style.backgroundColor = 'white'
           }}
         >
-          <RefreshCw size={20} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+          <RefreshCw size={20} color="#E8334A" style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
         </button>
       </div>
 
-      {/* Search Input */}
-      <input
-        type="text"
-        placeholder="Search cafeteria..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="mobile-input mobile-slide-up-1"
-        style={{ marginBottom: 20 }}
-      />
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: '16px', paddingTop: 20 }}>
+        <div className="stat-card">
+          <div style={{ fontSize: 12, color: '#8a90a8', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={14} /> Avg Wait
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1f2e' }}>
+            {avgWait} <span style={{ fontSize: 14, color: '#8a90a8' }}>min</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div style={{ fontSize: 12, color: '#8a90a8', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Users size={14} /> In Queue
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1f2e' }}>
+            {totalWaiting}
+          </div>
+        </div>
+      </div>
+
+      {/* Search & Sort */}
+      <div style={{ padding: '0 16px' }}>
+        <input
+          type="text"
+          placeholder="Search cafeteria..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            marginBottom: 12,
+            background: 'white',
+            border: '1px solid rgba(26,31,46,0.1)',
+            borderRadius: 10,
+            fontSize: 14,
+            fontFamily: 'var(--font-body)',
+          }}
+        />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {['wait', 'name'].map(s => (
+            <button
+              key={s}
+              onClick={() => setSortBy(s as any)}
+              style={{
+                flex: 1,
+                padding: '10px',
+                border: 'none',
+                borderRadius: 8,
+                background: sortBy === s ? '#E8334A' : '#f5f5f5',
+                color: sortBy === s ? 'white' : '#666',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {s === 'wait' ? '⏱️ Fastest' : '📝 A-Z'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Cafeteria List */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)' }}>
-          Loading cafeterias...
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#8a90a8' }}>
+          ⏳ Loading cafeterias...
         </div>
       ) : (
-        <div>
-          {filtered.map((c, idx) => {
+        <div style={{ padding: '0 16px', paddingBottom: 20 }}>
+          {sorted.map((c) => {
             const wait = c.queue?.avg_wait_mins ?? 0
+            const queueCount = c.queue?.queue_count ?? 0
             const level = getWaitLevel(wait)
+            const colors = getQueueColor(wait)
+            const maxWait = 30
+
             return (
-              <div key={c.id} className={`mobile-card mobile-list-item`} style={{ padding: 0, overflow: 'hidden' }}>
-                {/* Emoji Header */}
-                <div
-                  style={{
-                    height: 100,
-                    background: 'var(--surface2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 48,
-                    position: 'relative',
-                  }}
-                >
-                  {c.image_emoji}
-                  <div
-                    className={`mobile-badge ${waitColor(level)}`}
-                    style={{ position: 'absolute', top: 12, right: 12 }}
-                  >
-                    {formatWait(wait)}
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div style={{ padding: 'var(--mobile-spacing)' }}>
-                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, marginBottom: 3, color: 'var(--text)' }}>
-                    {c.name}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
-                    {c.location}
-                  </div>
-                  {c.description && (
-                    <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
-                      {c.description}
+              <Link key={c.id} href={`/mobile/order/${c.id}`}>
+                <div className="cafe-card" style={{ marginBottom: 12, background: colors.bg, cursor: 'pointer' }}>
+                  {/* Image Section */}
+                  <div className="cafe-image" style={{ background: level === 'low' ? '#d4f5e8' : level === 'mid' ? '#fef3dc' : '#f5d4da' }}>
+                    {c.image_emoji}
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      background: colors.color,
+                      color: 'white',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}>
+                      {formatWait(wait)}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Queue & CTA */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)', background: 'var(--surface2)', borderRadius: 8, padding: '4px 10px' }}>
-                      {c.queue?.queue_count ?? 0} waiting
-                    </span>
-                    <Link href={`/mobile/order/${c.id}`}>
-                      <button className="mobile-btn mobile-btn-primary" style={{ width: 'auto', padding: '10px 18px', marginBottom: 0 }}>
-                        Pre-order
-                      </button>
-                    </Link>
+                  {/* Content */}
+                  <div style={{ padding: '12px 14px' }}>
+                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, color: '#1a1f2e', marginBottom: 3 }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8a90a8', marginBottom: 8 }}>
+                      {c.location}
+                    </div>
+
+                    {/* Queue Visual */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: colors.color, fontWeight: 600 }}>
+                          {queueCount} {queueCount === 1 ? 'person' : 'people'} waiting
+                        </span>
+                      </div>
+                      <div className="queue-bar">
+                        <div
+                          className="queue-fill"
+                          style={{
+                            width: `${Math.min((wait / maxWait) * 100, 100)}%`,
+                            background: colors.bar,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
 
-          {!loading && filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)' }}>
-              No cafeterias found
+          {!loading && sorted.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#8a90a8' }}>
+              🔍 No cafeterias found
             </div>
           )}
         </div>
