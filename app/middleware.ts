@@ -3,6 +3,12 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function isMobileUserAgent(userAgent?: string): boolean {
+  if (!userAgent) return false
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+  return mobileRegex.test(userAgent)
+}
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
@@ -23,9 +29,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/auth', req.url))
   }
 
-  // Already logged in + hitting /auth → redirect to /browse
+  // Detect mobile device
+  const userAgent = req.headers.get('user-agent') || ''
+  const isMobile = isMobileUserAgent(userAgent)
+
+  // Already logged in + hitting /auth → redirect based on device type
   if (session && req.nextUrl.pathname === '/auth') {
-    return NextResponse.redirect(new URL('/browse', req.url))
+    const redirectPath = isMobile ? '/mobile/home' : '/browse'
+    return NextResponse.redirect(new URL(redirectPath, req.url))
   }
 
   return res
