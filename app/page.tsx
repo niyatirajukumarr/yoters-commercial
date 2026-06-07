@@ -488,28 +488,34 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Horizontal Scrolling Carousel */}
-            <div className="cafe-carousel-wrapper">
-              <div className="cafe-carousel-scroll" style={{ animationPlayState: 'running' }}>
-                {[...restaurants, ...restaurants].map((r, i) => (
-                  <div key={i}
-                    className="cafe-carousel-card"
-                    style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer' }}>
-                    {/* Background Image */}
-                    <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            {restaurants && restaurants.length > 0 ? (
+              <div className="cafe-carousel-wrapper">
+                <div className="cafe-carousel-scroll" style={{ animationPlayState: 'running' }}>
+                  {[...restaurants, ...restaurants].map((r, i) => (
+                    <div key={i}
+                      className="cafe-carousel-card"
+                      style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer' }}>
+                      {/* Background Image */}
+                      <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
 
-                    {/* Dark Overlay Gradient */}
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)' }} />
+                      {/* Dark Overlay Gradient */}
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)' }} />
 
-                    {/* Content - Just the name */}
-                    <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 28, color: 'white' }}>
-                      <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxWidth: '90%' }}>
-                        {r.name}
-                      </h3>
+                      {/* Content - Just the name */}
+                      <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 28, color: 'white' }}>
+                        <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxWidth: '90%' }}>
+                          {r.name}
+                        </h3>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ height: 320, background: '#f0f0f0', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 80 }}>
+                <p style={{ color: '#999' }}>Loading cafeterias...</p>
+              </div>
+            )}
 
             {/* CTA Button - Separate Below */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
