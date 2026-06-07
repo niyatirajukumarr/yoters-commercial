@@ -217,9 +217,9 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-        body { background: #fdf8f5; }
-        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'DM Sans', sans-serif; overflow-x: hidden; position: relative; }
+        html { scroll-behavior: smooth; overflow-y: auto; }
+        body { background: #fdf8f5; overflow-y: auto; }
+        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'DM Sans', sans-serif; overflow-x: hidden; overflow-y: auto; position: relative; }
 
         .glitch { position: relative; display: inline-block; cursor: pointer; transition: color 0.2s; }
         .glitch:hover { color: #E8334A !important; }
