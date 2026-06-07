@@ -283,38 +283,45 @@ export default function MobileOrderPage() {
             .category-card {
               border: 2px solid rgba(26,31,46,0.1);
               border-radius: 14px;
-              padding: 16px;
               background: white;
               margin-bottom: 16px;
               animation: slideUpMobile 0.5s ease both;
+              overflow: hidden;
             }
             .category-header {
+              position: relative;
+              width: 100%;
+              height: 180px;
+              margin-bottom: 0;
+              padding: 0;
+              border-bottom: 3px solid #FFA500;
               display: flex;
-              align-items: center;
-              gap: 12px;
-              margin-bottom: 16px;
-              padding-bottom: 12px;
-              border-bottom: 2px solid #FFA500;
+              align-items: flex-start;
+              justify-content: flex-start;
             }
             .category-title {
               font-family: 'Impact', 'Arial Black', sans-serif;
-              font-size: 20px;
+              font-size: 24px;
               font-weight: 900;
               color: #1a1f2e;
               text-transform: uppercase;
               letter-spacing: 1px;
               background: black;
               color: #FFA500;
-              padding: 6px 12px;
-              border-radius: 4px;
+              padding: 10px 16px;
+              border-radius: 6px;
               white-space: nowrap;
+              position: absolute;
+              bottom: 12px;
+              left: 12px;
+              z-index: 10;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
             .category-image {
-              width: 80px;
-              height: 80px;
-              border-radius: 8px;
+              width: 100%;
+              height: 100%;
               object-fit: cover;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              box-shadow: inset 0 0 0 2px #FFA500;
             }
             .menu-item-row {
               display: flex;
@@ -376,19 +383,23 @@ export default function MobileOrderPage() {
 
             return (
               <div key={category} className="category-card" style={{ animationDelay: `${catIdx * 0.1}s` }}>
-                {/* Category Header with Title and Image */}
+                {/* Category Header with Full-Width Image and Overlay Title */}
                 <div className="category-header">
-                  <div className="category-title">{category}</div>
                   {typeof categoryImage === 'string' && categoryImage.includes('http') ? (
                     <img src={categoryImage} alt={category} className="category-image" />
                   ) : (
-                    <div style={{ width: 80, height: 80, borderRadius: 8, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
+                    <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
                       {categoryImage}
                     </div>
                   )}
+                  <div className="category-title">{category}</div>
                 </div>
 
+                {/* Menu Items Padding */}
+                <div style={{ padding: '16px 0' }}>
+
                 {/* Menu Items in Category */}
+                <div style={{ padding: '0 16px' }}>
                 {categoryItems.map(item => {
                   const inCart = itemInCart(item.id)
                   const isOutOfStock = item.stock_quantity !== null && item.stock_quantity !== undefined && item.stock_quantity <= 0
@@ -429,6 +440,7 @@ export default function MobileOrderPage() {
                     </div>
                   )
                 })}
+                </div>
               </div>
             )
           })}
