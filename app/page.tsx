@@ -84,11 +84,21 @@ export default function LandingPage() {
         if (result.error) {
           console.error('Cafeterias fetch error:', result.error)
         } else if (result.data) {
-          const cafeList = result.data.map((cafe: any) => ({
-            name: cafe.name,
-            image_url: cafe.image_url,
-            image: cafe.image_url || `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
-          }))
+          const cafeList = result.data.map((cafe: any) => {
+            let imageUrl = cafe.image_url
+            if (!imageUrl) {
+              if (cafe.name === 'Main Block Cafeteria') {
+                imageUrl = 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=600&h=400&fit=crop'
+              } else {
+                imageUrl = `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+              }
+            }
+            return {
+              name: cafe.name,
+              image_url: cafe.image_url,
+              image: imageUrl
+            }
+          })
           setRestaurants(cafeList)
         }
       } catch (error) {
