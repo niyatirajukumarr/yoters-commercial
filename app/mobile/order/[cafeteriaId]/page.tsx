@@ -32,6 +32,22 @@ interface Cafeteria {
 
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 
+// Category images mapping
+const CATEGORY_IMAGES: { [key: string]: string } = {
+  'Biryani': 'https://images.unsplash.com/photo-1585238341710-4b51926b4b13?w=600&h=400&fit=crop',
+  'Mandhi': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
+  'Combo': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop',
+  'Burger': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=400&fit=crop',
+  'Roll': 'https://images.unsplash.com/photo-1599599810694-b5ac4dd64761?w=600&h=400&fit=crop',
+  'Alfaham': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=600&h=400&fit=crop',
+  'Fries': 'https://images.unsplash.com/photo-1585238341710-4b51926b4b13?w=600&h=400&fit=crop',
+  'Drinks': 'https://images.unsplash.com/photo-1551182364-8a84ac993676?w=600&h=400&fit=crop',
+  'Momos': 'https://images.unsplash.com/photo-1609501676725-7186f017a4b6?w=600&h=400&fit=crop',
+  'Coffee': 'https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=600&h=400&fit=crop',
+  'Shakes': 'https://images.unsplash.com/photo-1550434494-dba8d36ae60e?w=600&h=400&fit=crop',
+  'Juice': 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=600&h=400&fit=crop',
+}
+
 export default function MobileOrderPage() {
   const params = useParams()
   const router = useRouter()
@@ -356,7 +372,7 @@ export default function MobileOrderPage() {
           {/* Category Cards */}
           {categories.map((category, catIdx) => {
             const categoryItems = menuItems.filter(m => m.category === category)
-            const categoryImage = categoryItems[0]?.image_url || '🍽️'
+            const categoryImage = CATEGORY_IMAGES[category] || categoryItems[0]?.image_url || '🍽️'
 
             return (
               <div key={category} className="category-card" style={{ animationDelay: `${catIdx * 0.1}s` }}>
