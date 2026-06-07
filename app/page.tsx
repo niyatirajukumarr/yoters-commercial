@@ -341,6 +341,7 @@ export default function LandingPage() {
             loop
             muted
             playsInline
+            preload="auto"
             style={{
               position: 'absolute', right: 0, top: 0,
               width: '80%', height: '100%',
@@ -348,6 +349,9 @@ export default function LandingPage() {
               opacity: 0.65,
               maskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)'
+            }}
+            onCanPlay={(e) => {
+              (e.target as HTMLVideoElement).play()
             }}
           >
             <source src="/hero-video.mp4" type="video/mp4" />
