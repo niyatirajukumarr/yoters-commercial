@@ -686,18 +686,10 @@ export default function CafeteriaPage() {
             style={{ width: '100%', padding: '12px', marginBottom: 12, border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, minHeight: 80 }}
           />
 
-          {/* Cart Preview */}
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Your Order</h3>
-            {cartItem.map(item => (
-              <div key={item.menuId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8 }}>
-                <span>{item.quantity}x {item.name}</span>
-                <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
-              </div>
-            ))}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
               <span>Total</span>
-              <span>₹{total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{total}</span>
             </div>
           </div>
 
