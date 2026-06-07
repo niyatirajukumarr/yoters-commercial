@@ -100,6 +100,29 @@ export default function MobileHome() {
         .cafe-image { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 52px; position: relative; }
       `}</style>
 
+      {/* Go to Home Button */}
+      <div style={{ padding: '8px 16px', display: 'flex', justifyContent: 'flex-end' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <button
+            style={{
+              padding: '8px 16px',
+              background: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            ← Go to Home
+          </button>
+        </Link>
+      </div>
+
       {/* Header with Refresh */}
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'slideUpMobile 0.5s ease' }}>
         <div>

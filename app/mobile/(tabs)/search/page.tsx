@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -21,12 +19,27 @@ export default function MobileSearch() {
   const [sortBy, setSortBy] = useState<'wait' | 'name'>('wait')
 
   const fetchData = useCallback(async () => {
-    const { data } = await supabase
-      .from('cafeterias')
-      .select('*, queue:cafeteria_queues(*)')
-      .order('name')
-    if (data) setCafeterias(data as CafeteriaWithQueue[])
-    setLoading(false)
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Fetch timeout after 10s')), 10000)
+      )
+      const result = await Promise.race([
+        supabase
+          .from('cafeterias')
+          .select('*, queue:cafeteria_queues(*)')
+          .order('name'),
+        timeoutPromise
+      ]) as any
+      if (result.error) {
+        console.error('Cafeterias fetch error:', result.error)
+      } else if (result.data) {
+        setCafeterias(result.data as CafeteriaWithQueue[])
+      }
+    } catch (error) {
+      console.error('Fetch error:', error)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -64,6 +77,29 @@ export default function MobileSearch() {
 
   return (
     <div style={{ padding: 'var(--mobile-spacing)' }}>
+      {/* Go to Home Button */}
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <button
+            style={{
+              padding: '8px 16px',
+              background: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            ← Go to Home
+          </button>
+        </Link>
+      </div>
+
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>

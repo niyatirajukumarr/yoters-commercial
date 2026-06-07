@@ -339,7 +339,27 @@ export default function MobileOrderPage() {
               {cafeteria.location}
             </div>
           </div>
-          <div style={{ fontSize: 28 }}>{cafeteria.image_emoji}</div>
+          <div style={{ fontSize: 28, marginRight: 12 }}>{cafeteria.image_emoji}</div>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <button
+              style={{
+                padding: '6px 12px',
+                background: 'var(--accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              Home
+            </button>
+          </Link>
         </div>
 
         {/* Content - Category Cards Grid */}
