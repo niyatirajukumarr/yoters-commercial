@@ -303,14 +303,15 @@ export default function LandingPage() {
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
         .lp-section { overflow-x: hidden; }
-        .cafe-carousel-wrapper { overflow: hidden !important; margin-bottom: 40px; width: 100%; max-width: 100vw; position: relative; }
-        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; animation-play-state: running; overflow: hidden; }
+        .cafe-carousel-wrapper { overflow: visible !important; margin-bottom: 80px; width: 100%; max-width: 100vw; position: relative; min-height: 320px; padding: 20px 0; }
+        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 0 48px; animation-play-state: running; overflow: visible; }
         .cafe-carousel-scroll:hover { animation-play-state: paused; }
         @keyframes scrollCafes { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); flex-shrink: 0; }
         .cafe-carousel-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 48px rgba(232,51,74,0.15), 0 0 0 1px rgba(232,51,74,0.1); }
         .cafe-carousel-card:hover img { filter: brightness(1.1); }
+        @media (max-width: 768px) { .cafe-carousel-wrapper { margin-bottom: 100px; padding: 30px 0; } }
 
         .rest-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 28px 32px; display: flex; align-items: center; gap: 28px; cursor: pointer; }
         .rest-card:hover { border-color: rgba(232,51,74,0.25); box-shadow: 0 12px 48px rgba(232,51,74,0.08); }
