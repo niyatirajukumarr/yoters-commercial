@@ -323,11 +323,12 @@ export default function CafeteriaPage() {
       {activeTab === 'home' && step === 'menu' && (
         <div>
           <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/mobile/home">
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <ChevronLeft size={24} color='var(--text)' />
-              </button>
-            </Link>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+            >
+              <ChevronLeft size={24} color='var(--text)' />
+            </button>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
