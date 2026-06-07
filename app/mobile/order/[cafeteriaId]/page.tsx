@@ -102,6 +102,12 @@ export default function MobileOrderPage() {
     }
   }, [user])
 
+  // Map category names for display (e.g., "Juice" → "Juice @59")
+  const categoryDisplayMap: { [key: string]: string } = {
+    'Juice': 'Juice @59',
+  }
+  const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
+
   const categories = [...new Set(menuItems.map(m => m.category))]
   const filtered = menuItems.filter(m => m.category === selectedCategory)
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
@@ -456,20 +462,21 @@ export default function MobileOrderPage() {
             }
 
             const categoryItems = menuItems.filter(m => m.category === category)
-            const categoryImage = CATEGORY_IMAGES[category] || categoryItems[0]?.image_url || '🍽️'
+            const displayName = displayCategory(category)
+            const categoryImage = CATEGORY_IMAGES[displayName] || CATEGORY_IMAGES[category] || categoryItems[0]?.image_url || '🍽️'
 
             return (
               <div key={category} className="category-card" style={{ animationDelay: `${catIdx * 0.1}s` }}>
                 {/* Category Header with Full-Width Image and Overlay Title */}
                 <div className="category-header">
                   {typeof categoryImage === 'string' && categoryImage.includes('http') ? (
-                    <img src={categoryImage} alt={category} className="category-image" />
+                    <img src={categoryImage} alt={displayName} className="category-image" />
                   ) : (
                     <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
                       {categoryImage}
                     </div>
                   )}
-                  <div className="category-title">{category}</div>
+                  <div className="category-title">{displayName}</div>
                 </div>
 
                 {/* Menu Items in Category */}
