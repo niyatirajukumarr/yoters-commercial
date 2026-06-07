@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
 export async function GET(req: NextRequest) {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     .select('*')
     .eq('cafeteria_id', cafId)
     .eq('payment_status', 'paid')
-    .in('status', ['paid', 'preparing', 'ready'])
+    .in('status', ['paid', 'approved', 'preparing', 'ready'])
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
