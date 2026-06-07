@@ -274,6 +274,7 @@ export default function LandingPage() {
         .track-emoji-wrap { width: 72px; height: 72px; border-radius: 50%; background: white; border: 1.5px solid rgba(232,51,74,0.15); display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 4px 16px rgba(26,31,46,0.06); transition: transform 0.2s; }
         .track-emoji-wrap:hover { transform: scale(1.15) rotate(8deg); }
 
+        .lp-section { overflow-x: hidden; }
         .cafe-carousel-wrapper { overflow: hidden !important; margin-bottom: 40px; width: 100%; max-width: 100vw; position: relative; }
         .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 8px 0; animation-play-state: running; overflow: hidden; }
         .cafe-carousel-scroll:hover { animation-play-state: paused; }
