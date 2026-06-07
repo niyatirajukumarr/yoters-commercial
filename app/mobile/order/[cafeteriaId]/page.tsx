@@ -115,6 +115,8 @@ export default function MobileOrderPage() {
       price: item.price,
       quantity: 1,
     })
+    // Scroll to bottom to show Continue button
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100)
   }
 
   const decrementStock = async (menuItemId: string, quantity: number) => {
