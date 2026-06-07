@@ -304,7 +304,7 @@ export default function LandingPage() {
 
         .lp-section { overflow-x: hidden; }
         .cafe-carousel-wrapper { overflow: visible !important; margin-bottom: 80px; width: 100%; max-width: 100vw; position: relative; min-height: 320px; padding: 20px 0; }
-        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 30s linear infinite; padding: 0 48px; animation-play-state: running; overflow: visible; }
+        .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; animation: scrollCafes 15s linear infinite; padding: 0 48px; animation-play-state: running; overflow: visible; }
         .cafe-carousel-scroll:hover { animation-play-state: paused; }
         @keyframes scrollCafes { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
