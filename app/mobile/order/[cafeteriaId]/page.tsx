@@ -78,10 +78,21 @@ export default function MobileOrderPage() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [cafRes, menuRes] = await Promise.all([
-          supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
-          supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
-        ])
+        console.log('Starting fetch for cafeteriaId:', cafeteriaId)
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Fetch timeout after 10s')), 10000)
+        )
+
+        const [cafRes, menuRes] = await Promise.race([
+          Promise.all([
+            supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
+            supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
+          ]),
+          timeoutPromise
+        ]) as any
+
+        console.log('Fetch completed:', { cafRes, menuRes })
 
         if (cafRes.error) {
           console.error('Cafeteria fetch error:', cafRes.error)
@@ -93,7 +104,6 @@ export default function MobileOrderPage() {
           console.error('Menu fetch error:', menuRes.error)
         } else if (menuRes.data) {
           setMenuItems(menuRes.data as MenuItem[])
-          // Auto-select first category
           const categories = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
           if (categories.length > 0) {
             setSelectedCategory(categories[0])
@@ -102,6 +112,7 @@ export default function MobileOrderPage() {
       } catch (error) {
         console.error('Fetch error:', error)
       } finally {
+        console.log('Setting loading to false')
         setLoading(false)
       }
     }
