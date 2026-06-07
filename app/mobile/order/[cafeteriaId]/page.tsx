@@ -249,6 +249,13 @@ export default function MobileOrderPage() {
   if (loading) {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        <style>{`
+          @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
+
         {/* Header Skeleton */}
         <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 32, height: 32, borderRadius: 6, background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite' }} />
@@ -260,12 +267,6 @@ export default function MobileOrderPage() {
 
         {/* Content Skeleton */}
         <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 200 }}>
-          <style>{`
-            @keyframes loading {
-              0% { background-position: 200% 0; }
-              100% { background-position: -200% 0; }
-            }
-          `}</style>
           {[1, 2, 3].map(i => (
             <div key={i} style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', background: 'white', border: '2px solid rgba(26,31,46,0.1)' }}>
               {/* Image Skeleton */}
