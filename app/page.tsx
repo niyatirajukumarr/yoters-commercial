@@ -489,10 +489,9 @@ export default function LandingPage() {
 
             {/* Horizontal Scrolling Carousel */}
             <motion.div className="cafe-carousel-wrapper"
-              initial={{ opacity: 0 }}
+              initial={{ opacity: 1 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: false, margin: '0px' }}
-              transition={{ duration: 0.6 }}>
+              transition={{ duration: 0 }}>
               <div className="cafe-carousel-scroll" style={{ animationPlayState: 'running' }}>
                 {[...restaurants, ...restaurants].map((r, i) => (
                   <div key={i}
