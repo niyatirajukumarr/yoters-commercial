@@ -77,20 +77,33 @@ export default function MobileOrderPage() {
   // Fetch cafeteria & menu
   useEffect(() => {
     const fetch = async () => {
-      const [cafRes, menuRes] = await Promise.all([
-        supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
-        supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
-      ])
-      if (cafRes.data) setCafeteria(cafRes.data as Cafeteria)
-      if (menuRes.data) {
-        setMenuItems(menuRes.data as MenuItem[])
-        // Auto-select first category
-        const categories = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
-        if (categories.length > 0) {
-          setSelectedCategory(categories[0])
+      try {
+        const [cafRes, menuRes] = await Promise.all([
+          supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
+          supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
+        ])
+
+        if (cafRes.error) {
+          console.error('Cafeteria fetch error:', cafRes.error)
+        } else if (cafRes.data) {
+          setCafeteria(cafRes.data as Cafeteria)
         }
+
+        if (menuRes.error) {
+          console.error('Menu fetch error:', menuRes.error)
+        } else if (menuRes.data) {
+          setMenuItems(menuRes.data as MenuItem[])
+          // Auto-select first category
+          const categories = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
+          if (categories.length > 0) {
+            setSelectedCategory(categories[0])
+          }
+        }
+      } catch (error) {
+        console.error('Fetch error:', error)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetch()
   }, [cafeteriaId])
