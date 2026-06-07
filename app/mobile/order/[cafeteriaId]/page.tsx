@@ -381,7 +381,7 @@ export default function CafeteriaPage() {
       {activeTab === 'home' && step === 'menu' && (
         <div>
           <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/mobile/home">
+            <Link href="/browse">
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <ChevronLeft size={24} color='var(--text)' />
               </button>
