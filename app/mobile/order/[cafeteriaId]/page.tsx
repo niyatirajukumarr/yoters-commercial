@@ -707,6 +707,142 @@ export default function MobileOrderPage() {
             />
           </div>
 
+          {/* Cart Preview Cards */}
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>Your Order</h3>
+            {cartItem.map(item => (
+              <div
+                key={item.menuId}
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  padding: 12,
+                  marginBottom: 10,
+                  background: 'white',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--mobile-radius)',
+                  alignItems: 'center'
+                }}
+              >
+                {/* Item Image Placeholder */}
+                <div
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 8,
+                    background: 'var(--surface2)',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 24,
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  🍽️
+                </div>
+
+                {/* Item Details */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>
+                    ₹{item.price * item.quantity}
+                  </div>
+                </div>
+
+                {/* Quantity Controls */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'var(--surface2)',
+                    borderRadius: 6,
+                    padding: '4px 8px'
+                  }}
+                >
+                  <button
+                    onClick={() => updateQuantity(item.menuId, Math.max(0, item.quantity - 1))}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      border: 'none',
+                      background: 'white',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-light)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
+                  >
+                    −
+                  </button>
+                  <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      border: 'none',
+                      background: 'var(--accent)',
+                      color: 'white',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Remove Button */}
+                <button
+                  onClick={() => removeItem(item.menuId)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    border: 'none',
+                    background: 'var(--red-bg)',
+                    color: 'var(--red)',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--red)';
+                    (e.currentTarget as HTMLElement).style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--red-bg)';
+                    (e.currentTarget as HTMLElement).style.color = 'var(--red)'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
           {/* Order Summary */}
           <div className="mobile-card" style={{ padding: 'var(--mobile-spacing)', marginBottom: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Order Summary</h3>
