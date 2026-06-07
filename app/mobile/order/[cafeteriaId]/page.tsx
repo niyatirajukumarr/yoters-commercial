@@ -115,6 +115,8 @@ export default function MobileOrderPage() {
       price: item.price,
       quantity: 1,
     })
+    // Scroll to bottom to show Continue button
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100)
   }
 
   const decrementStock = async (menuItemId: string, quantity: number) => {
@@ -445,22 +447,36 @@ export default function MobileOrderPage() {
 
         {/* Sticky Cart */}
         {itemCount > 0 && (
-          <div className="mobile-sticky-bottom" style={{ display: 'flex', gap: 10, alignItems: 'center', animation: 'slideUpMobile 0.3s ease', backdropFilter: 'blur(8px)', background: 'rgba(255,255,255,0.95)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>
-                {itemCount} item{itemCount !== 1 ? 's' : ''}
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-                ₹{total}
-              </div>
+          <div className="mobile-sticky-bottom" style={{ animation: 'slideUpMobile 0.3s ease', backdropFilter: 'blur(8px)', background: 'rgba(255,255,255,0.97)', borderTop: '1px solid rgba(26,31,46,0.1)' }}>
+            {/* Cart Items Summary */}
+            <div style={{ marginBottom: 10 }}>
+              {cartItem.map(item => (
+                <div key={item.menuId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 6, borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
+                  <div style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                    {item.name} <span style={{ color: 'var(--muted)' }}>×{item.quantity}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', marginRight: 10 }}>₹{item.price * item.quantity}</div>
+                  <button
+                    onClick={() => removeItem(item.menuId)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8334A', fontSize: 16, padding: '0 4px', lineHeight: 1 }}
+                  >✕</button>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={() => setStep('details')}
-              className="mobile-btn mobile-btn-primary"
-              style={{ padding: '12px 20px', animation: 'slideUpMobile 0.3s 0.1s ease both' }}
-            >
-              Continue →
-            </button>
+            {/* Total + Continue */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>₹{total}</div>
+              </div>
+              <button
+                onClick={() => setStep('details')}
+                className="mobile-btn mobile-btn-primary"
+                style={{ padding: '12px 20px' }}
+              >
+                Continue →
+              </button>
+            </div>
           </div>
         )}
       </div>
