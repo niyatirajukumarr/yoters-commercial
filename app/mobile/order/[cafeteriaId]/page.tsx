@@ -146,6 +146,21 @@ export default function MobileOrderPage() {
   // FIX 3: Open payment page (safe payment gateway instead of UPI app redirect)
   function handleOpenUPI() {
     const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
+
+    // Detect if mobile: if so, navigate directly; otherwise open popup
+    const isMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+      return mobileRegex.test(userAgent) || window.innerWidth < 768
+    }
+
+    if (isMobile()) {
+      // On mobile, navigate directly to payment page
+      router.push(paymentUrl)
+      return
+    }
+
+    // On desktop, open in popup
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
     // Go straight to confirmation polling — no waiting screen
     setConfirmedTotal(total)
