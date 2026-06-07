@@ -219,13 +219,18 @@ export default function CafeteriaPage() {
   }
 
   const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Delete this order?')) return
     try {
       const { error } = await supabase.from('orders').delete().eq('id', orderId)
-      if (!error) {
+      if (error) {
+        console.error('Delete error:', error)
+        alert('Failed to delete order')
+      } else {
         setCafeOrders(cafeOrders.filter(o => o.id !== orderId))
       }
     } catch (error) {
       console.error('Delete failed:', error)
+      alert('Failed to delete order')
     }
   }
 
@@ -564,23 +569,27 @@ export default function CafeteriaPage() {
             ) : (
               cafeOrders.map(order => (
                 <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>₹{order.total_amount}</div>
-                    <div style={{ fontSize: 11, background: order.status === 'collected' ? '#edfaf3' : '#fff8ec', color: order.status === 'collected' ? '#2e9e6b' : '#d4821a', padding: '4px 8px', borderRadius: 4 }}>
-                      {order.status}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>₹{order.total_amount}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: 11, background: order.status === 'collected' ? '#edfaf3' : '#fff8ec', color: order.status === 'collected' ? '#2e9e6b' : '#d4821a', padding: '4px 8px', borderRadius: 4 }}>
+                        {order.status}
+                      </div>
+                      {(order.status === 'pending' || order.status === 'cancelled') && (
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          style={{ padding: '6px 10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          🗑️ Delete
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </div>
-                  {(order.status === 'pending' || order.status === 'cancelled') && (
-                    <button
-                      onClick={() => handleDeleteOrder(order.id)}
-                      style={{ width: '100%', padding: '10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
-                    >
-                      🗑️ Delete Order
-                    </button>
-                  )}
                 </div>
               ))
             )}
