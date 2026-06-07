@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -20,13 +18,34 @@ export default function MobileHome() {
   const [sortBy, setSortBy] = useState<'wait' | 'name'>('wait')
 
   const fetchData = useCallback(async () => {
-    const { data } = await supabase
-      .from('cafeterias')
-      .select('*, queue:cafeteria_queues(*)')
-      .eq('is_open', true)
-      .order('name')
-    if (data) setCafeterias(data as CafeteriaWithQueue[])
-    setLoading(false)
+    try {
+      console.log('Fetching cafeterias...')
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Fetch timeout after 10s')), 10000)
+      )
+
+      const result = await Promise.race([
+        supabase
+          .from('cafeterias')
+          .select('*, queue:cafeteria_queues(*)')
+          .eq('is_open', true)
+          .order('name'),
+        timeoutPromise
+      ]) as any
+
+      console.log('Cafeterias fetched:', result)
+
+      if (result.error) {
+        console.error('Supabase error:', result.error)
+      } else if (result.data) {
+        setCafeterias(result.data as CafeteriaWithQueue[])
+      }
+    } catch (error) {
+      console.error('Fetch error:', error)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
