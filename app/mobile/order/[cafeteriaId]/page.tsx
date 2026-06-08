@@ -256,13 +256,15 @@ export default function CafeteriaPage() {
       const { error } = await supabase.from('orders').delete().eq('id', orderId)
       if (error) {
         console.error('Delete error:', error)
-        alert('Failed to delete order')
+        alert('Failed to delete order: ' + error.message)
       } else {
-        setCafeOrders(cafeOrders.filter(o => o.id !== orderId))
+        // Immediately update UI
+        setCafeOrders(prev => prev.filter(o => o.id !== orderId))
+        alert('Order deleted successfully')
       }
     } catch (error) {
       console.error('Delete failed:', error)
-      alert('Failed to delete order')
+      alert('Failed to delete order: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
 
