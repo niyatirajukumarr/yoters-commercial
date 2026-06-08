@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 export default function LandingPage() {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const carouselWrapperRef = useRef<HTMLDivElement>(null)
   const [isChecking, setIsChecking] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -497,7 +498,7 @@ export default function LandingPage() {
 
             {/* Horizontal Scrolling Carousel */}
             {restaurants && restaurants.length > 0 ? (
-              <div className="cafe-carousel-wrapper" ref={useRef<HTMLDivElement>(null)} onMouseEnter={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'paused' }} onMouseLeave={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'running' }}>
+              <div className="cafe-carousel-wrapper" ref={carouselWrapperRef} onMouseEnter={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'paused' }} onMouseLeave={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'running' }}>
                 <motion.div className="cafe-carousel-scroll" animate={{ x: [0, -500] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
                   {[...restaurants, ...restaurants].map((r, i) => (
                     <div key={i}
