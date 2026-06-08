@@ -251,6 +251,15 @@ export default function CafeteriaPage() {
   }
 
   const handleDeleteOrder = async (orderId: string) => {
+    // Find the order to check its status
+    const order = cafeOrders.find(o => o.id === orderId)
+
+    // Only allow deletion for pending and cancelled orders
+    if (order && order.status !== 'pending' && order.status !== 'cancelled') {
+      alert(`Cannot delete ${order.status} orders. Vendor has already ${order.status === 'approved' ? 'accepted' : 'started preparing'} your order.`)
+      return
+    }
+
     if (!confirm('Delete this order?')) return
     try {
       const { error } = await supabase.from('orders').delete().eq('id', orderId)
