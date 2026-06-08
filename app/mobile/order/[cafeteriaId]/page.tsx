@@ -200,11 +200,18 @@ export default function CafeteriaPage() {
     }
     setIsPlacingOrder(true)
     try {
-      const { data, error } = await supabase
+      // Add 10-second timeout to prevent infinite loading
+      const orderPromise = supabase
         .from('orders')
         .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes, is_shared: false }])
         .select()
         .single()
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Order creation timeout')), 10000)
+      )
+
+      const { data, error } = await Promise.race([orderPromise, timeoutPromise]) as any
 
       if (error) {
         console.error('Order creation error:', error)
@@ -217,6 +224,7 @@ export default function CafeteriaPage() {
         console.log('Order created successfully:', data.id)
         setOrderId(data.id)
         updateUser({ name: formData.name, phone: formData.phone, email: formData.email })
+        setIsPlacingOrder(false) // Reset loading state before showing modal
         setShowSharingModal(true) // Show sharing modal instead of going to payment
       } else {
         alert('Failed to create order')
