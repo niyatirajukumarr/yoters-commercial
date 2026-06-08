@@ -584,7 +584,7 @@ export default function CafeteriaPage() {
             backgroundImage: 'url(/friends-bg.jpg)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
+            backgroundRepeat: 'no-repeat',
             position: 'relative',
             minHeight: '100vh',
             paddingBottom: 100
