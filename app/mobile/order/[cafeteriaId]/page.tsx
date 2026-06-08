@@ -581,7 +581,7 @@ export default function CafeteriaPage() {
           </div>
           <div style={{
             padding: '16px',
-            backgroundImage: 'url(/friends-bg.jpg)',
+            backgroundImage: 'url(https://static.ffx.io/images/$zoom_1%2C$multiply_0.7459%2C$ratio_1.777778%2C$width_1995%2C$x_5%2C$y_50/t_crop_custom/q_62%2Cf_auto/05180b858b18fac7045041e66a545b35870fe007)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
