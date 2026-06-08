@@ -600,7 +600,11 @@ export default function CafeteriaPage() {
             {/* Content */}
             <div style={{ position: 'relative', zIndex: 1, paddingBottom: 20 }}>
               {friendsOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No shared orders yet fr fr</div>
+                <div style={{ textAlign: 'center', padding: 80, paddingTop: 120 }}>
+                  <div style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontSize: 28, fontWeight: 600, color: '#1a1f2e', lineHeight: 1.6, letterSpacing: 0.5 }}>
+                    Looks like your friends are deciding on their favourites!
+                  </div>
+                </div>
               ) : (
                 friendsOrders.map(order => (
                   <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12, boxShadow: '0 4px 12px rgba(26,31,46,0.08)' }}>
