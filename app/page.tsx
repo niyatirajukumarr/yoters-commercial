@@ -16,99 +16,126 @@ export default function LandingPage() {
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
   const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
+  // Safety timeout: Force page to render after 15 seconds max
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      if (isChecking) {
+        console.warn('Page load timeout - forcing render')
+        setIsChecking(false)
+      }
+    }, 15000)
+    return () => clearTimeout(safetyTimer)
+  }, [])
+
   const { scrollY: scrollYProgress } = useScroll()
   const heroY = useTransform(scrollYProgress, [0, 600], [0, -80])
   const heroOpacity = useTransform(scrollYProgress, [0, 400], [1, 0])
 
   useEffect(() => {
+    let isMounted = true
+
     const checkAuth = async () => {
       try {
         // Check if we've already shown splash (splash=true param means user already saw it)
         const params = new URLSearchParams(window.location.search)
         const hasSplash = params.get('splash') === 'true'
 
-        const { data: { session } } = await supabase.auth.getSession()
+        const sessionPromise = Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Session fetch timeout')), 8000))
+        ])
+
+        const { data: { session } } = await sessionPromise as any
+
+        if (!isMounted) return
 
         if (!session && !hasSplash) {
-          // Unauthenticated & haven't seen splash → show splash
           router.replace('/splash')
         } else if (session && !hasSplash) {
-          // Authenticated & haven't seen splash → show splash
           router.replace('/splash')
         } else if (session && hasSplash) {
           // Authenticated & already seen splash → show landing page
-          setIsChecking(false)
+          if (isMounted) setIsChecking(false)
+
           // Fetch user profile for students
           try {
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-            )
             const result = await Promise.race([
               supabase
                 .from('profiles')
                 .select('id, name, email')
                 .eq('id', session.user.id)
                 .single(),
-              timeoutPromise
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 8000))
             ]) as any
-            if (result.error) {
-              console.error('Profile fetch error:', result.error)
-              setUser({ id: session.user.id, email: session.user.email })
-            } else if (result.data) {
-              setUser({ id: session.user.id, name: result.data.name, email: result.data.email })
+
+            if (isMounted) {
+              if (result.error) {
+                console.error('Profile fetch error:', result.error)
+                setUser({ id: session.user.id, email: session.user.email })
+              } else if (result.data) {
+                setUser({ id: session.user.id, name: result.data.name, email: result.data.email })
+              }
             }
           } catch (error) {
             console.error('Profile fetch error:', error)
-            setUser({ id: session.user.id, email: session.user.email })
+            if (isMounted) setUser({ id: session.user.id, email: session.user.email })
           }
+        } else {
+          // Unauthenticated with splash=true
+          if (isMounted) setIsChecking(false)
         }
-        // If unauthenticated with splash=true, redirect to /auth happens in splash
       } catch (error) {
         console.error('Auth check error:', error)
+        if (isMounted) setIsChecking(false)
       }
     }
 
     // Fetch cafeterias from database
     const fetchCafeterias = async () => {
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Cafeterias fetch timeout')), 10000)
-        )
         const result = await Promise.race([
           supabase
             .from('cafeterias')
             .select('name, image_url')
             .order('name', { ascending: false }),
-          timeoutPromise
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Cafeterias fetch timeout')), 8000))
         ]) as any
 
-        if (result.error) {
-          console.error('Cafeterias fetch error:', result.error)
-        } else if (result.data) {
-          const cafeList = result.data.map((cafe: any) => {
-            let imageUrl = cafe.image_url
-            if (!imageUrl) {
-              if (cafe.name === 'Main Block Cafeteria') {
-                imageUrl = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&h=400&fit=crop'
-              } else {
-                imageUrl = `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+        if (isMounted) {
+          if (result.error) {
+            console.error('Cafeterias fetch error:', result.error)
+            setRestaurants([])
+          } else if (result.data) {
+            const cafeList = result.data.map((cafe: any) => {
+              let imageUrl = cafe.image_url
+              if (!imageUrl) {
+                if (cafe.name === 'Main Block Cafeteria') {
+                  imageUrl = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&h=400&fit=crop'
+                } else {
+                  imageUrl = `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
+                }
               }
-            }
-            return {
-              name: cafe.name,
-              image_url: cafe.image_url,
-              image: imageUrl
-            }
-          })
-          setRestaurants(cafeList)
+              return {
+                name: cafe.name,
+                image_url: cafe.image_url,
+                image: imageUrl
+              }
+            })
+            setRestaurants(cafeList)
+          }
         }
       } catch (error) {
         console.error('Cafeterias fetch error:', error)
+        if (isMounted) setRestaurants([])
       }
     }
 
     checkAuth()
     fetchCafeterias()
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   async function handleLogout() {
