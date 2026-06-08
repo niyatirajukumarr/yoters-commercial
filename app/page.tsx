@@ -689,7 +689,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', marginBottom: 14 }} onClick={() => scrollTo('hero')}>
                 <img src="/logo.png" alt="Yoters" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#E8334A' }}>Yoters</span>
+                  <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: 'white' }}>Yoters</span>
                 </div>
               </div>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, maxWidth: 260, marginBottom: 24 }}>Skip the queue. Pre-book your meal. Walk in, pick up, and enjoy your break.</p>
@@ -707,10 +707,6 @@ export default function LandingPage() {
               ))}
               <Link href="/browse" className="glitch" data-text="Browse Cafeterias"
                 style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Cafeterias</Link>
-              <Link href="/vendor/login"
-                style={{ fontSize: 13, color: 'white', fontWeight: 600, display: 'inline-block', marginTop: 4, padding: '8px 16px', background: '#E8334A', borderRadius: 8, textDecoration: 'none' }}>
-                🔐 Vendor Login
-              </Link>
               <button className="footer-back-btn" onClick={() => scrollTo('hero')}>↑ Back to Top</button>
             </div>
             <div>
