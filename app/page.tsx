@@ -97,7 +97,7 @@ export default function LandingPage() {
           supabase
             .from('cafeterias')
             .select('name, image_url')
-            .order('name', { ascending: false }),
+            .order('name', { ascending: true }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Cafeterias fetch timeout')), 8000))
         ]) as any
 

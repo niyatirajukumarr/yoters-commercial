@@ -60,6 +60,7 @@ export default function AdminDashboard() {
       const { data: cafsData, error: cafsError } = await supabase
         .from('cafeterias')
         .select('id, name, upi_id')
+        .order('name', { ascending: true })
 
       if (cafsError) throw cafsError
 
