@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
+import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
@@ -224,7 +225,7 @@ export default function StudentHome() {
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      <Link href={`/mobile/order/${c.id}`}>
+                      <Link href={`/mobile/order/${generateSlug(c.name)}`}>
                         <button className="cafe-see-menu-btn">
                           See Full Menu →
                         </button>

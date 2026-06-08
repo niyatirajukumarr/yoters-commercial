@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
+import { generateSlug } from '@/lib/utils/slug'
 import { X } from 'lucide-react'
 
 interface CafeteriaWithQueue extends Cafeteria {
@@ -224,7 +225,7 @@ export default function MobileSearch() {
                         {c.queue?.queue_count ?? 0} waiting
                       </span>
                     </div>
-                    <Link href={`/mobile/order/${c.id}`}>
+                    <Link href={`/mobile/order/${generateSlug(c.name)}`}>
                       <button className="mobile-btn mobile-btn-primary" style={{ padding: '10px 14px', fontSize: 13 }}>
                         Order
                       </button>
