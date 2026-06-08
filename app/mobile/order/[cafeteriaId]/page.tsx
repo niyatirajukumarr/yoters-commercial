@@ -588,11 +588,11 @@ export default function CafeteriaPage() {
             position: 'relative',
             minHeight: 'calc(100vh - 200px)'
           }}>
-            {/* Overlay */}
+            {/* Overlay - darker to show image better */}
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,248,245,0.88) 100%)',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.75) 0%, rgba(255,248,245,0.65) 100%)',
               pointerEvents: 'none'
             }} />
 
