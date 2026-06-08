@@ -225,7 +225,6 @@ export default function CafeteriaPage() {
 
   const handleAddItem = (item: MenuItem) => {
     addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
-    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100)
   }
 
   const handlePlaceOrder = async () => {
