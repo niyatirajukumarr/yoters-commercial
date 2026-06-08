@@ -587,12 +587,12 @@ export default function LandingPage() {
             <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
               {steps.map((step, i) => (
                 <motion.div key={i} className="how-card"
-                  style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0 }}
-                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                  style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0, cursor: 'pointer' }}
+                  initial={{ opacity: 0, y: 60, scale: 0.9 }}
                   whileInView={{ opacity: 1, y: i === 1 ? 24 : i === 2 ? 48 : 0, scale: 1 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22,1,0.36,1] }}
-                  whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 8, scale: 1.02, transition: { duration: 0.2 } }}>
+                  viewport={{ once: true, margin: '-80px' }}
+                  transition={{ duration: 0.8, delay: i * 0.15, ease: [0.23, 1, 0.32, 1] }}
+                  whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 12, scale: 1.04, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', transition: { duration: 0.3 } }}>
                   <span style={{ fontSize: 52, marginBottom: 20, display: 'block' }}>{step.img}</span>
                   <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 12 }}>STEP {step.n}</div>
                   <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 10 }}>{step.title}</h3>
