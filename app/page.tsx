@@ -78,7 +78,7 @@ export default function LandingPage() {
           supabase
             .from('cafeterias')
             .select('name, image_url')
-            .order('name'),
+            .order('name', { ascending: false }),
           timeoutPromise
         ]) as any
 
