@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue } from '@/lib/types'
+import { generateSlug } from '@/lib/utils/slug'
 import { Clock, Users } from 'lucide-react'
 
 interface CafeteriaWithQueue extends Cafeteria {
@@ -115,8 +116,9 @@ export default function MobileHome() {
         ) : (
           filtered.map(cafe => {
             const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)
+            const slug = generateSlug(cafe.name)
             return (
-              <Link key={cafe.id} href={`/mobile/order/${cafe.id}`} style={{ textDecoration: 'none' }}>
+              <Link key={cafe.id} href={`/mobile/order/${slug}`} style={{ textDecoration: 'none' }}>
                 <div className="cafe-item">
                   <div className="cafe-image">{cafe.image_emoji}</div>
                   <div className="cafe-info">

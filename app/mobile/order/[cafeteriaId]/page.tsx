@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { TokenTicket } from '@/components/TokenTicket'
+import { generateSlug } from '@/lib/utils/slug'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, Users, ShoppingBag, User } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 
@@ -62,7 +63,10 @@ export default function CafeteriaPage() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const cafeteriaId = params.cafeteriaId as string
+  const slugOrId = params.cafeteriaId as string
+
+  // State for slug-to-ID conversion
+  const [cafeteriaId, setCafeteriaId] = useState<string>('')
 
   // Core state
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
@@ -71,6 +75,36 @@ export default function CafeteriaPage() {
   const [selectedCategory, setSelectedCategory] = useState('Meals')
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
+
+  // Convert slug to ID if needed
+  useEffect(() => {
+    const convertSlugToId = async () => {
+      // Check if it's already a UUID (contains dashes and is 36 chars)
+      if (slugOrId.includes('-') && slugOrId.length === 36) {
+        setCafeteriaId(slugOrId)
+        return
+      }
+
+      // It's a slug, fetch all cafeterias and find matching ID
+      try {
+        const { data } = await supabase.from('cafeterias').select('id, name')
+        if (data) {
+          const matching = data.find(c => generateSlug(c.name) === slugOrId)
+          if (matching) {
+            setCafeteriaId(matching.id)
+          } else {
+            console.error('Cafeteria not found for slug:', slugOrId)
+            router.push('/mobile')
+          }
+        }
+      } catch (error) {
+        console.error('Error converting slug to ID:', error)
+        router.push('/mobile')
+      }
+    }
+
+    convertSlugToId()
+  }, [slugOrId, router])
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<Tab>('home')
