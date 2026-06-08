@@ -423,8 +423,12 @@ export default function LandingPage() {
             </div>
           </div>
           <ul className="lp-nav-links">
-            {['Home', 'About', 'Contact'].map(item => (
-              <li key={item}><a className="glitch" data-text={item} onClick={() => scrollTo(item.toLowerCase())}>{item}</a></li>
+            {[
+              { label: 'How', id: 'howitworks' },
+              { label: 'Why', id: 'why' },
+              { label: 'Contact', id: 'contact' }
+            ].map(item => (
+              <li key={item.id}><a className="glitch" data-text={item.label} onClick={() => scrollTo(item.id)}>{item.label}</a></li>
             ))}
           </ul>
           <div className="lp-nav-right">
@@ -452,12 +456,16 @@ export default function LandingPage() {
           {menuOpen && (
             <motion.div className="mobile-menu-overlay"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {['Home', 'About', 'Contact'].map(item => (
-                <motion.a key={item} className="glitch" data-text={item}
+              {[
+                { label: 'How', id: 'howitworks' },
+                { label: 'Why', id: 'why' },
+                { label: 'Contact', id: 'contact' }
+              ].map(item => (
+                <motion.a key={item.id} className="glitch" data-text={item.label}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  onClick={() => scrollTo(item.toLowerCase())}
+                  onClick={() => scrollTo(item.id)}
                   style={{ fontFamily: 'Playfair Display, serif', fontSize: 40, fontWeight: 700, color: '#1a1f2e', cursor: 'pointer' }}>
-                  {item}
+                  {item.label}
                 </motion.a>
               ))}
               <button className="lp-join-btn" onClick={() => { scrollTo('contact'); setMenuOpen(false) }}>Join Now!</button>
@@ -565,7 +573,7 @@ export default function LandingPage() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section className="lp-section" style={{ padding: '100px 48px', background: 'white' }}>
+        <section id="howitworks" className="lp-section" style={{ padding: '100px 48px', background: 'white' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>How It Works</motion.p>
@@ -614,7 +622,7 @@ export default function LandingPage() {
         </section>
 
         {/* WHY */}
-        <section className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
+        <section id="why" className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Why Choose Us</motion.p>
@@ -689,9 +697,13 @@ export default function LandingPage() {
             </div>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginBottom: 20 }}>Navigation</p>
-              {['Home', 'About', 'Contact'].map(item => (
-                <a key={item} className="glitch" data-text={item} onClick={() => scrollTo(item.toLowerCase())}
-                  style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500, marginBottom: 12, display: 'block' }}>{item}</a>
+              {[
+                { label: 'How', id: 'howitworks' },
+                { label: 'Why', id: 'why' },
+                { label: 'Contact', id: 'contact' }
+              ].map(item => (
+                <a key={item.id} className="glitch" data-text={item.label} onClick={() => scrollTo(item.id)}
+                  style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500, marginBottom: 12, display: 'block' }}>{item.label}</a>
               ))}
               <Link href="/browse" className="glitch" data-text="Browse Cafeterias"
                 style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Cafeterias</Link>
