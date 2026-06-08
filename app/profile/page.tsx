@@ -174,8 +174,65 @@ export default function ProfilePage() {
 
       {/* Hero */}
       <div style={{ padding: '8px 24px 28px' }}>
-        <div style={{ fontSize: 32, fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 }}>{user?.name || 'User'}</div>
-        <div style={{ fontSize: 15, color: '#666', marginTop: 6 }}>{user?.phone ? `+91 - ${user.phone}` : user?.email || ''}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 }}>{user?.name || 'User'}</div>
+            <div style={{ fontSize: 15, color: '#666', marginTop: 6 }}>{user?.phone ? `+91 - ${user.phone}` : user?.email || ''}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={openEdit}
+              style={{
+                padding: '8px 16px',
+                background: '#E8334A',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: '8px 16px',
+                background: '#f0f0f0',
+                color: '#333',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Profile Details Card */}
+        <div style={{ background: 'white', borderRadius: 14, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#888', letterSpacing: 1, marginBottom: 14, textTransform: 'uppercase' }}>Your Profile</div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Name</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{user?.name || '—'}</div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Phone</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{user?.phone || '—'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Email</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{user?.email || '—'}</div>
+          </div>
+        </div>
       </div>
 
       {/* Quick tiles */}
