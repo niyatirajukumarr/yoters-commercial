@@ -203,7 +203,7 @@ export default function CafeteriaPage() {
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
         .from('orders')
-        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes, is_shared: false }])
+        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes }])
         .select()
         .single()
 
@@ -239,7 +239,12 @@ export default function CafeteriaPage() {
 
   const handleShareOrder = async (share: boolean) => {
     if (share) {
-      await supabase.from('orders').update({ is_shared: true }).eq('id', orderId)
+      try {
+        // TODO: Add is_shared column to orders table in Supabase
+        // await supabase.from('orders').update({ is_shared: true }).eq('id', orderId)
+      } catch (error) {
+        console.error('Error updating order:', error)
+      }
     }
     setShowSharingModal(false)
     setStep('payment')
