@@ -593,10 +593,10 @@ export default function LandingPage() {
               {steps.map((step, i) => (
                 <motion.div key={i} className="how-card"
                   style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0, cursor: 'pointer', boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)' }}
-                  initial={{ opacity: 0, x: 100, y: 20 }}
+                  initial={{ opacity: 0, x: -100, y: 20 }}
                   whileInView={{ opacity: 1, x: 0, y: i === 1 ? 24 : i === 2 ? 48 : 0 }}
                   viewport={{ once: true, margin: '-100px' }}
-                  transition={{ duration: 0.8, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 16, scale: 1.06, boxShadow: '0 24px 48px rgba(232,51,74,0.15)', transition: { duration: 0.35 } }}>
                   <span style={{ fontSize: 60, marginBottom: 24, display: 'block', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }}>{step.img}</span>
                   <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 14, textTransform: 'uppercase' }}>Step {step.n}</div>
@@ -641,10 +641,10 @@ export default function LandingPage() {
             <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }}>
               {whyCards.map((card, i) => (
                 <motion.div key={i} className="why-card"
-                  initial={{ opacity: 0, x: 100, y: 20 }}
+                  initial={{ opacity: 0, x: -100, y: 20 }}
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   viewport={{ once: true, margin: '-80px' }}
-                  transition={{ duration: 0.8, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ scale: 1.03, y: -6, transition: { duration: 0.3 } }}
                   style={{ boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)', background: 'white' }}>
                   <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 64, fontWeight: 700, color: 'rgba(232,51,74,0.08)', lineHeight: 1, marginBottom: 20 }}>{card.n}</div>
