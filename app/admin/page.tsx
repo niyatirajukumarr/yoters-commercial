@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [payoutData, setPayoutData] = useState<PayoutData | null>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [processingPayout, setProcessingPayout] = useState(false)
+  const [payoutMessage, setPayoutMessage] = useState('')
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -87,6 +89,50 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/auth')
+  }
+
+  const handleSendPayout = async () => {
+    if (!payoutData || payoutData.pending_payout <= 0) {
+      alert('No pending payouts')
+      return
+    }
+
+    if (!confirm(`Send ₹${payoutData.pending_payout.toLocaleString()} to ${payoutData.upi_id}?`)) {
+      return
+    }
+
+    setProcessingPayout(true)
+    setPayoutMessage('')
+
+    try {
+      const response = await fetch('/api/admin/initiate-payout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendorName: payoutData.vendor_name,
+          upiId: payoutData.upi_id,
+          amount: payoutData.pending_payout
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Payout failed')
+      }
+
+      setPayoutMessage(`✅ Payout sent! ID: ${data.payout_id}`)
+      setProcessingPayout(false)
+
+      // Refresh data after 2 seconds
+      setTimeout(() => {
+        fetchPayoutData()
+        setPayoutMessage('')
+      }, 2000)
+    } catch (error) {
+      setPayoutMessage(`❌ Error: ${error instanceof Error ? error.message : 'Payout failed'}`)
+      setProcessingPayout(false)
+    }
   }
 
   if (loading) {
@@ -168,22 +214,29 @@ export default function AdminDashboard() {
           )}
 
           <button
-            disabled
+            onClick={handleSendPayout}
+            disabled={processingPayout || !payoutData || payoutData.pending_payout <= 0}
             style={{
               width: '100%',
               padding: '12px',
-              background: '#ccc',
-              color: '#666',
+              background: payoutData?.pending_payout ? '#E8334A' : '#ccc',
+              color: 'white',
               border: 'none',
               borderRadius: 8,
-              cursor: 'not-allowed',
+              cursor: payoutData?.pending_payout && !processingPayout ? 'pointer' : 'not-allowed',
               fontWeight: 600,
-              marginTop: 20
+              marginTop: 20,
+              fontSize: 14
             }}
-            title="Auto-triggers after 2 days of payment settlement"
           >
-            ⏰ Auto-Payout (After 2 Days)
+            {processingPayout ? '⏳ Processing...' : `💰 Send ₹${payoutData?.pending_payout.toLocaleString() || 0}`}
           </button>
+
+          {payoutMessage && (
+            <div style={{ marginTop: 12, padding: 12, background: payoutMessage.includes('✅') ? '#e8f5e9' : '#ffebee', borderRadius: 8, color: payoutMessage.includes('✅') ? '#2e7d32' : '#c62828', fontSize: 12, fontWeight: 600 }}>
+              {payoutMessage}
+            </div>
+          )}
         </div>
       )}
 
