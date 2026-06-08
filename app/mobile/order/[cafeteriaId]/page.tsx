@@ -586,7 +586,8 @@ export default function CafeteriaPage() {
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed',
             position: 'relative',
-            minHeight: 'calc(100vh - 200px)'
+            minHeight: '100vh',
+            paddingBottom: 100
           }}>
             {/* Overlay - darker to show image better */}
             <div style={{
@@ -597,7 +598,7 @@ export default function CafeteriaPage() {
             }} />
 
             {/* Content */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'relative', zIndex: 1, paddingBottom: 20 }}>
               {friendsOrders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No shared orders yet fr fr</div>
               ) : (
