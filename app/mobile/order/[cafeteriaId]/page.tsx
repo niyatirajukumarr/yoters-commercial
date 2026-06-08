@@ -91,6 +91,7 @@ export default function CafeteriaPage() {
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [showCartSheet, setShowCartSheet] = useState(false)
 
   const [showTicket, setShowTicket] = useState(false)
   const [tokenData, setTokenData] = useState<{ token: number; items: Array<{ name: string; quantity: number }>; total: number; id: string } | null>(null)
@@ -565,20 +566,48 @@ export default function CafeteriaPage() {
             })}
           </div>
 
-          {/* Sticky Cart */}
-          {itemCount > 0 && (
-            <div style={{ position: 'fixed', bottom: 70, left: 0, right: 0, background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: 'var(--mobile-spacing)', display: 'flex', gap: 12, alignItems: 'center', zIndex: 99 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>₹{total}</div>
+          {/* Cart Sheet */}
+          {showCartSheet && (
+            <>
+              <div onClick={() => setShowCartSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 36px', maxHeight: '72vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUpMobile 0.3s ease' }}>
+                <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Your Cart 🛒</div>
+                {cartItem.map(item => (
+                  <div key={item.menuId} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
+                    <div style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{item.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', minWidth: 42, textAlign: 'right' }}>₹{item.price * item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</button>
+                      <span style={{ fontSize: 14, fontWeight: 700, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</button>
+                      <button onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17 }}>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{total}</span>
+                </div>
+                <button onClick={() => { setShowCartSheet(false); setStep('details') }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  Proceed to Checkout →
+                </button>
               </div>
-              <button
-                onClick={() => setStep('details')}
-                style={{ flex: 1, padding: '14px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Go to Cart →
-              </button>
-            </div>
+            </>
+          )}
+
+          {/* Floating Cart FAB */}
+          {itemCount > 0 && (
+            <button onClick={() => setShowCartSheet(true)} style={{ position: 'fixed', bottom: 90, right: 20, zIndex: 200, background: 'linear-gradient(135deg,#E8334A,#c0202e)', color: 'white', border: 'none', borderRadius: 50, padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 24px rgba(232,51,74,0.5)', fontFamily: 'var(--font-body)' }}>
+              <div style={{ position: 'relative' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <span style={{ position: 'absolute', top: -8, right: -8, background: 'white', color: '#E8334A', borderRadius: '50%', width: 18, height: 18, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{itemCount}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>₹{total}</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
+            </button>
           )}
         </div>
       )}
