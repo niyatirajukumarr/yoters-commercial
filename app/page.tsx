@@ -313,10 +313,11 @@ export default function LandingPage() {
         .hamburger-btn { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
         .hamburger-btn span { display: block; width: 22px; height: 2px; background: #1a1f2e; margin: 5px 0; border-radius: 2px; }
 
-        .btn-primary { padding: 15px 34px; background: #E8334A; color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
-        .btn-primary:hover { background: #c9293f; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,51,74,0.3); }
-        .btn-outline { padding: 15px 34px; background: transparent; color: #1a1f2e; border: 1.5px solid rgba(26,31,46,0.2); font-family: 'DM Sans', sans-serif; font-size: 15px; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
-        .btn-outline:hover { border-color: #E8334A; color: #E8334A; }
+        .btn-primary { padding: 16px 40px; background: #E8334A; color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); box-shadow: 0 4px 12px rgba(232,51,74,0.15); letter-spacing: 0.3px; }
+        .btn-primary:hover { background: #d42a40; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(232,51,74,0.35); }
+        .btn-primary:active { transform: translateY(-1px); }
+        .btn-outline { padding: 16px 40px; background: transparent; color: #1a1f2e; border: 1.5px solid rgba(26,31,46,0.2); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); letter-spacing: 0.3px; }
+        .btn-outline:hover { border-color: #E8334A; color: #E8334A; background: rgba(232,51,74,0.02); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(232,51,74,0.1); }
 
         .tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #E8334A; animation: pulse 2s infinite; display:inline-block; }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
@@ -344,9 +345,9 @@ export default function LandingPage() {
         .cafe-carousel-wrapper { overflow-x: auto; overflow-y: hidden; margin-bottom: 20px; width: 100%; max-width: 100%; position: relative; min-height: 320px; padding: 0; display: block !important; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         .cafe-carousel-scroll { display: flex; gap: 20px; width: max-content; padding: 0 48px; will-change: transform; }
 
-        .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.08); flex-shrink: 0; }
-        .cafe-carousel-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 24px 48px rgba(232,51,74,0.15), 0 0 0 1px rgba(232,51,74,0.1); }
-        .cafe-carousel-card:hover img { filter: brightness(1.1); }
+        .cafe-carousel-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 12px 40px rgba(26,31,46,0.08); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
+        .cafe-carousel-card:hover { transform: translateY(-12px) scale(1.03); box-shadow: 0 24px 56px rgba(232,51,74,0.2), 0 0 0 1.5px rgba(232,51,74,0.15); }
+        .cafe-carousel-card:hover img { filter: brightness(1.15) contrast(1.05); }
         @media (max-width: 768px) { .cafe-carousel-wrapper { margin-bottom: 100px; padding: 30px 0; } }
 
         .rest-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 28px 32px; display: flex; align-items: center; gap: 28px; cursor: pointer; }
@@ -474,8 +475,8 @@ export default function LandingPage() {
         </AnimatePresence>
 
         {/* HERO */}
-        <section id="hero" className="lp-hero" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', padding: '120px 48px 80px', background: '#fdf8f5' }}>
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(232,51,74,0.15) 1.5px, transparent 1.5px)', backgroundSize: '36px 36px', maskImage: 'radial-gradient(ellipse 70% 70% at 80% 50%, black 0%, transparent 100%)', zIndex: 0 }} />
+        <section id="hero" className="lp-hero" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', padding: '120px 48px 80px', background: 'linear-gradient(135deg, #fdf8f5 0%, #fff8f0 50%, #fdf8f5 100%)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 180% 180% at 100% 40%, rgba(232,51,74,0.08) 0%, transparent 50%)', zIndex: 0 }} />
           <video
             ref={videoRef}
             autoPlay
@@ -485,49 +486,50 @@ export default function LandingPage() {
             webkit-playsinline="true"
             preload="auto"
             style={{
-              position: 'absolute', right: 0, top: 0,
-              width: '80%', height: '100%',
+              position: 'absolute', right: -40, top: 0,
+              width: '85%', height: '100%',
               objectFit: 'cover', zIndex: 0,
-              opacity: 0.65,
-              maskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to left, black 20%, rgba(0,0,0,0.5) 55%, transparent 100%)',
+              opacity: 0.7,
+              maskImage: 'linear-gradient(to left, black 15%, rgba(0,0,0,0.6) 50%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to left, black 15%, rgba(0,0,0,0.6) 50%, transparent 100%)',
               pointerEvents: 'none',
-              display: 'block'
+              display: 'block',
+              filter: 'brightness(1.05) contrast(1.1)'
             } as any}
           >
             <source src="/hero-video.mp4" type="video/mp4" />
           </video>
-          <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 660, y: heroY, opacity: heroOpacity }}>
+          <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 680, y: heroY, opacity: heroOpacity }}>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff0f2', border: '1px solid #ffd6dc', color: '#E8334A', padding: '6px 16px', borderRadius: 20, marginBottom: 28, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,51,74,0.1)', border: '1px solid rgba(232,51,74,0.25)', color: '#E8334A', padding: '8px 18px', borderRadius: 20, marginBottom: 32, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', backdropFilter: 'blur(8px)' }}>
               <span className="tag-dot" /> Now accepting early access
             </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: [0.22,1,0.36,1] }}
-              style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(44px, 6.5vw, 84px)', fontWeight: 700, lineHeight: 1.02, letterSpacing: -1.5, color: '#1a1f2e', marginBottom: 20 }}>
-              Skip the Cafeteria<br /><em style={{ fontStyle: 'italic', color: '#E8334A' }}>Rush.</em>
+            <motion.h1 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22,1,0.36,1] }}
+              style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 700, lineHeight: 1, letterSpacing: -2, color: '#1a1f2e', marginBottom: 24 }}>
+              Skip the<br /><em style={{ fontStyle: 'italic', color: '#E8334A', fontWeight: 700 }}>Cafeteria Rush.</em>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
-              style={{ fontSize: 18, color: '#4a5068', lineHeight: 1.72, maxWidth: 500, marginBottom: 36 }}>
-              Pre-book meals from your college cafeteria and pick them up without waiting in lines. Your food. Ready when you are.
+              style={{ fontSize: 20, color: '#5a6078', lineHeight: 1.8, maxWidth: 520, marginBottom: 40, fontWeight: 400 }}>
+              Pre-book your meal before your break. Walk in, pick up, leave. Zero queues. Fresh food. Every time.
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-              style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button className="btn-primary" onClick={() => scrollTo('contact')}>Get Early Access</button>
-              <button className="btn-outline" onClick={() => scrollTo('about')}>Learn More</button>
+              style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button className="btn-primary" onClick={() => scrollTo('contact')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
+              <button className="btn-outline" onClick={() => scrollTo('howitworks')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Learn How →</button>
             </motion.div>
           </motion.div>
         </section>
 
         {/* OUR CAFETERIAS - FEATURED RESTAURANTS */}
-        <section className="lp-section" style={{ padding: '40px 48px 20px 48px', background: '#fdf8f5' }}>
+        <section className="lp-section" style={{ padding: '80px 48px 60px 48px', background: '#fdf8f5', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Our Cafeterias</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(28px,3.5vw,48px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 10 }}>
-                Campus Cafeterias,<br /><span style={{ color: '#E8334A', fontStyle: 'italic' }}>Live & Ready.</span>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Campus Cafeterias</motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Every Cafeteria.<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>One App.</span>
               </motion.h2>
-              <motion.p variants={fadeUp} style={{ fontSize: 16, color: '#8a90a8', maxWidth: 520, lineHeight: 1.7, marginBottom: 52 }}>
-                Real-time queue visibility across every cafeteria on campus. Pre-order from any, skip the line at all.
+              <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
+                Browse all campus cafeterias in real-time. Pre-order your meal with just a few taps, and pick it up when it's ready.
               </motion.p>
             </motion.div>
 
@@ -536,67 +538,70 @@ export default function LandingPage() {
               <div className="cafe-carousel-wrapper" ref={carouselWrapperRef} onMouseEnter={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'paused' }} onMouseLeave={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'running' }}>
                 <motion.div className="cafe-carousel-scroll" animate={{ x: [0, -500] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
                   {[...restaurants, ...restaurants].map((r, i) => (
-                    <div key={i}
+                    <motion.div key={i}
                       className="cafe-carousel-card"
-                      style={{ position: 'relative', minWidth: 300, height: 280, borderRadius: 20, overflow: 'hidden', cursor: 'pointer' }}>
+                      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                      style={{ position: 'relative', minWidth: 320, height: 300, borderRadius: 24, overflow: 'hidden', cursor: 'pointer', boxShadow: '0 12px 40px rgba(26,31,46,0.08)', border: '1px solid rgba(26,31,46,0.05)' }}>
                       {/* Background Image */}
-                      <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={r.image} alt={r.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} />
 
-                      {/* Dark Overlay Gradient */}
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)' }} />
+                      {/* Premium Gradient Overlay */}
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.45) 100%)' }} />
 
                       {/* Content - Just the name */}
-                      <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 28, color: 'white' }}>
-                        <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, lineHeight: 1.2, maxWidth: '90%' }}>
-                          {r.name}
-                        </h3>
+                      <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 32, color: 'white' }}>
+                        <div>
+                          <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, lineHeight: 1.2, maxWidth: '95%', letterSpacing: -0.5 }}>
+                            {r.name}
+                          </h3>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </motion.div>
               </div>
             ) : (
-              <div style={{ height: 320, background: '#f0f0f0', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 80 }}>
-                <p style={{ color: '#999' }}>Loading cafeterias...</p>
+              <div style={{ height: 320, background: '#f5f1ed', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 60 }}>
+                <p style={{ color: '#999', fontSize: 16 }}>Loading cafeterias...</p>
               </div>
             )}
 
             {/* CTA Button - Separate Below */}
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-              <Link href="/browse" style={{ display: 'inline-block', padding: '14px 32px', background: '#E8334A', color: 'white', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none', transition: 'all 0.3s', letterSpacing: 0.5 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(232,51,74,0.3)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
-                Wanna know more? Start ordering →
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ marginTop: 48 }}>
+              <Link href="/browse" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 40px', background: '#E8334A', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 16, textDecoration: 'none', transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)', letterSpacing: 0.5 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(232,51,74,0.35)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(232,51,74,0.15)' }}>
+                Wanna start ordering? →
               </Link>
             </motion.div>
           </div>
         </section>
 
         {/* HOW IT WORKS */}
-        <section id="howitworks" className="lp-section" style={{ padding: '100px 48px', background: 'white' }}>
+        <section id="howitworks" className="lp-section" style={{ padding: '100px 48px', background: '#faf9f7', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>How It Works</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(28px,3.5vw,48px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 10 }}>
-                Simple. Fast.<br /><span style={{ color: '#E8334A', fontStyle: 'italic' }}>Delicious.</span>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>How It Works</motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Three Steps to<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Zero Waiting.</span>
               </motion.h2>
-              <motion.p variants={fadeUp} style={{ fontSize: 16, color: '#8a90a8', maxWidth: 520, lineHeight: 1.7, marginBottom: 52 }}>
-                Three steps between you and a hot meal — no queues, no guessing, no wasted time.
+              <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
+                Browse, order, and pick up — all before your break even starts. Simple. Fast. Fresh.
               </motion.p>
             </motion.div>
-            <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+            <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }}>
               {steps.map((step, i) => (
                 <motion.div key={i} className="how-card"
-                  style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0, cursor: 'pointer' }}
+                  style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0, cursor: 'pointer', boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)' }}
                   initial={{ opacity: 0, y: 80, scale: 0.85 }}
                   whileInView={{ opacity: 1, y: i === 1 ? 24 : i === 2 ? 48 : 0, scale: 1 }}
                   viewport={{ once: true, margin: '-100px' }}
                   transition={{ duration: 0.9, delay: i * 0.2, ease: [0.34, 1.56, 0.64, 1] }}
                   whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 16, scale: 1.06, boxShadow: '0 24px 48px rgba(232,51,74,0.15)', transition: { duration: 0.35 } }}>
-                  <span style={{ fontSize: 52, marginBottom: 20, display: 'block' }}>{step.img}</span>
-                  <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 12 }}>STEP {step.n}</div>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 10 }}>{step.title}</h3>
-                  <p style={{ fontSize: 14, color: '#8a90a8', lineHeight: 1.72 }}>{step.desc}</p>
+                  <span style={{ fontSize: 60, marginBottom: 24, display: 'block', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }}>{step.img}</span>
+                  <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 14, textTransform: 'uppercase' }}>Step {step.n}</div>
+                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#1a1f2e', marginBottom: 12, lineHeight: 1.3 }}>{step.title}</h3>
+                  <p style={{ fontSize: 15, color: '#7a8296', lineHeight: 1.8, fontWeight: 400 }}>{step.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -622,24 +627,24 @@ export default function LandingPage() {
         </section>
 
         {/* WHY */}
-        <section id="why" className="lp-section" style={{ padding: '60px 48px', background: '#fdf8f5' }}>
+        <section id="why" className="lp-section" style={{ padding: '100px 48px', background: '#fdf8f5', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 14 }}>Why Choose Us</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(28px,3.5vw,48px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 10 }}>
-                Why it <em style={{ fontStyle: 'italic', color: '#E8334A' }}>Matters</em>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Why Choose Us</motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Why Yoters<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Changes Everything.</span>
               </motion.h2>
-              <motion.p variants={fadeUp} style={{ fontSize: 16, color: '#8a90a8', maxWidth: 520, lineHeight: 1.7, marginBottom: 52 }}>
-                College breaks are short, cafeteria crowds are large, and food is often wasted. Pre-booking changes all of that.
+              <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
+                Every break is precious. Every minute counts. Pre-order ensures you never waste another second waiting in line.
               </motion.p>
             </motion.div>
-            <motion.div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}
+            <motion.div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }}
               initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               {whyCards.map((card, i) => (
-                <motion.div key={i} className="why-card" variants={fadeUp} whileHover={{ scale: 1.02, y: -4 }}>
-                  <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 56, fontWeight: 700, color: 'rgba(232,51,74,0.1)', lineHeight: 1, marginBottom: 14 }}>{card.n}</div>
-                  <h3 style={{ fontSize: 17, fontWeight: 600, color: '#1a1f2e', marginBottom: 8 }}>{card.title}</h3>
-                  <p style={{ fontSize: 14, color: '#8a90a8', lineHeight: 1.72 }}>{card.desc}</p>
+                <motion.div key={i} className="why-card" variants={fadeUp} whileHover={{ scale: 1.03, y: -6 }} style={{ boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)', background: 'white' }}>
+                  <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 64, fontWeight: 700, color: 'rgba(232,51,74,0.08)', lineHeight: 1, marginBottom: 20 }}>{card.n}</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 12, lineHeight: 1.3, fontFamily: 'Playfair Display, serif' }}>{card.title}</h3>
+                  <p style={{ fontSize: 15, color: '#7a8296', lineHeight: 1.8, fontWeight: 400 }}>{card.desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -647,19 +652,20 @@ export default function LandingPage() {
         </section>
 
         {/* CTA */}
-        <section id="contact" className="lp-section" style={{ padding: '100px 48px', background: '#1a1f2e', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 640, margin: '0 auto' }}
+        <section id="contact" className="lp-section" style={{ padding: '120px 48px', background: 'linear-gradient(135deg, #1a1f2e 0%, #0f1219 100%)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.15) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+          <div style={{ position: 'absolute', bottom: '-15%', left: '-8%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+          <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 700, margin: '0 auto' }}
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Get Started</motion.p>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4.5vw,58px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 16 }}>
-              Ready to <em style={{ fontStyle: 'italic', color: '#ff8fa3' }}>Skip the Line?</em>
+            <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#ff8fa3', marginBottom: 20 }}>Get Started Now</motion.p>
+            <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(36px,5vw,64px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 20, letterSpacing: -1 }}>
+              Skip the<br /><em style={{ fontStyle: 'italic', color: '#ff8fa3', fontWeight: 700 }}>Queue Forever.</em>
             </motion.h2>
-            <motion.p variants={fadeUp} style={{ fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 36 }}>
-              Join hundreds of students already on the waitlist. Be the first to pre-order when we launch on your campus.
+            <motion.p variants={fadeUp} style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginBottom: 48, fontWeight: 400 }}>
+              Join hundreds of students already pre-ordering their meals. Fresh food. Zero waiting. Every break.
             </motion.p>
-            <motion.div variants={scaleIn}>
-              <button className="btn-primary" style={{ padding: '16px 40px', fontSize: 16 }}
+            <motion.div variants={scaleIn} style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn-primary" style={{ padding: '18px 44px', fontSize: 17, fontWeight: 700 }}
                 onClick={() => router.push('/browse')}>
                 Start Ordering Now →
               </button>
