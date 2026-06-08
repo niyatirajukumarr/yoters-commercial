@@ -89,7 +89,7 @@ export default function LandingPage() {
             let imageUrl = cafe.image_url
             if (!imageUrl) {
               if (cafe.name === 'Main Block Cafeteria') {
-                imageUrl = 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=600&h=400&fit=crop'
+                imageUrl = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&h=400&fit=crop'
               } else {
                 imageUrl = `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1565299585323-38d6b0865b47' : '1568901346375-23c9450c58cd'}?w=500&h=400&fit=crop`
               }
