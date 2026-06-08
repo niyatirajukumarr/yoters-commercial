@@ -141,7 +141,9 @@ export default function AdminDashboard() {
         cafe.id === cafeId ? { ...cafe, upi_id: newUPI } : cafe
       ))
 
-      setEditingUPI({ ...editingUPI, [cafeId]: undefined })
+      const updatedEditingUPI = { ...editingUPI }
+      delete updatedEditingUPI[cafeId]
+      setEditingUPI(updatedEditingUPI)
       setPayoutMessage({ ...payoutMessage, [cafeId]: '✅ UPI ID updated!' })
 
       setTimeout(() => {
