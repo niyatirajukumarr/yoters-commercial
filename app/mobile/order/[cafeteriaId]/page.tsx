@@ -579,39 +579,58 @@ export default function CafeteriaPage() {
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>What Your Besties Are Ordering</div>
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>No cap, these orders are 🔥</div>
           </div>
-          <div style={{ padding: '16px' }}>
-            {friendsOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No shared orders yet fr fr</div>
-            ) : (
-              friendsOrders.map(order => (
-                <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{order.student_name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-                    {new Date(order.created_at).toLocaleDateString()}
+          <div style={{
+            padding: '16px',
+            backgroundImage: 'url(/friends-bg.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+            position: 'relative',
+            minHeight: 'calc(100vh - 200px)'
+          }}>
+            {/* Overlay */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,248,245,0.88) 100%)',
+              pointerEvents: 'none'
+            }} />
+
+            {/* Content */}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {friendsOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No shared orders yet fr fr</div>
+              ) : (
+                friendsOrders.map(order => (
+                  <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12, boxShadow: '0 4px 12px rgba(26,31,46,0.08)' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{order.student_name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </div>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>
+                      {order.items.map((item, idx) => (
+                        <div key={idx}>
+                          {item.quantity}x {item.name} • ₹{item.price * item.quantity}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        style={{ flex: 1, padding: 10, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                        onClick={() => { order.items.forEach(item => addItem(cafeteriaId, { menuId: item.name, name: item.name, price: item.price, quantity: item.quantity })); setActiveTab('home') }}
+                      >
+                        Copy Order 🔥
+                      </button>
+                      <button
+                        style={{ flex: 1, padding: 10, background: 'var(--surface2)', color: 'var(--accent)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        ❤️ Wishlist
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 13, marginBottom: 12 }}>
-                    {order.items.map((item, idx) => (
-                      <div key={idx}>
-                        {item.quantity}x {item.name} • ₹{item.price * item.quantity}
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      style={{ flex: 1, padding: 10, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => { order.items.forEach(item => addItem(cafeteriaId, { menuId: item.name, name: item.name, price: item.price, quantity: item.quantity })); setActiveTab('home') }}
-                    >
-                      Copy Order 🔥
-                    </button>
-                    <button
-                      style={{ flex: 1, padding: 10, background: 'var(--surface2)', color: 'var(--accent)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      ❤️ Wishlist
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
