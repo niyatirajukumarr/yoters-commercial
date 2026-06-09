@@ -328,6 +328,7 @@ export default function CafeteriaPage() {
       return mobileRegex.test(userAgent) || window.innerWidth < 768
     }
     if (isMobile()) {
+      clearCart()
       router.push(paymentUrl)
       return
     }
