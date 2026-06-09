@@ -110,7 +110,19 @@ export default function MobileHome() {
       {/* Cafeterias List */}
       <div style={{ padding: '0 16px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#8a90a8' }}>Loading cafeterias...</div>
+          [1,2,3].map(i => (
+            <div key={i} className="cafe-item" style={{ overflow: 'hidden' }}>
+              <div className="mobile-skeleton" style={{ height: 140, width: '100%' }} />
+              <div style={{ padding: 16, background: 'white' }}>
+                <div className="mobile-skeleton" style={{ height: 16, width: '60%', borderRadius: 6, marginBottom: 8 }} />
+                <div className="mobile-skeleton" style={{ height: 12, width: '40%', borderRadius: 6, marginBottom: 12 }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="mobile-skeleton" style={{ height: 24, width: 80, borderRadius: 6 }} />
+                  <div className="mobile-skeleton" style={{ height: 24, width: 80, borderRadius: 6 }} />
+                </div>
+              </div>
+            </div>
+          ))
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#8a90a8' }}>No cafeterias found</div>
         ) : (

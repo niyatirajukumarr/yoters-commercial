@@ -21,6 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="preconnect" href="https://qbvwcpjjattwebdzexni.supabase.co" />
+        <link rel="dns-prefetch" href="https://qbvwcpjjattwebdzexni.supabase.co" />
       </head>
       <body>{children}</body>
     </html>
