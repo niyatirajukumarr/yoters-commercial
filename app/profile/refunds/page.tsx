@@ -16,6 +16,7 @@ interface RefundOrder {
   cafeteria_id: string
   cafeteria_name?: string
   created_at: string
+  payment_status: string
 }
 
 export default function Refunds() {
@@ -33,7 +34,7 @@ export default function Refunds() {
         .from('orders')
         .select('*, cafeterias(name)')
         .eq('status', 'cancelled')
-        .eq('payment_status', 'paid')
+        .in('payment_status', ['paid', 'refund_initiated', 'refund_successful'])
         .eq('student_email', email ?? '')
         .order('denied_at', { ascending: false })
 
@@ -95,9 +96,19 @@ export default function Refunds() {
                 <div style={{ fontSize: 11, color: '#aaa' }}>
                   {refund.denied_at ? new Date(refund.denied_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#2e9e6b', background: '#e8f7f0', borderRadius: 20, padding: '3px 10px' }}>
-                  🔄 Refund Initiated
-                </div>
+                {refund.payment_status === 'refund_successful' ? (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#2e9e6b', background: '#e8f7f0', borderRadius: 20, padding: '3px 10px' }}>
+                    ✅ Refund Successful
+                  </div>
+                ) : refund.payment_status === 'refund_initiated' ? (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#d4821a', background: '#fff8ec', borderRadius: 20, padding: '3px 10px' }}>
+                    🔄 Refund Initiated
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#888', background: '#f5f5f5', borderRadius: 20, padding: '3px 10px' }}>
+                    ⏳ Processing
+                  </div>
+                )}
               </div>
             </div>
           ))

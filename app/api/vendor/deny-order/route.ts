@@ -68,12 +68,16 @@ export async function POST(req: NextRequest) {
 
     // Process refund if payment was made
     if (order.payment_status === 'paid' && order.razorpay_payment_id) {
+      // Mark as refund initiated immediately
+      await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
       try {
         await refundPayment(order.razorpay_payment_id, order.total_amount)
+        // Razorpay accepted the refund request — mark as successful
+        await supabase.from('orders').update({ payment_status: 'refund_successful' }).eq('id', orderId)
         console.log(`Refund processed for order ${orderId}`)
       } catch (refundError: any) {
         console.error('Refund processing error:', refundError)
-        // Continue with denial even if refund fails (can be retried manually)
+        // Keep as refund_initiated so it can be retried
       }
     }
 
