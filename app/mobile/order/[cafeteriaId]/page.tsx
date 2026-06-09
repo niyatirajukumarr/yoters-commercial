@@ -922,7 +922,7 @@ export default function CafeteriaPage() {
       {/* TAB NAVIGATION */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
         <button
-          onClick={() => router.push('/mobile')}
+          onClick={() => router.push('/browse')}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home
