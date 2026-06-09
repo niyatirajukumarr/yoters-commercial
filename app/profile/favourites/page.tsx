@@ -11,12 +11,10 @@ export default function FavouritesPage() {
   const { favourites, removeFavourite, isLoaded } = useFavourites()
 
   const handleReorder = (fav: typeof favourites[0]) => {
-    // Store reorder item so student page can pick it up
     sessionStorage.setItem('yoters_reorder', JSON.stringify({
-      cafeteriaId: fav.cafeteriaId,
-      item: { menu_item_id: fav.menuId, name: fav.name, price: fav.price, quantity: 1 }
+      menuId: fav.menuId, name: fav.name, price: fav.price, quantity: 1
     }))
-    router.push(`/student?cafeteria=${fav.cafeteriaId}&reorder=1`)
+    router.push(`/mobile/order/${fav.cafeteriaId}`)
   }
 
   return (

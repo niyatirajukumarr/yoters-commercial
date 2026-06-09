@@ -224,6 +224,19 @@ export default function CafeteriaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cafeteriaId])
 
+  // Auto-add reorder item from favourites
+  useEffect(() => {
+    if (!cafeteriaId || menuItems.length === 0) return
+    const raw = sessionStorage.getItem('yoters_reorder')
+    if (!raw) return
+    try {
+      const reorder = JSON.parse(raw)
+      sessionStorage.removeItem('yoters_reorder')
+      addItem(cafeteriaId, { menuId: reorder.menuId, name: reorder.name, price: reorder.price, quantity: reorder.quantity ?? 1 })
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeteriaId, menuItems.length])
+
   const categories = [...new Set(menuItems.map(m => m.category))]
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
@@ -522,10 +535,12 @@ export default function CafeteriaPage() {
                         <div style={{ padding: '16px' }}>
                           {shakes99.map(item => {
                             const inCart = itemInCart(item.id)
+                            const fav = isFavourite(item.id)
                             return (
                               <div key={item.id} className="menu-item-row">
                                 <span className="menu-item-name">{item.name}</span>
                                 <span className="menu-item-price">₹{item.price}</span>
+                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: 16, lineHeight: 1 }}>{fav ? '❤️' : '🤍'}</button>
                                 {inCart ? (
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
@@ -550,10 +565,12 @@ export default function CafeteriaPage() {
                         <div style={{ padding: '16px' }}>
                           {shakes79.map(item => {
                             const inCart = itemInCart(item.id)
+                            const fav = isFavourite(item.id)
                             return (
                               <div key={item.id} className="menu-item-row">
                                 <span className="menu-item-name">{item.name}</span>
                                 <span className="menu-item-price">₹{item.price}</span>
+                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: 16, lineHeight: 1 }}>{fav ? '❤️' : '🤍'}</button>
                                 {inCart ? (
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
@@ -592,10 +609,17 @@ export default function CafeteriaPage() {
                   <div style={{ padding: '16px' }}>
                     {categoryItems.map(item => {
                       const inCart = itemInCart(item.id)
+                      const fav = isFavourite(item.id)
                       return (
                         <div key={item.id} className="menu-item-row">
                           <span className="menu-item-name">{item.name}</span>
                           <span className="menu-item-price">₹{item.price}</span>
+                          <button
+                            onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId: cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', color: fav ? '#E8334A' : '#ccc', fontSize: 18, lineHeight: 1 }}
+                          >
+                            {fav ? '❤️' : '🤍'}
+                          </button>
                           {inCart ? (
                             <div style={{ display: 'flex', gap: 4 }}>
                               <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
