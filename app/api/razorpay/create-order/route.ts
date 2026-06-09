@@ -73,8 +73,9 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('Create order error:', error)
-    const msg = error?.message ?? error?.error?.description ?? error?.description ?? JSON.stringify(error)
+    const fullError = JSON.stringify(error, Object.getOwnPropertyNames(error))
+    console.error('Create order error FULL:', fullError)
+    const msg = error?.message ?? error?.error?.description ?? error?.description ?? fullError
     return NextResponse.json(
       { error: 'Failed to create payment order: ' + msg },
       { status: 500 }
