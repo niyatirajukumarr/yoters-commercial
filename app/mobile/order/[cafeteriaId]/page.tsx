@@ -374,6 +374,12 @@ export default function CafeteriaPage() {
 
   useEffect(() => () => clearInterval(pollRef.current), [])
 
+  // Clear cart when user leaves this page
+  useEffect(() => {
+    return () => { clearCart() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', paddingBottom: 80, background: 'var(--bg)' }}>
