@@ -216,6 +216,14 @@ export default function CafeteriaPage() {
     }
   }, [user])
 
+  // Clear cart if it belongs to a different cafeteria (user switched cafeteria)
+  useEffect(() => {
+    if (cafeteriaId && cart && cart.cafeteriaId !== cafeteriaId) {
+      clearCart()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeteriaId])
+
   const categories = [...new Set(menuItems.map(m => m.category))]
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
