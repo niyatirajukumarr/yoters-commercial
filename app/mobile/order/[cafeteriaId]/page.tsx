@@ -540,7 +540,6 @@ export default function CafeteriaPage() {
                               <div key={item.id} className="menu-item-row">
                                 <span className="menu-item-name">{item.name}</span>
                                 <span className="menu-item-price">₹{item.price}</span>
-                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: 16, lineHeight: 1 }}>{fav ? '❤️' : '🤍'}</button>
                                 {inCart ? (
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
@@ -550,6 +549,9 @@ export default function CafeteriaPage() {
                                 ) : (
                                   <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
                                 )}
+                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                                  <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
+                                </button>
                               </div>
                             )
                           })}
@@ -570,7 +572,6 @@ export default function CafeteriaPage() {
                               <div key={item.id} className="menu-item-row">
                                 <span className="menu-item-name">{item.name}</span>
                                 <span className="menu-item-price">₹{item.price}</span>
-                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: 16, lineHeight: 1 }}>{fav ? '❤️' : '🤍'}</button>
                                 {inCart ? (
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
@@ -580,6 +581,9 @@ export default function CafeteriaPage() {
                                 ) : (
                                   <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
                                 )}
+                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                                  <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
+                                </button>
                               </div>
                             )
                           })}
@@ -614,12 +618,6 @@ export default function CafeteriaPage() {
                         <div key={item.id} className="menu-item-row">
                           <span className="menu-item-name">{item.name}</span>
                           <span className="menu-item-price">₹{item.price}</span>
-                          <button
-                            onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId: cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', color: fav ? '#E8334A' : '#ccc', fontSize: 18, lineHeight: 1 }}
-                          >
-                            {fav ? '❤️' : '🤍'}
-                          </button>
                           {inCart ? (
                             <div style={{ display: 'flex', gap: 4 }}>
                               <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
@@ -629,6 +627,9 @@ export default function CafeteriaPage() {
                           ) : (
                             <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
                           )}
+                          <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                            <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
+                          </button>
                         </div>
                       )
                     })}
