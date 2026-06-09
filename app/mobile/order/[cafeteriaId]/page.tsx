@@ -939,12 +939,6 @@ export default function CafeteriaPage() {
         >
           <ShoppingBag size={22} /> Orders
         </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'profile' ? 'var(--accent)' : 'var(--muted)', fontSize: 11, fontWeight: 600 }}
-        >
-          <User size={22} /> Profile
-        </button>
       </div>
     </div>
   )
