@@ -211,7 +211,7 @@ export default function LandingPage() {
 
 
   const steps = [
-    { n: '01', title: 'Browse & Choose', desc: "Open Yoters, pick your cafeteria, browse today's menu and add items to your cart — all before your break starts.", img: '🍽️', bg: '#fff0f2' },
+    { n: '01', title: 'Browse & Choose', desc: "Open Yoters, pick your restaurant, browse today's menu and add items to your cart — all before your break starts.", img: '🍽️', bg: '#fff0f2' },
     { n: '02', title: 'Pre-order & Pay', desc: 'Place your order, pay via UPI in seconds. Your queue position is reserved instantly.', img: '📱', bg: '#fff8ec' },
     { n: '03', title: 'Walk in. Pick up. Leave.', desc: 'Head to the counter when your order is marked ready. Skip the entire queue.', img: '🎉', bg: '#edfaf3' },
   ]
@@ -219,7 +219,7 @@ export default function LandingPage() {
   const aboutCards = [
     { icon: '📅', title: 'Pre-book Before Break', desc: "Order your meal before your break starts so it's ready the moment you walk in." },
     { icon: '⚡', title: 'Zero Queue Time', desc: 'Walk in, pick up your food, and leave — no waiting in lines, no wasted break time.' },
-    { icon: '♻️', title: 'Reduce Food Waste', desc: 'Cafeterias prepare based on real demand — exact quantities, fresher food, less waste.' },
+    { icon: '♻️', title: 'Reduce Food Waste', desc: 'Restaurants prepare based on real demand — exact quantities, fresher food, less waste.' },
   ]
 
   const transitionEase = [0.22, 1, 0.36, 1] as const
@@ -227,7 +227,7 @@ export default function LandingPage() {
   const whyCards = [
     { n: '01', title: 'Know Your Meal in Advance', desc: 'Browse the menu, choose your meal, and schedule pickup before your break even begins.' },
     { n: '02', title: 'No More Waiting', desc: 'Walk straight to the counter, collect your food, and leave — no queues, no rush.' },
-    { n: '03', title: 'Less Waste, Smarter Cooking', desc: 'Cafeterias prepare food based on real demand, reducing waste and serving students better.' },
+    { n: '03', title: 'Less Waste, Smarter Cooking', desc: 'Restaurants prepare food based on real demand, reducing waste and serving customers better.' },
   ]
 
   const foodEmojis = ['🍛', '🥟', '🍕', '🥗', '🍜', '🫕', '🥘', '🍱', '🥙', '🍔', '🧆', '🍝']
@@ -506,7 +506,7 @@ export default function LandingPage() {
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22,1,0.36,1] }}
               style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 700, lineHeight: 1, letterSpacing: -2, color: '#1a1f2e', marginBottom: 24 }}>
-              Skip the<br /><em style={{ fontStyle: 'italic', color: '#E8334A', fontWeight: 700 }}>Cafeteria Rush.</em>
+              Skip the<br /><em style={{ fontStyle: 'italic', color: '#E8334A', fontWeight: 700 }}>Restaurant Rush.</em>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
               style={{ fontSize: 20, color: '#5a6078', lineHeight: 1.8, maxWidth: 520, marginBottom: 40, fontWeight: 400 }}>
@@ -520,16 +520,16 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* OUR CAFETERIAS - FEATURED RESTAURANTS */}
+        {/* OUR RESTAURANTS - FEATURED RESTAURANTS */}
         <section className="lp-section" style={{ padding: '80px 48px 60px 48px', background: '#fdf8f5', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Campus Cafeterias</motion.p>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Local Restaurants</motion.p>
               <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
-                Every Cafeteria.<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>One App.</span>
+                Every Restaurant.<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>One App.</span>
               </motion.h2>
               <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
-                Browse all campus cafeterias in real-time. Pre-order your meal with just a few taps, and pick it up when it's ready.
+                Browse all restaurants in real-time. Pre-order your meal with just a few taps, and pick it up when it's ready.
               </motion.p>
             </motion.div>
 
@@ -562,7 +562,7 @@ export default function LandingPage() {
               </div>
             ) : (
               <div style={{ height: 320, background: '#f5f1ed', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 60 }}>
-                <p style={{ color: '#999', fontSize: 16 }}>Loading cafeterias...</p>
+                <p style={{ color: '#999', fontSize: 16 }}>Loading restaurants...</p>
               </div>
             )}
 
@@ -613,7 +613,7 @@ export default function LandingPage() {
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 12 }}>Always Fresh</motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', fontFamily: 'Playfair Display, serif', fontSize: 'clamp(22px,3vw,36px)', fontWeight: 700, color: '#1a1f2e', marginBottom: 8 }}>Every Cuisine. One Platform.</motion.h2>
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} style={{ textAlign: 'center', fontSize: 15, color: '#8a90a8', marginBottom: 40, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
-            From South Indian breakfasts to multi-cuisine lunches — your entire campus food scene, right here.
+            From South Indian breakfasts to multi-cuisine lunches — your entire local food scene, right here.
           </motion.p>
           <div style={{ overflow: 'hidden' }}>
             <div className="track-scroll">
@@ -683,7 +683,7 @@ export default function LandingPage() {
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div className="lp-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'rgba(26,31,46,0.06)', borderRadius: 20, overflow: 'hidden' }}
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-              {[{ val: 'Students', label: 'Built for' }, { val: 'Cafeterias', label: 'Partnering with' }, { val: 'Zero Waste', label: 'Real demand only' }, { val: 'Soon', label: 'Launching' }].map((s, i) => (
+              {[{ val: 'Customers', label: 'Built for' }, { val: 'Restaurants', label: 'Partnering with' }, { val: 'Zero Waste', label: 'Real demand only' }, { val: 'Soon', label: 'Launching' }].map((s, i) => (
                 <motion.div key={i} variants={fadeUp} style={{ padding: '40px 24px', textAlign: 'center', background: 'white' }}>
                   <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, fontWeight: 700, color: '#E8334A', marginBottom: 6 }}>{s.val}</h3>
                   <p style={{ fontSize: 11, color: '#8a90a8', letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 600 }}>{s.label}</p>
@@ -716,8 +716,8 @@ export default function LandingPage() {
                 <a key={item.id} className="glitch" data-text={item.label} onClick={() => scrollTo(item.id)}
                   style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500, marginBottom: 12, display: 'block' }}>{item.label}</a>
               ))}
-              <Link href="/browse" className="glitch" data-text="Browse Cafeterias"
-                style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Cafeterias</Link>
+              <Link href="/browse" className="glitch" data-text="Browse Restaurants"
+                style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Restaurants</Link>
               <button className="footer-back-btn" onClick={() => scrollTo('hero')}>↑ Back to Top</button>
             </div>
             <div>
@@ -735,7 +735,7 @@ export default function LandingPage() {
               <div style={{ marginTop: 20 }}>
                 <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', display: 'block', marginBottom: 8 }}>Subscribe to updates</label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input className="footer-nl-input" type="email" placeholder="you@college.edu" />
+                  <input className="footer-nl-input" type="email" placeholder="you@email.com" />
                   <button className="footer-nl-btn">→</button>
                 </div>
               </div>

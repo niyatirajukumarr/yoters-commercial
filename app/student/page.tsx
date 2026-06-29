@@ -262,8 +262,8 @@ function StudentPageInner() {
   if (!cafeteriaId) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
       <div style={{ fontSize: 48 }}>🍱</div>
-      <p style={{ color: 'var(--muted)', textAlign: 'center' }}>No cafeteria selected.</p>
-      <Link href="/browse"><button style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 600 }}>Browse Cafeterias</button></Link>
+      <p style={{ color: 'var(--muted)', textAlign: 'center' }}>No restaurant selected.</p>
+      <Link href="/browse"><button style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 600 }}>Browse Restaurants</button></Link>
     </div>
   )
 
@@ -467,7 +467,7 @@ function StudentPageInner() {
               <div><label style={lbl}>Full Name *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={inp} /></div>
               <div><label style={lbl}>Phone Number *</label><input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" style={inp} /></div>
               <div><label style={lbl}>Alternative Phone (optional)</label><input value={form.altPhone} onChange={e => setForm(f => ({ ...f, altPhone: e.target.value }))} placeholder="+91 98765 43210" style={inp} /></div>
-              <div><label style={lbl}>Email (optional)</label><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="you@college.edu" style={inp} /></div>
+              <div><label style={lbl}>Email (optional)</label><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="you@email.com" style={inp} /></div>
               <div><label style={lbl}>Notes</label><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="No onions, extra spicy..." style={inp} /></div>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
                 <div style={{ fontWeight: 600, marginBottom: 12 }}>Order Summary</div>
@@ -587,7 +587,7 @@ function StudentPageInner() {
       {showTicket && tokenData && (
         <TokenTicket
           token={tokenData.token}
-          cafeteriaName={cafeteria?.name ?? 'Cafeteria'}
+          cafeteriaName={cafeteria?.name ?? 'Restaurant'}
           items={tokenData.items}
           total={tokenData.total}
           orderId={tokenData.id}

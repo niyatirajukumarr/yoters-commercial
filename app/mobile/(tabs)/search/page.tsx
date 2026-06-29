@@ -111,7 +111,7 @@ export default function MobileSearch() {
       {/* Search Input */}
       <input
         type="text"
-        placeholder="Cafeteria name or location..."
+        placeholder="Restaurant name or location..."
         value={search}
         onChange={e => setSearch(e.target.value)}
         className="mobile-input"

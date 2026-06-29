@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Yoters',
-  description: 'Skip the cafeteria rush. Pre-book your meal, walk in, pick up, leave.',
+  description: 'Skip the restaurant rush. Pre-book your meal, walk in, pick up, leave.',
   icons: {
     icon: '/favicon.ico',
   }

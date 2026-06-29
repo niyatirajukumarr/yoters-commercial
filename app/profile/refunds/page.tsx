@@ -41,7 +41,7 @@ export default function Refunds() {
       if (data) {
         setRefunds(data.map((o: any) => ({
           ...o,
-          cafeteria_name: o.cafeterias?.name ?? 'Cafeteria',
+          cafeteria_name: o.cafeterias?.name ?? 'Restaurant',
         })))
       }
       setLoading(false)

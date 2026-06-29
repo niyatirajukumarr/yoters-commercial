@@ -178,7 +178,7 @@ export default function AuthPage() {
               Skip the queue.
             </h1>
             <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
-              Order from your campus cafeteria and pick up when it's ready.
+              Order from your favourite restaurant and pick up when it's ready.
             </p>
             {/* Feature chips */}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' }}>
@@ -233,7 +233,7 @@ export default function AuthPage() {
                   <input
                     className="auth-input"
                     type="email"
-                    placeholder="you@college.edu"
+                    placeholder="you@email.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}

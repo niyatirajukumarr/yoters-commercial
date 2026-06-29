@@ -84,7 +84,7 @@ export default function MobileHome() {
       {/* Header */}
       <div style={{ padding: '16px 16px 0', marginBottom: 16 }}>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700, color: '#1a1f2e' }}>
-          Browse Cafeterias
+          Browse Restaurants
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export default function MobileHome() {
       <div style={{ padding: '0 16px', marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search cafeteria..."
+          placeholder="Search restaurant..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{
@@ -124,7 +124,7 @@ export default function MobileHome() {
             </div>
           ))
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#8a90a8' }}>No cafeterias found</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#8a90a8' }}>No restaurants found</div>
         ) : (
           filtered.map(cafe => {
             const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)

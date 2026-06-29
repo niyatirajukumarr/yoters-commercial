@@ -184,7 +184,7 @@ export default function StudentHome() {
           <span style={{ color: 'var(--accent)' }}>Walk in. Pick up. Leave.</span>
         </h1>
         <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 460, lineHeight: 1.65 }}>
-          Browse campus cafeterias, pre-order your food, and skip the queue entirely.
+          Browse local restaurants, pre-order your food, and skip the queue entirely.
         </p>
       </div>
 
@@ -192,17 +192,17 @@ export default function StudentHome() {
       <div className="browse-list">
         <input
           className="search-input"
-          placeholder="Search cafeteria or location..."
+          placeholder="Search restaurant or location..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>Loading cafeterias...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>Loading restaurants...</div>
         ) : (
           <>
             {filtered.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No cafeterias found for &quot;{search}&quot;</div>
+              <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No restaurants found for &quot;{search}&quot;</div>
             ) : (
               <div className="newspaper-grid">
                 {filtered.map((c, idx) => (

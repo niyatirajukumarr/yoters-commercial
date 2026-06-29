@@ -255,9 +255,9 @@ export default function AdminDashboard() {
 
       {/* Grand Total */}
       <div className="admin-card" style={{ background: '#fff0f2', border: '2px solid #ffd6dc', marginBottom: 30 }}>
-        <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Total Received (All Cafes)</div>
+        <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Total Received (All Restaurants)</div>
         <div style={{ fontSize: 48, fontWeight: 700, color: '#E8334A' }}>₹{totalReceived.toLocaleString()}</div>
-        <div style={{ fontSize: 13, color: '#999', marginTop: 8 }}>Across {cafeterias.length} cafeterias</div>
+        <div style={{ fontSize: 13, color: '#999', marginTop: 8 }}>Across {cafeterias.length} restaurants</div>
       </div>
 
       {/* Cafeteria Cards */}
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div className="admin-card" style={{ textAlign: 'center', padding: 40 }}>
-          <p style={{ color: '#999', fontSize: 14 }}>No cafeterias found</p>
+          <p style={{ color: '#999', fontSize: 14 }}>No restaurants found</p>
         </div>
       )}
 

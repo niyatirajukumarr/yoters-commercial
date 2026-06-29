@@ -40,7 +40,7 @@ export default function VendorLogin() {
           <div style={{ textAlign:'center', marginBottom:32 }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🐧</div>
             <h1 style={{ fontFamily:'var(--font-head)', fontSize:28, fontWeight:700, color:'var(--navy)', marginBottom:6 }}>Vendor Login</h1>
-            <p style={{ fontSize:14, color:'var(--muted)' }}>Access your cafeteria dashboard</p>
+            <p style={{ fontSize:14, color:'var(--muted)' }}>Access your restaurant dashboard</p>
           </div>
           <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius-xl)', padding:32 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>

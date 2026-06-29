@@ -431,7 +431,7 @@ export default function CafeteriaPage() {
   }
 
   if (!cafeteria) {
-    return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Cafeteria not found</div>
+    return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
   }
 
   // FRIENDS MODAL

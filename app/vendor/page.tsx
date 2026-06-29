@@ -344,7 +344,7 @@ export default function VendorDashboard() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="v-open-label" style={{ fontSize: 13, color: 'var(--muted)' }}>Cafeteria:</span>
+          <span className="v-open-label" style={{ fontSize: 13, color: 'var(--muted)' }}>Restaurant:</span>
           <button onClick={toggleOpen} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: isOpen ? 'rgba(46,158,107,0.1)' : 'rgba(232,51,74,0.1)', color: isOpen ? 'var(--green)' : 'var(--red)', border: `1px solid ${isOpen ? 'rgba(46,158,107,0.25)' : 'rgba(232,51,74,0.25)'}` }}>
             {isOpen ? '🟢 Open' : '🔴 Closed'}
           </button>
@@ -722,7 +722,7 @@ export default function VendorDashboard() {
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 18 }}>Settings</div>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-                  <div><div style={{ fontWeight: 600 }}>Cafeteria Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Toggle open or close</div></div>
+                  <div><div style={{ fontWeight: 600 }}>Restaurant Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Toggle open or close</div></div>
                   <button onClick={toggleOpen} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: isOpen ? 'var(--green)' : 'var(--red)', color: 'white' }}>{isOpen ? 'Open' : 'Closed'}</button>
                 </div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Email</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.vendor_email}</div></div>

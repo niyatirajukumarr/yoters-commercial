@@ -278,7 +278,7 @@ export default function ProfilePage() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                     <div style={{ fontSize: 30 }}>{cafe?.image_emoji || '🍱'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{cafe?.name || 'Cafeteria'}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{cafe?.name || 'Restaurant'}</div>
                       <div style={{ fontSize: 12, color: '#aaa' }}>#{order.id.slice(0, 8)}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
