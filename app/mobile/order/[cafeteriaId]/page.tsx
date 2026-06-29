@@ -8,7 +8,7 @@ import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
-import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, Users, ShoppingBag, User } from 'lucide-react'
+import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 
 interface MenuItem {
@@ -41,7 +41,7 @@ interface Order {
 }
 
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
-type Tab = 'home' | 'friends' | 'orders' | 'profile'
+type Tab = 'home' | 'orders' | 'profile'
 
 const CATEGORY_IMAGES: { [key: string]: string } = {
   'Biryani': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/biryani.jpg',
@@ -134,8 +134,7 @@ export default function CafeteriaPage() {
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [showSharingModal, setShowSharingModal] = useState(false)
 
-  // Friends & Orders
-  const [friendsOrders, setFriendsOrders] = useState<Order[]>([])
+  // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
 
   // Payment & UI
@@ -177,25 +176,6 @@ export default function CafeteriaPage() {
         console.error('Cafeteria/menu fetch error:', error)
       } finally {
         setLoading(false)
-      }
-    }
-    fetch()
-  }, [cafeteriaId])
-
-  // Fetch friends orders (shared orders from this cafe)
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const { data } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('cafeteria_id', cafeteriaId)
-          .eq('is_shared', true)
-          .order('created_at', { ascending: false })
-          .limit(50)
-        if (data) setFriendsOrders(data as Order[])
-      } catch (error) {
-        console.error('Friends orders fetch error:', error)
       }
     }
     fetch()
@@ -686,74 +666,6 @@ export default function CafeteriaPage() {
         </div>
       )}
 
-      {/* FRIENDS TAB */}
-      {activeTab === 'friends' && (
-        <div>
-          <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px 16px' }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>What Your Besties Are Ordering</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>No cap, these orders are 🔥</div>
-          </div>
-          <div style={{
-            padding: '16px',
-            backgroundImage: 'url(https://static.ffx.io/images/$zoom_1%2C$multiply_0.7459%2C$ratio_1.777778%2C$width_1995%2C$x_5%2C$y_50/t_crop_custom/q_62%2Cf_auto/05180b858b18fac7045041e66a545b35870fe007)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            position: 'relative',
-            minHeight: '100vh',
-            paddingBottom: 100
-          }}>
-            {/* Overlay - darker to show image better */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.75) 0%, rgba(255,248,245,0.65) 100%)',
-              pointerEvents: 'none'
-            }} />
-
-            {/* Content */}
-            <div style={{ position: 'relative', zIndex: 1, paddingBottom: 20 }}>
-              {friendsOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 80, paddingTop: 120 }}>
-                  <div style={{ fontFamily: "'Playfair Display', 'Georgia', serif", fontSize: 28, fontWeight: 600, color: '#1a1f2e', lineHeight: 1.6, letterSpacing: 0.5 }}>
-                    Looks like your friends are deciding on their favourites!
-                  </div>
-                </div>
-              ) : (
-                friendsOrders.map(order => (
-                  <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12, boxShadow: '0 4px 12px rgba(26,31,46,0.08)' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{order.student_name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </div>
-                    <div style={{ fontSize: 13, marginBottom: 12 }}>
-                      {order.items.map((item, idx) => (
-                        <div key={idx}>
-                          {item.quantity}x {item.name} • ₹{item.price * item.quantity}
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        style={{ flex: 1, padding: 10, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                        onClick={() => { order.items.forEach(item => addItem(cafeteriaId, { menuId: item.name, name: item.name, price: item.price, quantity: item.quantity })); setActiveTab('home') }}
-                      >
-                        Copy Order 🔥
-                      </button>
-                      <button
-                        style={{ flex: 1, padding: 10, background: 'var(--surface2)', color: 'var(--accent)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        ❤️ Wishlist
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ORDERS TAB */}
       {activeTab === 'orders' && (
         <div>
@@ -927,12 +839,6 @@ export default function CafeteriaPage() {
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home
-        </button>
-        <button
-          onClick={() => setActiveTab('friends')}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'friends' ? 'var(--accent)' : 'var(--muted)', fontSize: 11, fontWeight: 600 }}
-        >
-          <Users size={22} /> Friends
         </button>
         <button
           onClick={() => setActiveTab('orders')}
