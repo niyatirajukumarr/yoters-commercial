@@ -132,7 +132,6 @@ export default function CafeteriaPage() {
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<Tab>('home')
-  const [showSharingModal, setShowSharingModal] = useState(false)
 
   // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
@@ -282,8 +281,8 @@ export default function CafeteriaPage() {
         console.log('Order created successfully:', data.id)
         setOrderId(data.id)
         updateUser({ name: formData.name, phone: formData.phone, email: formData.email })
-        setIsPlacingOrder(false) // Reset loading state before showing modal
-        setShowSharingModal(true) // Show sharing modal instead of going to payment
+        setIsPlacingOrder(false)
+        setStep('payment')
       } else {
         alert('Failed to create order')
         setIsPlacingOrder(false)
@@ -293,19 +292,6 @@ export default function CafeteriaPage() {
       alert('Error: ' + (error instanceof Error ? error.message : 'Failed to create order'))
       setIsPlacingOrder(false)
     }
-  }
-
-  const handleShareOrder = async (share: boolean) => {
-    if (share) {
-      try {
-        // TODO: Add is_shared column to orders table in Supabase
-        // await supabase.from('orders').update({ is_shared: true }).eq('id', orderId)
-      } catch (error) {
-        console.error('Error updating order:', error)
-      }
-    }
-    setShowSharingModal(false)
-    setStep('payment')
   }
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -435,33 +421,6 @@ export default function CafeteriaPage() {
 
   if (!cafeteria) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
-  }
-
-  // SHARING MODAL (at checkout)
-  if (showSharingModal && step === 'details') {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: '16px' }}>
-        <div style={{ background: 'white', borderRadius: '20px', padding: '32px', maxWidth: '90%', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🔥</div>
-          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>Add your name so your friends see what you're flexing?</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Let them copy your vibe fr fr 💅</div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={() => handleShareOrder(true)}
-              style={{ flex: 1, padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Sure! Let's go ✨
-            </button>
-            <button
-              onClick={() => handleShareOrder(false)}
-              style={{ flex: 1, padding: '14px', background: 'var(--surface2)', color: 'var(--text)', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Nah I'm good
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   // RENDER BY TAB
