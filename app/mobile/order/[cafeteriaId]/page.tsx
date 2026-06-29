@@ -108,7 +108,6 @@ export default function CafeteriaPage() {
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<Tab>('home')
-  const [showFriendsModal, setShowFriendsModal] = useState(true)
   const [showSharingModal, setShowSharingModal] = useState(false)
 
   // Friends & Orders
@@ -432,33 +431,6 @@ export default function CafeteriaPage() {
 
   if (!cafeteria) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
-  }
-
-  // FRIENDS MODAL
-  if (showFriendsModal && activeTab === 'home') {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: '16px' }}>
-        <div style={{ background: 'white', borderRadius: '20px', padding: '32px', maxWidth: '90%', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>👀</div>
-          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>Wanna see what your friends are ordering?</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>No cap, check what your besties are flexing from here 🔥</div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={() => { setShowFriendsModal(false); setActiveTab('friends') }}
-              style={{ flex: 1, padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Yess! 🔥
-            </button>
-            <button
-              onClick={() => { setShowFriendsModal(false); setActiveTab('home') }}
-              style={{ flex: 1, padding: '14px', background: 'var(--surface2)', color: 'var(--text)', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Nah, menu plz
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   // SHARING MODAL (at checkout)
