@@ -46,7 +46,7 @@ export default function VendorLogin() {
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
               <div>
                 <label style={{ fontSize:12, color:'var(--text2)', marginBottom:6, display:'block', fontWeight:600 }}>Email</label>
-                <input type="email" placeholder="main@yoters.com" value={email}
+                <input type="email" placeholder="lethafi@yoters.com" value={email}
                   onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key==='Enter' && login()}
                   style={{ width:'100%', padding:'12px 16px' }} />
               </div>
@@ -60,14 +60,6 @@ export default function VendorLogin() {
               <button onClick={login} disabled={loading} className="btn-primary" style={{ padding:14, fontSize:16, opacity:loading?0.6:1, marginTop:4 }}>
                 {loading ? 'Signing in...' : 'Sign In →'}
               </button>
-            </div>
-          </div>
-          <div style={{ marginTop:16, padding:16, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', fontSize:13, color:'var(--muted)' }}>
-            <div style={{ fontWeight:600, color:'var(--text2)', marginBottom:6 }}>Test vendor accounts — click to autofill:</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:4 }}>
-              {['main@yoters.com','engr@yoters.com','north@yoters.com','sports@yoters.com'].map(e => (
-                <div key={e} style={{ fontSize:12, cursor:'pointer', color:'var(--accent)' }} onClick={() => setEmail(e)}>{e}</div>
-              ))}
             </div>
           </div>
         </div>
