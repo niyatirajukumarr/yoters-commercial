@@ -57,6 +57,30 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Shakes @99': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/shakes%20@99.jpg',
   'Shakes @79': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/shakes%20@79.jpeg',
   'Juice @59': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/juice%20@59.webp',
+
+  // LETHAFI categories
+  'Fresh Juices': '🍹',
+  'Mojitos': '🍸',
+  'Hot Beverages': '☕',
+  'Fruit Milkshakes': '🥤',
+  'Thick Shake': '🧋',
+  'Sodas': '🥤',
+  'Coffee Shake': '☕',
+  'Special Shakes': '🍧',
+  'Ice Cream Shakes': '🍨',
+  'Lassi': '🥛',
+  'Delights': '🍰',
+  'Club Sandwich': '🥪',
+  'Strips': '🍗',
+  'Sandwiches': '🥪',
+  'Egg Bites': '🍳',
+  'Loaded Fries': '🍟',
+  'Rolls': '🌯',
+  'Burgers': '🍔',
+  'Buns': '🥯',
+  'Wraps': '🌯',
+  'Quick Bites': '🍿',
+  'Maggies': '🍜',
 }
 
 export default function CafeteriaPage() {
