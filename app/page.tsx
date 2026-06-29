@@ -536,8 +536,8 @@ export default function LandingPage() {
             {/* Horizontal Scrolling Carousel */}
             {restaurants && restaurants.length > 0 ? (
               <div className="cafe-carousel-wrapper" ref={carouselWrapperRef} onMouseEnter={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'paused' }} onMouseLeave={() => { const el = document.querySelector('.cafe-carousel-scroll') as HTMLElement; if (el) el.style.animationPlayState = 'running' }}>
-                <motion.div className="cafe-carousel-scroll" animate={{ x: [0, -500] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
-                  {[...restaurants, ...restaurants].map((r, i) => (
+                <motion.div className="cafe-carousel-scroll" animate={restaurants.length >= 3 ? { x: [0, -500] } : undefined} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
+                  {(restaurants.length >= 3 ? [...restaurants, ...restaurants] : restaurants).map((r, i) => (
                     <motion.div key={i}
                       className="cafe-carousel-card"
                       whileHover={{ y: -8, transition: { duration: 0.3 } }}
