@@ -59,28 +59,28 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Juice @59': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/juice%20@59.webp',
 
   // LETHAFI categories
-  'Fresh Juices': '🍹',
-  'Mojitos': '🍸',
-  'Hot Beverages': '☕',
-  'Fruit Milkshakes': '🥤',
-  'Thick Shake': '🧋',
-  'Sodas': '🥤',
-  'Coffee Shake': '☕',
-  'Special Shakes': '🍧',
-  'Ice Cream Shakes': '🍨',
-  'Lassi': '🥛',
-  'Delights': '🍰',
-  'Club Sandwich': '🥪',
-  'Strips': '🍗',
-  'Sandwiches': '🥪',
-  'Egg Bites': '🍳',
-  'Loaded Fries': '🍟',
-  'Rolls': '🌯',
-  'Burgers': '🍔',
-  'Buns': '🥯',
-  'Wraps': '🌯',
-  'Quick Bites': '🍿',
-  'Maggies': '🍜',
+  'Fresh Juices': 'https://images.unsplash.com/photo-1622597468739-9b66fac1c1a2?w=600&h=400&fit=crop',
+  'Mojitos': 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&h=400&fit=crop',
+  'Hot Beverages': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
+  'Fruit Milkshakes': 'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=600&h=400&fit=crop',
+  'Thick Shake': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&h=400&fit=crop',
+  'Sodas': 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=600&h=400&fit=crop',
+  'Coffee Shake': 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&h=400&fit=crop',
+  'Special Shakes': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
+  'Ice Cream Shakes': 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68a?w=600&h=400&fit=crop',
+  'Lassi': 'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=600&h=400&fit=crop',
+  'Delights': 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&h=400&fit=crop',
+  'Club Sandwich': 'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=600&h=400&fit=crop',
+  'Strips': 'https://images.unsplash.com/photo-1562967914-608f82629710?w=600&h=400&fit=crop',
+  'Sandwiches': 'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=600&h=400&fit=crop',
+  'Egg Bites': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&h=400&fit=crop',
+  'Loaded Fries': 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&h=400&fit=crop',
+  'Rolls': 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&h=400&fit=crop',
+  'Burgers': 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=600&h=400&fit=crop',
+  'Buns': 'https://images.unsplash.com/photo-1550317138-10000687a72b?w=600&h=400&fit=crop',
+  'Wraps': 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&h=400&fit=crop',
+  'Quick Bites': 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&h=400&fit=crop',
+  'Maggies': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&h=400&fit=crop',
 }
 
 export default function CafeteriaPage() {
@@ -598,7 +598,12 @@ export default function CafeteriaPage() {
                 <div key={category} className="category-card">
                   <div className="category-header">
                     {typeof categoryImage === 'string' && categoryImage.includes('http') ? (
-                      <img src={categoryImage} alt={displayName} className="category-image" />
+                      <>
+                        <img src={categoryImage} alt={displayName} className="category-image" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; const fb = (e.currentTarget as HTMLImageElement).nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }} />
+                        <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'none', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
+                          🍽️
+                        </div>
+                      </>
                     ) : (
                       <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
                         {categoryImage}
