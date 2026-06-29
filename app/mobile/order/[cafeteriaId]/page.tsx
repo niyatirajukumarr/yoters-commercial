@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
@@ -430,11 +429,9 @@ export default function CafeteriaPage() {
       {activeTab === 'home' && step === 'menu' && (
         <div>
           <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/browse">
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <ChevronLeft size={24} color='var(--text)' />
-              </button>
-            </Link>
+            <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <ChevronLeft size={24} color='var(--text)' />
+            </button>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
@@ -794,7 +791,7 @@ export default function CafeteriaPage() {
       {/* TAB NAVIGATION */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
         <button
-          onClick={() => router.push('/browse')}
+          onClick={() => { window.location.href = '/browse' }}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home
