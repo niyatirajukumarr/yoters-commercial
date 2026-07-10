@@ -382,18 +382,16 @@ export default function CafeteriaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Local card component using outer scope state
-  const MenuItemCard = ({ item }: { item: MenuItem }) => {
+  // Helper to render a single menu item card (inlined, not a component)
+  const renderMenuCard = (item: MenuItem) => {
     const inCart = itemInCart(item.id)
     const fav = isFavourite(item.id)
     const catImg = CATEGORY_IMAGES[item.category] || null
     return (
-      <div className="menu-item-card">
-        {catImg ? (
-          <img src={catImg} alt={item.name} className="menu-item-thumb"
-            onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }} />
-        ) : null}
-        {catImg ? <div className="menu-item-thumb-emoji" style={{ display: 'none' }}>🍽️</div> : <div className="menu-item-thumb-emoji">🍽️</div>}
+      <div key={item.id} className="menu-item-card">
+        {catImg
+          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+          : <div className="menu-item-thumb-emoji">🍽️</div>}
         <div className="menu-item-info">
           <div className="menu-item-name-sw">{item.name}</div>
           {item.description && <div className="menu-item-desc">{item.description}</div>}
@@ -575,7 +573,7 @@ export default function CafeteriaPage() {
                 ) : (
                   <>
                     <div className="menu-section-title">Results ({results.length})</div>
-                    {results.map(item => <MenuItemCard key={item.id} item={item} />)}
+                    {results.map(item => renderMenuCard(item))}
                   </>
                 )
               })()
@@ -597,16 +595,12 @@ export default function CafeteriaPage() {
                       </div>
                     )}
                     <div className="menu-section-title" style={{ paddingTop: catImg ? 12 : 20 }}>{catImg ? '' : selectedCategory} {!catImg && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>• {catItems.length} items</span>}</div>
-                    {catItems.map(item => <MenuItemCard key={item.id} item={item} />)}
+                    {catItems.map(item => renderMenuCard(item))}
                   </>
                 )
               })()
             )}
           </div>
-
-        </div>
-      )}
-
 
           {/* Cart Sheet */}
           {showCartSheet && (
