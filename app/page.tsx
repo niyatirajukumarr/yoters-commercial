@@ -514,7 +514,7 @@ export default function LandingPage() {
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
               style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button className="btn-primary" onClick={() => scrollTo('contact')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
+              <button className="btn-primary" onClick={() => router.push('/browse')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
               <button className="btn-outline" onClick={() => scrollTo('howitworks')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Learn How →</button>
             </motion.div>
           </motion.div>
