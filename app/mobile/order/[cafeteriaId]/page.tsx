@@ -643,9 +643,11 @@ export default function CafeteriaPage() {
     )
   }
 
-  if (!cafeteria && !loading && cafeteriaId) {
+  if (!loading && !cafeteria) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
   }
+
+  if (!cafeteria) return null
 
   // RENDER BY TAB
   return (
