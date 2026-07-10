@@ -335,10 +335,11 @@ export default function CafeteriaPage() {
 
   // Fetch cafeteria & menu
   useEffect(() => {
+    if (!cafeteriaId) return
     const fetch = async () => {
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Fetch timeout')), 60000)
+          setTimeout(() => reject(new Error('Fetch timeout')), 10000)
         )
         const [cafRes, menuRes] = await Promise.race([
           Promise.all([
