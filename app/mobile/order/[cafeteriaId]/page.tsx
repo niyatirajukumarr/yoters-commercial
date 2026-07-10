@@ -559,7 +559,7 @@ export default function CafeteriaPage() {
     return (
       <div key={item.id} className="menu-item-card">
         {catImg
-          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = document.createElement('div'); fb.className = 'menu-item-thumb-emoji'; fb.textContent = '🍽️'; el.parentNode?.insertBefore(fb, el); }} />
           : <div className="menu-item-thumb-emoji">🍽️</div>}
         <div className="menu-item-info">
           <div className="menu-item-name-sw">{item.name}</div>
