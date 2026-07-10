@@ -269,6 +269,7 @@ export default function CafeteriaPage() {
 
   // State for slug-to-ID conversion
   const [cafeteriaId, setCafeteriaId] = useState<string>('')
+  const [resolving, setResolving] = useState(true)
 
   // Core state
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
@@ -287,28 +288,28 @@ export default function CafeteriaPage() {
   // Convert slug to ID if needed
   useEffect(() => {
     const convertSlugToId = async () => {
-      // Check if it's already a UUID (contains dashes and is 36 chars)
-      if (slugOrId.includes('-') && slugOrId.length === 36) {
-        setCafeteriaId(slugOrId)
-        return
-      }
-
-      // It's a slug, fetch all cafeterias and find matching ID
+      setResolving(true)
       try {
-        const { data } = await supabase.from('cafeterias').select('id, name')
-        if (data) {
-          const matching = data.find(c => generateSlug(c.name) === slugOrId)
-          if (matching) {
-            setCafeteriaId(matching.id)
-          } else {
-            console.error('Cafeteria not found for slug:', slugOrId)
-            router.push('/mobile')
-          }
+        // Check if it's already a UUID
+        if (slugOrId.includes('-') && slugOrId.length === 36) {
+          setCafeteriaId(slugOrId)
+          return
         }
-      } catch (error) {
-        console.error('Error converting slug to ID:', error)
-        setLoading(false)
-        router.push('/browse')
+
+        const { data, error } = await supabase.from('cafeterias').select('id, name')
+        if (error || !data) throw new Error('fetch failed')
+
+        const matching = data.find(c => generateSlug(c.name) === slugOrId)
+        if (matching) {
+          setCafeteriaId(matching.id)
+        } else {
+          router.push('/browse')
+        }
+      } catch {
+        // On any error, retry once by reloading the page
+        window.location.reload()
+      } finally {
+        setResolving(false)
       }
     }
 
@@ -642,11 +643,11 @@ export default function CafeteriaPage() {
     )
   }
 
-  if (!loading && !cafeteria) {
+  if (resolving || loading) return null
+
+  if (!cafeteria) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
   }
-
-  if (!cafeteria) return null
 
   // RENDER BY TAB
   return (
