@@ -38,37 +38,36 @@ export default function StudentHome() {
   }, [router])
 
   const fetchData = useCallback(async () => {
+    setLoading(true)
     try {
-      // Fetch cafeterias and their latest queue data in parallel for speed
-      const [cafesRes, queuesRes] = await Promise.all([
-        supabase
-          .from('cafeterias')
-          .select('id, name, description, location, image_url, image_emoji, is_open')
-          .eq('is_open', true)
-          .order('name'),
-        supabase
-          .from('cafeteria_queues')
-          .select('cafeteria_id, avg_wait_mins, queue_count')
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      const [cafesRes, queuesRes] = await Promise.race([
+        Promise.all([
+          supabase
+            .from('cafeterias')
+            .select('id, name, description, location, image_url, image_emoji, is_open')
+            .eq('is_open', true)
+            .order('name'),
+          supabase
+            .from('cafeteria_queues')
+            .select('cafeteria_id, avg_wait_mins, queue_count')
+        ]),
+        timeout
       ])
 
-      if (cafesRes.data && queuesRes.data) {
-        // Create a map of queues for quick lookup
-        const queueMap = new Map()
-        queuesRes.data.forEach(q => {
-          queueMap.set(q.cafeteria_id, q)
-        })
+      const queueMap = new Map()
+      queuesRes.data?.forEach((q: any) => queueMap.set(q.cafeteria_id, q))
 
-        // Combine cafeterias with their queue data
-        const combined = cafesRes.data.map(cafe => ({
-          ...cafe,
-          queue: queueMap.get(cafe.id) || { avg_wait_mins: 0, queue_count: 0 }
-        }))
+      const combined = (cafesRes.data ?? []).map((cafe: any) => ({
+        ...cafe,
+        queue: queueMap.get(cafe.id) || { avg_wait_mins: 0, queue_count: 0 }
+      }))
 
-        setCafeterias(combined as CafeteriaWithQueue[])
-      }
-      setLoading(false)
+      setCafeterias(combined as CafeteriaWithQueue[])
     } catch (error) {
       console.error('Error fetching data:', error)
+      setCafeterias([])
+    } finally {
       setLoading(false)
     }
   }, [])
@@ -78,7 +77,15 @@ export default function StudentHome() {
     const ch = supabase.channel('student-home')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_queues' }, fetchData)
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+
+    // Refetch when tab becomes visible again (handles back navigation)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      supabase.removeChannel(ch)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [fetchData])
 
   const filtered = cafeterias.filter(c =>
