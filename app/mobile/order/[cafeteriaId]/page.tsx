@@ -9,6 +9,7 @@ import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
+import DeliveryMapModal from '@/components/DeliveryMapModal'
 
 interface MenuItem {
   id: string
@@ -279,6 +280,7 @@ export default function CafeteriaPage() {
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [showOrderTypeModal, setShowOrderTypeModal] = useState(false)
+  const [showMapPicker, setShowMapPicker] = useState(false)
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
 
@@ -1035,16 +1037,22 @@ export default function CafeteriaPage() {
             </div>
             {orderType === 'delivery' && (
               <div style={{ marginTop: 16 }}>
-                <input
-                  placeholder="Enter your delivery address..."
-                  value={deliveryAddress}
-                  onChange={e => setDeliveryAddress(e.target.value)}
-                  style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-                />
-                <button onClick={() => { if (deliveryAddress.trim()) setShowOrderTypeModal(false) }}
-                  style={{ width: '100%', marginTop: 12, padding: 14, background: deliveryAddress.trim() ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: deliveryAddress.trim() ? 'pointer' : 'not-allowed' }}>
-                  Confirm Address
+                {deliveryAddress ? (
+                  <div style={{ padding: '12px 14px', background: '#f0faf5', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 13, color: 'var(--navy)', marginBottom: 12 }}>
+                    📍 {deliveryAddress}
+                  </div>
+                ) : null}
+                <button
+                  onClick={() => setShowMapPicker(true)}
+                  style={{ width: '100%', padding: 14, background: deliveryAddress ? 'white' : 'var(--accent)', color: deliveryAddress ? 'var(--accent)' : 'white', border: `2px solid var(--accent)`, borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  {deliveryAddress ? '📍 Change Location' : '📍 Select on Map'}
                 </button>
+                {deliveryAddress && (
+                  <button onClick={() => setShowOrderTypeModal(false)}
+                    style={{ width: '100%', marginTop: 10, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                    Confirm Address →
+                  </button>
+                )}
               </div>
             )}
             {orderType && orderType !== 'delivery' && (
@@ -1054,6 +1062,16 @@ export default function CafeteriaPage() {
             )}
           </div>
         </div>
+      )}
+
+      {showMapPicker && (
+        <DeliveryMapModal
+          onConfirm={(addr) => {
+            setDeliveryAddress(addr)
+            setShowMapPicker(false)
+          }}
+          onClose={() => setShowMapPicker(false)}
+        />
       )}
 
       {/* TAB NAVIGATION */}
