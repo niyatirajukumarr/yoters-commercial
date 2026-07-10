@@ -643,7 +643,7 @@ export default function CafeteriaPage() {
     )
   }
 
-  if (!cafeteria) {
+  if (!cafeteria && !loading && cafeteriaId) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
   }
 
