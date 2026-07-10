@@ -273,7 +273,7 @@ export default function CafeteriaPage() {
   // Core state
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
@@ -307,7 +307,8 @@ export default function CafeteriaPage() {
         }
       } catch (error) {
         console.error('Error converting slug to ID:', error)
-        router.push('/mobile')
+        setLoading(false)
+        router.push('/browse')
       }
     }
 
@@ -339,6 +340,7 @@ export default function CafeteriaPage() {
   useEffect(() => {
     if (!cafeteriaId) return
     const fetch = async () => {
+      setLoading(true)
       try {
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Fetch timeout')), 10000)
