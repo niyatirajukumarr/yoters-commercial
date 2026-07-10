@@ -15,15 +15,15 @@ export interface MobileCart {
   createdAt: string
 }
 
-const CART_KEY = 'yoters-mobile-cart'
+const CART_KEY = 'yoters-cart'
 
 export function useCart() {
   const [cart, setCart] = useState<MobileCart | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load from localStorage on mount
+  // Load from sessionStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(CART_KEY)
+    const saved = sessionStorage.getItem(CART_KEY)
     if (saved) {
       try {
         setCart(JSON.parse(saved))
@@ -48,7 +48,7 @@ export function useCart() {
         : [...newCart.items, item]
 
       const updated = { ...newCart, items }
-      localStorage.setItem(CART_KEY, JSON.stringify(updated))
+      sessionStorage.setItem(CART_KEY, JSON.stringify(updated))
       return updated
     })
   }
@@ -62,9 +62,9 @@ export function useCart() {
 
       const updated = items.length === 0 ? null : { ...prev, items }
       if (updated) {
-        localStorage.setItem(CART_KEY, JSON.stringify(updated))
+        sessionStorage.setItem(CART_KEY, JSON.stringify(updated))
       } else {
-        localStorage.removeItem(CART_KEY)
+        sessionStorage.removeItem(CART_KEY)
       }
       return updated
     })
@@ -76,9 +76,9 @@ export function useCart() {
       const items = prev.items.filter(i => i.menuId !== menuId)
       const updated = items.length === 0 ? null : { ...prev, items }
       if (updated) {
-        localStorage.setItem(CART_KEY, JSON.stringify(updated))
+        sessionStorage.setItem(CART_KEY, JSON.stringify(updated))
       } else {
-        localStorage.removeItem(CART_KEY)
+        sessionStorage.removeItem(CART_KEY)
       }
       return updated
     })
@@ -86,7 +86,7 @@ export function useCart() {
 
   const clear = () => {
     setCart(null)
-    localStorage.removeItem(CART_KEY)
+    sessionStorage.removeItem(CART_KEY)
   }
 
   const total = cart?.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) ?? 0
