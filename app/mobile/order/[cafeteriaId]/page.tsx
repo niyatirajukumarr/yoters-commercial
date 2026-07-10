@@ -95,7 +95,8 @@ export default function CafeteriaPage() {
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('Meals')
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [menuSearch, setMenuSearch] = useState('')
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
 
@@ -167,8 +168,8 @@ export default function CafeteriaPage() {
         if (cafRes.data) setCafeteria(cafRes.data as Cafeteria)
         if (menuRes.data) {
           setMenuItems(menuRes.data as MenuItem[])
-          const categories = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
-          if (categories.length > 0) setSelectedCategory(categories[0])
+          const cats = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
+          if (cats.length > 0) setSelectedCategory(cats[0])
         }
       } catch (error) {
         console.error('Cafeteria/menu fetch error:', error)
@@ -381,6 +382,44 @@ export default function CafeteriaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Local card component using outer scope state
+  const MenuItemCard = ({ item }: { item: MenuItem }) => {
+    const inCart = itemInCart(item.id)
+    const fav = isFavourite(item.id)
+    const catImg = CATEGORY_IMAGES[item.category] || null
+    return (
+      <div className="menu-item-card">
+        {catImg ? (
+          <img src={catImg} alt={item.name} className="menu-item-thumb"
+            onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }} />
+        ) : null}
+        {catImg ? <div className="menu-item-thumb-emoji" style={{ display: 'none' }}>🍽️</div> : <div className="menu-item-thumb-emoji">🍽️</div>}
+        <div className="menu-item-info">
+          <div className="menu-item-name-sw">{item.name}</div>
+          {item.description && <div className="menu-item-desc">{item.description}</div>}
+          <div className="menu-item-price-sw">₹{item.price}</div>
+        </div>
+        <div className="menu-item-actions">
+          {inCart ? (
+            <div className="qty-box">
+              <button className="qty-btn" onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</button>
+              <span className="qty-num">{inCart.quantity}</span>
+              <button className="qty-btn" onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</button>
+            </div>
+          ) : (
+            <button className="add-btn-sw" onClick={() => handleAddItem(item)}>
+              <Plus size={14} /> ADD
+            </button>
+          )}
+          <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+            <Heart size={15} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#ccc'} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', paddingBottom: 80, background: 'var(--bg)' }}>
@@ -428,153 +467,146 @@ export default function CafeteriaPage() {
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
         <div>
-          <div style={{ backgroundColor: 'white', borderBottom: '1px solid rgba(26,31,46,0.08)', padding: '12px var(--mobile-spacing)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-              <ChevronLeft size={24} color='var(--text)' />
-            </button>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
+          <style>{`
+            .menu-sticky-top { position: sticky; top: 0; z-index: 50; background: white; }
+            .menu-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(26,31,46,0.07); }
+            .menu-search-bar { display: flex; align-items: center; gap: 10px; background: #f5f5f7; border-radius: 12px; padding: 10px 14px; margin: 10px 16px 0; }
+            .menu-search-bar input { background: none; border: none; outline: none; font-size: 14px; color: var(--text); flex: 1; }
+            .cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 12px; scrollbar-width: none; }
+            .cat-pills::-webkit-scrollbar { display: none; }
+            .cat-pill { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; }
+            .cat-pill-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; border: 2px solid transparent; transition: all 0.18s; }
+            .cat-pill-icon.active { border-color: var(--accent); background: #fff0f2; }
+            .cat-pill-icon.inactive { background: #f5f5f7; }
+            .cat-pill-label { font-size: 11px; font-weight: 600; color: var(--text2); max-width: 64px; text-align: center; line-height: 1.2; }
+            .cat-pill-label.active { color: var(--accent); }
+            .menu-section-title { font-size: 18px; font-weight: 800; color: var(--navy); padding: 20px 16px 8px; }
+            .menu-item-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f0f2; background: white; }
+            .menu-item-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #f5f5f7; }
+            .menu-item-thumb-emoji { width: 72px; height: 72px; border-radius: 12px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+            .menu-item-info { flex: 1; min-width: 0; }
+            .menu-item-name-sw { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .menu-item-desc { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .menu-item-price-sw { font-size: 14px; font-weight: 700; color: var(--text); }
+            .menu-item-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+            .qty-box { display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--accent); border-radius: 8px; overflow: hidden; }
+            .qty-btn { width: 28px; height: 28px; background: none; border: none; color: var(--accent); font-weight: 800; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            .qty-num { font-size: 14px; font-weight: 700; color: var(--text); min-width: 18px; text-align: center; }
+            .add-btn-sw { width: 72px; height: 32px; background: white; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+            @keyframes slideUpMobile { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+          `}</style>
+
+          {/* Sticky top: header + search + category pills */}
+          <div className="menu-sticky-top">
+            <div className="menu-header">
+              <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <ChevronLeft size={24} color='var(--text)' />
+              </button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
+              </div>
+              <div style={{ fontSize: 26 }}>{cafeteria.image_emoji}</div>
             </div>
-            <div style={{ fontSize: 28 }}>{cafeteria.image_emoji}</div>
+
+            {/* Search */}
+            <div className="menu-search-bar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                placeholder="Search food or drink..."
+                value={menuSearch}
+                onChange={e => setMenuSearch(e.target.value)}
+              />
+              {menuSearch && (
+                <button onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</button>
+              )}
+            </div>
+
+            {/* Category pills */}
+            {!menuSearch && (
+              <div className="cat-pills">
+                {categories.map(cat => {
+                  const emoji = (() => {
+                    const c = cat.toLowerCase()
+                    if (c.includes('juice') || c.includes('fresh')) return '🍹'
+                    if (c.includes('mojito')) return '🍃'
+                    if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return '☕'
+                    if (c.includes('milkshake') || c.includes('thick shake') || c.includes('ice cream shake')) return '🥛'
+                    if (c.includes('shake') || c.includes('special shake')) return '🧋'
+                    if (c.includes('soda')) return '🥤'
+                    if (c.includes('lassi')) return '🪣'
+                    if (c.includes('burger')) return '🍔'
+                    if (c.includes('roll') || c.includes('wrap')) return '🌯'
+                    if (c.includes('sandwich') || c.includes('club')) return '🥪'
+                    if (c.includes('fries') || c.includes('loaded')) return '🍟'
+                    if (c.includes('egg')) return '🍳'
+                    if (c.includes('strip')) return '🍗'
+                    if (c.includes('bun')) return '🍞'
+                    if (c.includes('maggi')) return '🍜'
+                    if (c.includes('delight')) return '✨'
+                    if (c.includes('quick') || c.includes('snack') || c.includes('bite')) return '⚡'
+                    if (c.includes('biryani')) return '🍚'
+                    if (c.includes('combo')) return '🎁'
+                    if (c.includes('momos')) return '🥟'
+                    if (c.includes('drink')) return '🧃'
+                    return '🍽️'
+                  })()
+                  const isActive = selectedCategory === cat
+                  return (
+                    <button key={cat} className="cat-pill" onClick={() => setSelectedCategory(cat)} style={{ background: 'none', border: 'none', padding: 0 }}>
+                      <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>{emoji}</div>
+                      <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
-          <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 200 }}>
-            <style>{`
-              .category-card { border: 2px solid rgba(26,31,46,0.1); border-radius: 14px; background: white; margin-bottom: 16px; animation: slideUpMobile 0.5s ease both; overflow: hidden; }
-              .category-header { position: relative; width: 100%; height: 180px; margin-bottom: 0; padding: 0; border-bottom: 3px solid #FFA500; display: flex; align-items: flex-start; justify-content: flex-start; }
-              .category-title { font-family: 'Impact', 'Arial Black', sans-serif; font-size: 24px; font-weight: 900; color: #1a1f2e; text-transform: uppercase; letter-spacing: 1px; background: black; color: #FFA500; padding: 10px 16px; border-radius: 6px; white-space: nowrap; position: absolute; bottom: 12px; left: 12px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-              .category-image { width: 100%; height: 100%; object-fit: cover; }
-              .menu-item-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px dotted rgba(26,31,46,0.1); }
-              .menu-item-name { flex: 1; font-size: 14px; color: var(--text); font-weight: 500; }
-              .menu-item-price { font-size: 14px; fontWeight: 700; color: var(--accent); margin-right: 12px; }
-              .add-btn-small { width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 700; transition: all 0.2s; }
-              @keyframes slideUpMobile { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-            `}</style>
-
-            {categories.map((category, catIdx) => {
-              if (category === 'Shakes') {
-                const shakes99 = menuItems.filter(m => m.category === 'Shakes' && m.price === 99)
-                const shakes79 = menuItems.filter(m => m.category === 'Shakes' && m.price === 79)
-                return (
-                  <div key={`shakes-${catIdx}`} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                    {shakes99.length > 0 && (
-                      <div className="category-card">
-                        <div className="category-header">
-                          <img src={CATEGORY_IMAGES['Shakes @99']} alt="Shakes @99" className="category-image" />
-                          <div className="category-title">Shakes @99</div>
-                        </div>
-                        <div style={{ padding: '16px' }}>
-                          {shakes99.map(item => {
-                            const inCart = itemInCart(item.id)
-                            const fav = isFavourite(item.id)
-                            return (
-                              <div key={item.id} className="menu-item-row">
-                                <span className="menu-item-name">{item.name}</span>
-                                <span className="menu-item-price">₹{item.price}</span>
-                                {inCart ? (
-                                  <div style={{ display: 'flex', gap: 4 }}>
-                                    <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
-                                    <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{inCart.quantity}</span>
-                                    <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)} className="add-btn-small">+</button>
-                                  </div>
-                                ) : (
-                                  <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
-                                )}
-                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-                                  <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
-                                </button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    {shakes79.length > 0 && (
-                      <div className="category-card">
-                        <div className="category-header">
-                          <img src={CATEGORY_IMAGES['Shakes @79']} alt="Shakes @79" className="category-image" />
-                          <div className="category-title">Shakes @79</div>
-                        </div>
-                        <div style={{ padding: '16px' }}>
-                          {shakes79.map(item => {
-                            const inCart = itemInCart(item.id)
-                            const fav = isFavourite(item.id)
-                            return (
-                              <div key={item.id} className="menu-item-row">
-                                <span className="menu-item-name">{item.name}</span>
-                                <span className="menu-item-price">₹{item.price}</span>
-                                {inCart ? (
-                                  <div style={{ display: 'flex', gap: 4 }}>
-                                    <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
-                                    <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{inCart.quantity}</span>
-                                    <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)} className="add-btn-small">+</button>
-                                  </div>
-                                ) : (
-                                  <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
-                                )}
-                                <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-                                  <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
-                                </button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+          {/* Items list */}
+          <div style={{ paddingBottom: 180 }}>
+            {menuSearch ? (
+              // Search results across all categories
+              (() => {
+                const q = menuSearch.toLowerCase()
+                const results = menuItems.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q) || m.category.toLowerCase().includes(q))
+                return results.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>No items found for &quot;{menuSearch}&quot;</div>
+                ) : (
+                  <>
+                    <div className="menu-section-title">Results ({results.length})</div>
+                    {results.map(item => <MenuItemCard key={item.id} item={item} />)}
+                  </>
                 )
-              }
-
-              const categoryItems = menuItems.filter(m => m.category === category)
-              const displayName = displayCategory(category)
-              const categoryImage = CATEGORY_IMAGES[displayName] || CATEGORY_IMAGES[category] || '🍽️'
-
-              return (
-                <div key={category} className="category-card">
-                  <div className="category-header">
-                    {typeof categoryImage === 'string' && categoryImage.includes('http') ? (
-                      <>
-                        <img src={categoryImage} alt={displayName} className="category-image" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; const fb = (e.currentTarget as HTMLImageElement).nextElementSibling as HTMLElement; if (fb) fb.style.display = 'flex' }} />
-                        <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'none', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
-                          🍽️
-                        </div>
-                      </>
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
-                        {categoryImage}
+              })()
+            ) : (
+              // Items for selected category
+              (() => {
+                const catItems = menuItems.filter(m => m.category === selectedCategory)
+                const catImg = CATEGORY_IMAGES[selectedCategory] || null
+                return (
+                  <>
+                    {/* Category hero image */}
+                    {catImg && (
+                      <div style={{ position: 'relative', height: 160, overflow: 'hidden' }}>
+                        <img src={catImg} alt={selectedCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={e => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = 'none' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
+                        <div style={{ position: 'absolute', bottom: 14, left: 16, color: 'white', fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>{selectedCategory}</div>
+                        <div style={{ position: 'absolute', bottom: 14, right: 16, color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{catItems.length} items</div>
                       </div>
                     )}
-                    <div className="category-title">{displayName}</div>
-                  </div>
-                  <div style={{ padding: '16px' }}>
-                    {categoryItems.map(item => {
-                      const inCart = itemInCart(item.id)
-                      const fav = isFavourite(item.id)
-                      return (
-                        <div key={item.id} className="menu-item-row">
-                          <span className="menu-item-name">{item.name}</span>
-                          <span className="menu-item-price">₹{item.price}</span>
-                          {inCart ? (
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)} className="add-btn-small" style={{ background: '#ccc', color: '#333' }}>−</button>
-                              <span style={{ width: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{inCart.quantity}</span>
-                              <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)} className="add-btn-small">+</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => handleAddItem(item)} className="add-btn-small">+</button>
-                          )}
-                          <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 6px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-                            <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#bbb'} />
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
+                    <div className="menu-section-title" style={{ paddingTop: catImg ? 12 : 20 }}>{catImg ? '' : selectedCategory} {!catImg && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>• {catItems.length} items</span>}</div>
+                    {catItems.map(item => <MenuItemCard key={item.id} item={item} />)}
+                  </>
+                )
+              })()
+            )}
           </div>
+
+        </div>
+      )}
+
 
           {/* Cart Sheet */}
           {showCartSheet && (
