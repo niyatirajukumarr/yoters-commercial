@@ -42,6 +42,15 @@ interface Order {
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 type Tab = 'home' | 'orders' | 'profile'
 
+const CATEGORY_EMOJI: { [key: string]: string } = {
+  'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
+  'Thick Shake': '🧋', 'Sodas': '🫧', 'Coffee Shake': '☕', 'Special Shakes': '🧋',
+  'Ice Cream Shakes': '🍦', 'Lassi': '🥛', 'Delights': '🍮', 'Club Sandwich': '🥪',
+  'Strips': '🍗', 'Sandwiches': '🥪', 'Egg Bites': '🍳', 'Loaded Fries': '🍟',
+  'Rolls': '🌯', 'Burgers': '🍔', 'Buns': '🍞', 'Wraps': '🌯',
+  'Quick Bites': '🍟', 'Maggies': '🍜',
+}
+
 const ITEM_IMAGES: { [key: string]: string } = {
   // Fresh Juices
   'Lemon':                        'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop',
@@ -559,8 +568,8 @@ export default function CafeteriaPage() {
     return (
       <div key={item.id} className="menu-item-card">
         {catImg
-          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = document.createElement('div'); fb.className = 'menu-item-thumb-emoji'; fb.textContent = '🍽️'; el.parentNode?.insertBefore(fb, el); }} />
-          : <div className="menu-item-thumb-emoji">🍽️</div>}
+          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = document.createElement('div'); fb.className = 'menu-item-thumb-emoji'; fb.textContent = CATEGORY_EMOJI[item.category] ?? '🍽️'; el.parentNode?.insertBefore(fb, el); }} />
+          : <div className="menu-item-thumb-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
         <div className="menu-item-info">
           <div className="menu-item-name-sw">{item.name}</div>
           {item.description && <div className="menu-item-desc">{item.description}</div>}
@@ -650,7 +659,7 @@ export default function CafeteriaPage() {
             .menu-section-title { font-size: 18px; font-weight: 800; color: var(--navy); padding: 20px 16px 8px; }
             .menu-item-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f0f2; background: white; }
             .menu-item-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #f5f5f7; }
-            .menu-item-thumb-emoji { width: 72px; height: 72px; border-radius: 12px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+            .menu-item-thumb-emoji { width: 72px; height: 72px; border-radius: 12px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
             .menu-item-info { flex: 1; min-width: 0; }
             .menu-item-name-sw { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .menu-item-desc { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
