@@ -276,6 +276,9 @@ export default function CafeteriaPage() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
+  const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [showOrderTypeModal, setShowOrderTypeModal] = useState(false)
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
 
@@ -427,6 +430,7 @@ export default function CafeteriaPage() {
 
   const handleAddItem = (item: MenuItem) => {
     addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
+    if (!orderType) setShowOrderTypeModal(true)
   }
 
   const handlePlaceOrder = async () => {
@@ -439,7 +443,7 @@ export default function CafeteriaPage() {
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
         .from('orders')
-        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes }])
+        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes, order_type: orderType ?? 'takeaway', delivery_address: orderType === 'delivery' ? deliveryAddress : null }])
         .select()
         .single()
 
@@ -889,6 +893,17 @@ export default function CafeteriaPage() {
       {/* OTHER STEPS - DETAILS, PAYMENT, CONFIRMATION */}
       {step === 'details' && (
         <div style={{ padding: 'var(--mobile-spacing)', paddingBottom: 100 }}>
+          {/* Order Type Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-light)', border: '1px solid var(--accent-light2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 24 }}>{orderType === 'dine_in' ? '🍽️' : orderType === 'delivery' ? '🛵' : '🥡'}</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{orderType === 'dine_in' ? 'Dine In' : orderType === 'delivery' ? 'Home Delivery' : 'Take Away'}</div>
+                {orderType === 'delivery' && deliveryAddress && <div style={{ fontSize: 11, color: 'var(--muted)' }}>{deliveryAddress}</div>}
+              </div>
+            </div>
+            <button onClick={() => setShowOrderTypeModal(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Change</button>
+          </div>
           {/* Order Details Form */}
           <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Order Details</h3>
           <input
@@ -990,6 +1005,53 @@ export default function CafeteriaPage() {
       {step === 'confirmation' && showTicket && tokenData && (
         <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 20 }}>
           <TokenTicket token={tokenData.token} items={tokenData.items} total={tokenData.total} orderId={tokenData.id} cafeteriaName={cafeteria.name} onClose={() => setShowTicket(false)} />
+        </div>
+      )}
+
+      {/* ORDER TYPE MODAL */}
+      {showOrderTypeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowOrderTypeModal(false)}>
+          <div style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '28px 20px 40px', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, background: '#e0e0e0', borderRadius: 2, margin: '0 auto 20px' }} />
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, color: 'var(--navy)' }}>How would you like your order?</h2>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>Choose your preferred order type</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', emoji: '🍽️' },
+                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', emoji: '🥡' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', emoji: '🛵' },
+              ].map(opt => (
+                <button key={opt.key} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); if (opt.key !== 'delivery') setShowOrderTypeModal(false) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
+                  <span style={{ fontSize: 32 }}>{opt.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}</div>
+                  </div>
+                  {orderType === opt.key && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 18 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            {orderType === 'delivery' && (
+              <div style={{ marginTop: 16 }}>
+                <input
+                  placeholder="Enter your delivery address..."
+                  value={deliveryAddress}
+                  onChange={e => setDeliveryAddress(e.target.value)}
+                  style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                />
+                <button onClick={() => { if (deliveryAddress.trim()) setShowOrderTypeModal(false) }}
+                  style={{ width: '100%', marginTop: 12, padding: 14, background: deliveryAddress.trim() ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: deliveryAddress.trim() ? 'pointer' : 'not-allowed' }}>
+                  Confirm Address
+                </button>
+              </div>
+            )}
+            {orderType && orderType !== 'delivery' && (
+              <button onClick={() => setShowOrderTypeModal(false)} style={{ width: '100%', marginTop: 16, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Confirm →
+              </button>
+            )}
+          </div>
         </div>
       )}
 
