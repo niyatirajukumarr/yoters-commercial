@@ -1,156 +1,222 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api'
-
-const LIBRARIES: ('places')[] = ['places']
-
-const MAP_CONTAINER_STYLE = { width: '100%', height: '280px', borderRadius: '12px' }
-const DEFAULT_CENTER = { lat: 17.385, lng: 78.4867 } // Hyderabad default
+import { useState, useEffect, useRef } from 'react'
 
 interface Props {
-  onConfirm: (address: string, lat: number, lng: number) => void
+  onConfirm: (address: string) => void
   onClose: () => void
 }
 
 export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
-  const [center, setCenter] = useState(DEFAULT_CENTER)
-  const [markerPos, setMarkerPos] = useState(DEFAULT_CENTER)
+  const mapRef = useRef<HTMLDivElement>(null)
   const [address, setAddress] = useState('')
-  const [loadError, setLoadError] = useState(false)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
+  const [loadingSearch, setLoadingSearch] = useState(false)
+  const [manualAddress, setManualAddress] = useState('')
+  const markerRef = useRef<any>(null)
+  const mapInstanceRef = useRef<any>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Try to get user's current location
+  // Reverse geocode using Nominatim (free, no key)
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const data = await res.json()
+      return (data.display_name as string) ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    } catch {
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    }
+  }
+
+  // Search using Nominatim
+  const searchAddress = async (q: string) => {
+    if (!q.trim()) { setSuggestions([]); return }
+    setLoadingSearch(true)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const data = await res.json()
+      setSuggestions(data)
+    } catch {
+      setSuggestions([])
+    }
+    setLoadingSearch(false)
+  }
+
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        setCenter(loc)
-        setMarkerPos(loc)
-        // Reverse geocode to get address
-        const geocoder = new google.maps.Geocoder()
-        geocoder.geocode({ location: loc }, (results, status) => {
-          if (status === 'OK' && results?.[0]) {
-            setAddress(results[0].formatted_address)
-            if (inputRef.current) inputRef.current.value = results[0].formatted_address
-          }
+    if (!mapRef.current) return
+    let L: any
+    let map: any
+    let marker: any
+
+    const init = async () => {
+      L = (await import('leaflet')).default
+
+      // Fix default marker icons (Next.js asset path issue)
+      delete (L.Icon.Default.prototype as any)._getIconUrl
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      })
+
+      const defaultCenter: [number, number] = [17.385, 78.4867] // Hyderabad
+
+      map = L.map(mapRef.current!, { zoomControl: true, attributionControl: false })
+      mapInstanceRef.current = map
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(map)
+
+      marker = L.marker(defaultCenter, { draggable: true }).addTo(map)
+      markerRef.current = marker
+      map.setView(defaultCenter, 15)
+
+      // Try to get user's location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const lat = pos.coords.latitude
+          const lng = pos.coords.longitude
+          marker.setLatLng([lat, lng])
+          map.setView([lat, lng], 16)
+          const addr = await reverseGeocode(lat, lng)
+          setAddress(addr)
+        }, () => {
+          // silently fail, use default
         })
-      }, () => {}) // silently fail if denied
+      }
+
+      // Click on map to move marker
+      map.on('click', async (e: any) => {
+        const { lat, lng } = e.latlng
+        marker.setLatLng([lat, lng])
+        const addr = await reverseGeocode(lat, lng)
+        setAddress(addr)
+      })
+
+      // Drag marker
+      marker.on('dragend', async () => {
+        const { lat, lng } = marker.getLatLng()
+        const addr = await reverseGeocode(lat, lng)
+        setAddress(addr)
+      })
+    }
+
+    init()
+
+    return () => {
+      if (map) map.remove()
     }
   }, [])
 
-  const onPlaceChanged = useCallback(() => {
-    if (!autocompleteRef.current) return
-    const place = autocompleteRef.current.getPlace()
-    if (!place.geometry?.location) return
-    const lat = place.geometry.location.lat()
-    const lng = place.geometry.location.lng()
-    setCenter({ lat, lng })
-    setMarkerPos({ lat, lng })
-    setAddress(place.formatted_address ?? place.name ?? '')
-  }, [])
+  const flyTo = (lat: number, lng: number, displayName: string) => {
+    setSuggestions([])
+    setSearchQuery(displayName)
+    setAddress(displayName)
+    if (mapInstanceRef.current && markerRef.current) {
+      mapInstanceRef.current.setView([lat, lng], 17)
+      markerRef.current.setLatLng([lat, lng])
+    }
+  }
 
-  const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (!e.latLng) return
-    const lat = e.latLng.lat()
-    const lng = e.latLng.lng()
-    setMarkerPos({ lat, lng })
-    // Reverse geocode
-    const geocoder = new google.maps.Geocoder()
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results?.[0]) {
-        setAddress(results[0].formatted_address)
-        if (inputRef.current) inputRef.current.value = results[0].formatted_address
-      }
-    })
-  }, [])
-
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => searchAddress(val), 500)
+  }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 40px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        {/* Handle */}
-        <div style={{ width: 40, height: 4, background: '#e0e0e0', borderRadius: 2, margin: '0 auto 16px' }} />
+    <>
+      {/* Leaflet CSS */}
+      <style>{`@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');`}</style>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy)' }}>📍 Select Delivery Location</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</button>
-        </div>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
+        onClick={onClose}
+      >
+        <div
+          style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 36px', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Handle */}
+          <div style={{ width: 40, height: 4, background: '#e0e0e0', borderRadius: 2, margin: '0 auto' }} />
 
-        {!apiKey || loadError ? (
-          // Fallback: plain text input if no API key
-          <div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-              {!apiKey ? '⚠️ Google Maps API key not configured. Enter address manually:' : '⚠️ Map failed to load. Enter address manually:'}
-            </p>
-            <textarea
-              placeholder="Enter your full delivery address..."
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              style={{ width: '100%', padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 80, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy)', margin: 0 }}>📍 Select Delivery Location</h2>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</button>
           </div>
-        ) : (
-          <LoadScript googleMapsApiKey={apiKey} libraries={LIBRARIES} onError={() => setLoadError(true)}>
-            {/* Search box */}
-            <Autocomplete onLoad={ac => { autocompleteRef.current = ac }} onPlaceChanged={onPlaceChanged}>
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="🔍 Search for your address..."
-                style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, marginBottom: 12, outline: 'none', boxSizing: 'border-box' }}
-              />
-            </Autocomplete>
 
-            {/* Map */}
-            <GoogleMap
-              mapContainerStyle={MAP_CONTAINER_STYLE}
-              center={center}
-              zoom={15}
-              onClick={onMapClick}
-              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, zoomControl: true }}
-            >
-              <Marker
-                position={markerPos}
-                draggable
-                onDragEnd={e => {
-                  if (!e.latLng) return
-                  const lat = e.latLng.lat()
-                  const lng = e.latLng.lng()
-                  setMarkerPos({ lat, lng })
-                  const geocoder = new google.maps.Geocoder()
-                  geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-                    if (status === 'OK' && results?.[0]) {
-                      setAddress(results[0].formatted_address)
-                      if (inputRef.current) inputRef.current.value = results[0].formatted_address
-                    }
-                  })
-                }}
-              />
-            </GoogleMap>
-
-            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, textAlign: 'center' }}>
-              Tap on map or drag the pin to adjust your location
-            </p>
-
-            {address && (
-              <div style={{ marginTop: 12, padding: '10px 14px', background: '#f5f5f7', borderRadius: 10, fontSize: 13, color: 'var(--navy)' }}>
-                📍 {address}
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="🔍 Search for your address..."
+              style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+            />
+            {loadingSearch && (
+              <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--muted)' }}>Searching...</div>
+            )}
+            {suggestions.length > 0 && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 10, zIndex: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto' }}>
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => flyTo(parseFloat(s.lat), parseFloat(s.lon), s.display_name)}
+                    style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', fontSize: 13, cursor: 'pointer', color: 'var(--navy)', lineHeight: 1.4 }}
+                  >
+                    📍 {s.display_name}
+                  </button>
+                ))}
               </div>
             )}
-          </LoadScript>
-        )}
+          </div>
 
-        <button
-          onClick={() => { if (address.trim()) onConfirm(address, markerPos.lat, markerPos.lng) }}
-          disabled={!address.trim()}
-          style={{ width: '100%', marginTop: 16, padding: 15, background: address.trim() ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: address.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }}
-        >
-          Confirm Delivery Location →
-        </button>
+          {/* Map */}
+          <div ref={mapRef} style={{ width: '100%', height: 280, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }} />
+
+          <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', margin: 0 }}>
+            Tap on map or drag the pin to set your location
+          </p>
+
+          {/* Detected address */}
+          {address && (
+            <div style={{ padding: '10px 14px', background: '#f0faf5', border: '1px solid rgba(46,158,107,0.3)', borderRadius: 10, fontSize: 13, color: 'var(--navy)' }}>
+              📍 {address}
+            </div>
+          )}
+
+          {/* Manual fallback */}
+          <details style={{ fontSize: 13 }}>
+            <summary style={{ cursor: 'pointer', color: 'var(--muted)', padding: '4px 0' }}>Type address manually instead</summary>
+            <textarea
+              placeholder="Enter your full delivery address..."
+              value={manualAddress}
+              onChange={e => setManualAddress(e.target.value)}
+              style={{ width: '100%', marginTop: 8, padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 70, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
+            />
+          </details>
+
+          <button
+            onClick={() => {
+              const final = manualAddress.trim() || address.trim()
+              if (final) onConfirm(final)
+            }}
+            disabled={!address.trim() && !manualAddress.trim()}
+            style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
+          >
+            Confirm Delivery Location →
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
