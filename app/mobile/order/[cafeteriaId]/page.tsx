@@ -435,7 +435,6 @@ export default function CafeteriaPage() {
 
   const handleAddItem = (item: MenuItem) => {
     addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
-    if (!orderType) setShowOrderTypeModal(true)
   }
 
   const handlePlaceOrder = async () => {
@@ -814,7 +813,7 @@ export default function CafeteriaPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17 }}>
                   <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{total}</span>
                 </div>
-                <button onClick={() => { setShowCartSheet(false); setStep('details') }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                <button onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
                 </button>
               </div>
@@ -1052,16 +1051,16 @@ export default function CafeteriaPage() {
                   {deliveryAddress ? '📍 Change Location' : '📍 Select on Map'}
                 </button>
                 {deliveryAddress && (
-                  <button onClick={() => setShowOrderTypeModal(false)}
+                  <button onClick={() => { setShowOrderTypeModal(false); setStep('details') }}
                     style={{ width: '100%', marginTop: 10, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                    Confirm Address →
+                    Confirm & Proceed →
                   </button>
                 )}
               </div>
             )}
             {orderType && orderType !== 'delivery' && (
-              <button onClick={() => setShowOrderTypeModal(false)} style={{ width: '100%', marginTop: 16, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Confirm →
+              <button onClick={() => { setShowOrderTypeModal(false); setStep('details') }} style={{ width: '100%', marginTop: 16, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Confirm & Proceed →
               </button>
             )}
           </div>
