@@ -42,6 +42,196 @@ interface Order {
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 type Tab = 'home' | 'orders' | 'profile'
 
+const ITEM_IMAGES: { [key: string]: string } = {
+  // Fresh Juices
+  'Lemon':                       'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=200&h=200&fit=crop',
+  'Lemon Mint':                  'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=200&h=200&fit=crop',
+  'Moroccan Lime':               'https://images.unsplash.com/photo-1571506165871-ee72a35bc9d4?w=200&h=200&fit=crop',
+  'Grape Lemon':                 'https://images.unsplash.com/photo-1534353473418-4cfa0f1d6b03?w=200&h=200&fit=crop',
+  'Musambi':                     'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=200&h=200&fit=crop',
+  'Orange':                      'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop',
+  'Watermelon':                  'https://images.unsplash.com/photo-1587049633312-d628ae50a8ae?w=200&h=200&fit=crop',
+  'Muskmelon':                   'https://images.unsplash.com/photo-1622597468739-9b66fac1c1a2?w=200&h=200&fit=crop',
+  'Pappaya':                     'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=200&h=200&fit=crop',
+  'Pineapple':                   'https://images.unsplash.com/photo-1490885578174-acda8905c2c6?w=200&h=200&fit=crop',
+  'Grape':                       'https://images.unsplash.com/photo-1596363505729-4190a9506133?w=200&h=200&fit=crop',
+  'Kokum':                       'https://images.unsplash.com/photo-1559181567-c3190ca9be46?w=200&h=200&fit=crop',
+  'Mango':                       'https://images.unsplash.com/photo-1605027990121-cbae9e0642b8?w=200&h=200&fit=crop',
+  'Pomegranate':                 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=200&h=200&fit=crop',
+
+  // Mojitos
+  'Virgin Mojito':               'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=200&h=200&fit=crop',
+  'Blue Ocean':                  'https://images.unsplash.com/photo-1560508180-03f285f67ded?w=200&h=200&fit=crop',
+  'Kiwi Cooler':                 'https://images.unsplash.com/photo-1571506165871-ee72a35bc9d4?w=200&h=200&fit=crop',
+  'Greenade':                    'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=200&h=200&fit=crop&sat=-20&hue=90',
+  'Black Current Night':         'https://images.unsplash.com/photo-1614180274763-6e6d8f6cabb4?w=200&h=200&fit=crop',
+  'Melody Melon':                'https://images.unsplash.com/photo-1587049633312-d628ae50a8ae?w=200&h=200&fit=crop&hue=30',
+  'Blueberry Martini':           'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200&h=200&fit=crop',
+
+  // Hot Beverages
+  'Coffee':                      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=200&fit=crop',
+  'Boost':                       'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=200&h=200&fit=crop',
+  'Horlicks':                    'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=200&h=200&fit=crop',
+
+  // Fruit Milkshakes
+  'Apple Milkshake':             'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=200&h=200&fit=crop',
+  'Muskmelon Milkshake':         'https://images.unsplash.com/photo-1570696516188-ade861b84a49?w=200&h=200&fit=crop',
+  'Pappaya Milkshake':           'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=200&h=200&fit=crop',
+  'Banana Milkshake':            'https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=200&h=200&fit=crop',
+  'Mango Milkshake':             'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=200&h=200&fit=crop',
+  'Pomegranate Milkshake':       'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Avocado Milkshake':           'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+  'Cocktail Milkshake':          'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop',
+
+  // Thick Shake
+  'Horlicks Thick Shake':        'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=200&h=200&fit=crop',
+  'Boost Thick Shake':           'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=200&h=200&fit=crop',
+  'Badam Thick Shake':           'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200&h=200&fit=crop&hue=30',
+  'Black Current Thick Shake':   'https://images.unsplash.com/photo-1614180274763-6e6d8f6cabb4?w=200&h=200&fit=crop',
+  'Green Apple Thick Shake':     'https://images.unsplash.com/photo-1490885578174-acda8905c2c6?w=200&h=200&fit=crop',
+  'Pista Thick Shake':           'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+  'Litchi Thick Shake':          'https://images.unsplash.com/photo-1559181567-c3190ca9be46?w=200&h=200&fit=crop',
+  'Oreo Thick Shake':            'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
+  'Crunchy Oreo Thick Shake':    'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=200&h=200&fit=crop',
+  'Rose Milk Thick Shake':       'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Dates Thick Shake':           'https://images.unsplash.com/photo-1570696516188-ade861b84a49?w=200&h=200&fit=crop',
+  'Blueberry Thick Shake':       'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200&h=200&fit=crop',
+  'Fig Thick Shake':             'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=200&h=200&fit=crop',
+  'Sharjah Thick Shake':         'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop',
+  'Tender Coconut Thick Shake':  'https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=200&h=200&fit=crop',
+  'Snickers Thick Shake':        'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
+  'Kitkat Thick Shake':          'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=200&h=200&fit=crop',
+  'Jack Fruit Thick Shake':      'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=200&h=200&fit=crop',
+  'Cashew Thick Shake':          'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=200&h=200&fit=crop',
+  'Chocolate Sharjah Thick Shake':'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop&sat=20',
+  'Dry Fruit Mix Thick Shake':   'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+  'Biscoff Thick Shake':         'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
+
+  // Sodas
+  'Lemon Soda':                  'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=200&h=200&fit=crop',
+  'Masala Soda':                 'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=200&h=200&fit=crop',
+  'Mint Soda':                   'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=200&h=200&fit=crop',
+  'Blue Lemonade':               'https://images.unsplash.com/photo-1560508180-03f285f67ded?w=200&h=200&fit=crop',
+  'Ginger Lemonade':             'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=200&h=200&fit=crop',
+  'Peach Ice':                   'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop',
+  'Jeera Masala':                'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=200&h=200&fit=crop',
+  'Hannari':                     'https://images.unsplash.com/photo-1622597468739-9b66fac1c1a2?w=200&h=200&fit=crop',
+
+  // Coffee Shake
+  'Frappuccino':                 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=200&h=200&fit=crop',
+  'Cold Coffee':                 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=200&h=200&fit=crop',
+  'Chocolate Coffee':            'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=200&fit=crop',
+
+  // Special Shakes
+  'Abood':                       'https://images.unsplash.com/photo-1570696516188-ade861b84a49?w=200&h=200&fit=crop',
+  'Sharjah Special':             'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop',
+  'Mango Choco Chip':            'https://images.unsplash.com/photo-1605027990121-cbae9e0642b8?w=200&h=200&fit=crop',
+  'Cocktail Ajel':               'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Alphonsa Smoothie':           'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=200&h=200&fit=crop',
+  'LETHAFI Madness':             'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
+  'Tender Mango':                'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=200&h=200&fit=crop',
+  'Tender Chikoo':               'https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=200&h=200&fit=crop',
+  'Chocolate Sharjah Special':   'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=200&h=200&fit=crop',
+  'Tender Avocado':              'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+
+  // Ice Cream Shakes
+  'Vanilla Ice Cream Shake':     'https://images.unsplash.com/photo-1497034825429-c343d7c6a68a?w=200&h=200&fit=crop',
+  'Chocolate Ice Cream Shake':   'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop',
+  'Butterscotch Ice Cream Shake':'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=200&h=200&fit=crop',
+  'Strawberry Ice Cream Shake':  'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Pistachios Ice Cream Shake':  'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+  'Mango Ice Cream Shake':       'https://images.unsplash.com/photo-1605027990121-cbae9e0642b8?w=200&h=200&fit=crop',
+
+  // Lassi
+  'Sweet Lassi':                 'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=200&h=200&fit=crop',
+  'Chocolate Lassi':             'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop',
+  'Strawberry Lassi':            'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Fruit Lassi':                 'https://images.unsplash.com/photo-1570697197101-56a85ccb6c76?w=200&h=200&fit=crop',
+  'Mango Lassi':                 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=200&h=200&fit=crop',
+  'Dry Fruit Lassi':             'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=200&h=200&fit=crop',
+
+  // Delights
+  'Fruit Salad':                 'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=200&h=200&fit=crop',
+  'Gud Bud':                     'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200&h=200&fit=crop',
+  'Royal Falooda':               'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop',
+  'Dry Fruit Queen':             'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
+  'Death By Chocolate':          'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop',
+
+  // Club Sandwich
+  'Veg Club Sandwich':           'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=200&h=200&fit=crop',
+  'Egg Club Sandwich':           'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&h=200&fit=crop',
+  'Chicken Club Sandwich':       'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=200&h=200&fit=crop',
+  'Fillet Club Sandwich':        'https://images.unsplash.com/photo-1600326145552-327f74de4af4?w=200&h=200&fit=crop',
+
+  // Strips
+  'Chicken Strips':              'https://images.unsplash.com/photo-1562967914-608f82629710?w=200&h=200&fit=crop',
+  'Creamy Strips':               'https://images.unsplash.com/photo-1598515213692-37c1a5deae31?w=200&h=200&fit=crop',
+
+  // Sandwiches
+  'Classic Veg Sandwich':        'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200&h=200&fit=crop',
+  'Grilled Mayo Cheese Sandwich':'https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=200&h=200&fit=crop',
+  'Egg Sandwich':                'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&h=200&fit=crop',
+  'Sweet Corn Cheese Sandwich':  'https://images.unsplash.com/photo-1627308595229-7830a5c18037?w=200&h=200&fit=crop',
+  'Lays Cheese Sandwich':        'https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=200&h=200&fit=crop',
+  'Chocolate Cheese Sandwich':   'https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=200&h=200&fit=crop',
+  'Paneer Sandwich':             'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=200&h=200&fit=crop',
+  'Chicken Fillet Sandwich':     'https://images.unsplash.com/photo-1600326145552-327f74de4af4?w=200&h=200&fit=crop',
+  'Chicken Sandwich':            'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=200&h=200&fit=crop',
+
+  // Egg Bites
+  'Bun Omlet':                   'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&h=200&fit=crop',
+  'Bread Omlet':                 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=200&h=200&fit=crop',
+  'Egg Bites':                   'https://images.unsplash.com/photo-1607690424560-35d967d6ad7b?w=200&h=200&fit=crop',
+
+  // Loaded Fries
+  'Classic Loaded Fries':        'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
+  'Cheesy Loaded Fries':         'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=200&h=200&fit=crop',
+
+  // Rolls
+  'Egg Roll':                    'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=200&h=200&fit=crop',
+  'Veg Roll':                    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=200&h=200&fit=crop',
+  'Paneer Roll':                 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=200&h=200&fit=crop',
+  'Egg with Chicken Roll':       'https://images.unsplash.com/photo-1598515213692-37c1a5deae31?w=200&h=200&fit=crop',
+
+  // Burgers
+  'Classic Veg Burger':          'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=200&h=200&fit=crop',
+  'Egg Burger':                  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&h=200&fit=crop',
+  'Paneer Burger':               'https://images.unsplash.com/photo-1550547660-d9450f859349?w=200&h=200&fit=crop',
+  'Veg Nuggets Burger':          'https://images.unsplash.com/photo-1598515213692-37c1a5deae31?w=200&h=200&fit=crop',
+  'Classic Chicken Burger':      'https://images.unsplash.com/photo-1596956470007-2bf6095e7e16?w=200&h=200&fit=crop',
+  'Crunchy Chicken Burger':      'https://images.unsplash.com/photo-1600326145552-327f74de4af4?w=200&h=200&fit=crop',
+  'Chicken Cheese Burger':       'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=200&h=200&fit=crop',
+  'Chicken with Egg Burger':     'https://images.unsplash.com/photo-1607690424560-35d967d6ad7b?w=200&h=200&fit=crop',
+  'Zinger Chicken Burger':       'https://images.unsplash.com/photo-1561758033-48d52648ae8b?w=200&h=200&fit=crop',
+  'Zinger Stacker':              'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=200&h=200&fit=crop',
+
+  // Buns
+  'Mayo Bun':                    'https://images.unsplash.com/photo-1550317138-10000687a72b?w=200&h=200&fit=crop',
+  'Lays Bun':                    'https://images.unsplash.com/photo-1540713434306-58505cf1b6fc?w=200&h=200&fit=crop',
+
+  // Wraps
+  'Veggies Wrap':                'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=200&h=200&fit=crop',
+  'Crispy Chicken Wrap':         'https://images.unsplash.com/photo-1562967914-608f82629710?w=200&h=200&fit=crop',
+  'Green Grill Wrap':            'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=200&h=200&fit=crop',
+  'Fillet Wrap':                 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=200&h=200&fit=crop',
+  'Tandoori Wrap':               'https://images.unsplash.com/photo-1598515213692-37c1a5deae31?w=200&h=200&fit=crop',
+  'Lethafi Wrap':                'https://images.unsplash.com/photo-1600326145552-327f74de4af4?w=200&h=200&fit=crop',
+
+  // Quick Bites
+  'French Fries':                'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
+  'Peri Peri Fries':             'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=200&h=200&fit=crop',
+  'Veg Nuggets':                 'https://images.unsplash.com/photo-1562967914-608f82629710?w=200&h=200&fit=crop',
+  'Chicken Nuggets':             'https://images.unsplash.com/photo-1627308595229-7830a5c18037?w=200&h=200&fit=crop',
+  'Finger Chicken':              'https://images.unsplash.com/photo-1598515213692-37c1a5deae31?w=200&h=200&fit=crop',
+  'Onion Rings':                 'https://images.unsplash.com/photo-1612952010457-2b6920c5a4fd?w=200&h=200&fit=crop',
+
+  // Maggies
+  'Masala Maggie':               'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200&h=200&fit=crop',
+  'Sweet Corn Maggie':           'https://images.unsplash.com/photo-1547592180-85f173990554?w=200&h=200&fit=crop',
+  'Egg Maggie':                  'https://images.unsplash.com/photo-1607690424560-35d967d6ad7b?w=200&h=200&fit=crop',
+  'Chicken Maggie':              'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200&h=200&fit=crop',
+}
+
 const CATEGORY_IMAGES: { [key: string]: string } = {
   'Biryani': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/biryani.jpg',
   'Mandhi': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/mandhi.jpg',
@@ -386,7 +576,7 @@ export default function CafeteriaPage() {
   const renderMenuCard = (item: MenuItem) => {
     const inCart = itemInCart(item.id)
     const fav = isFavourite(item.id)
-    const catImg = CATEGORY_IMAGES[item.category] || null
+    const catImg = ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
     return (
       <div key={item.id} className="menu-item-card">
         {catImg
