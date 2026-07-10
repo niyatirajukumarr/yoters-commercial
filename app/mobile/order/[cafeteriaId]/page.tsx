@@ -275,6 +275,7 @@ export default function CafeteriaPage() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [menuSearch, setMenuSearch] = useState('')
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
   const [orderId, setOrderId] = useState<string>('')
 
@@ -567,8 +568,8 @@ export default function CafeteriaPage() {
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
     return (
       <div key={item.id} className="menu-item-card">
-        {catImg
-          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={e => { const el = e.currentTarget as HTMLImageElement; el.style.display = 'none'; const fb = document.createElement('div'); fb.className = 'menu-item-thumb-emoji'; fb.textContent = CATEGORY_EMOJI[item.category] ?? '🍽️'; el.parentNode?.insertBefore(fb, el); }} />
+        {catImg && !imgErrors.has(item.id)
+          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={() => setImgErrors(prev => new Set(prev).add(item.id))} />
           : <div className="menu-item-thumb-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
         <div className="menu-item-info">
           <div className="menu-item-name-sw">{item.name}</div>
