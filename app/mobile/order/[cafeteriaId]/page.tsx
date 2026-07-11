@@ -340,19 +340,13 @@ export default function CafeteriaPage() {
   // Fetch cafeteria & menu
   useEffect(() => {
     if (!cafeteriaId) return
-    const doFetch = async (attempt = 1): Promise<void> => {
+    const doFetch = async () => {
       setLoading(true)
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Fetch timeout')), 8000)
-        )
-        const [cafRes, menuRes] = await Promise.race([
-          Promise.all([
-            supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
-            supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
-          ]),
-          timeoutPromise
-        ]) as any
+        const [cafRes, menuRes] = await Promise.all([
+          supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
+          supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
+        ])
         if (cafRes.data) setCafeteria(cafRes.data as Cafeteria)
         if (menuRes.data) {
           setMenuItems(menuRes.data as MenuItem[])
@@ -360,16 +354,12 @@ export default function CafeteriaPage() {
           if (cats.length > 0) setSelectedCategory(cats[0])
         }
       } catch (error) {
-        if (attempt < 3) {
-          // Auto-retry up to 3 times before giving up
-          return doFetch(attempt + 1)
-        }
-        console.error('Cafeteria/menu fetch error after retries:', error)
+        console.error('Menu fetch error:', error)
       } finally {
-        if (attempt >= 3) setLoading(false)
+        setLoading(false)
       }
     }
-    doFetch().finally(() => setLoading(false))
+    doFetch()
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
