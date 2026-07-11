@@ -40,7 +40,7 @@ export default function StudentHome() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
       const [cafesRes, queuesRes] = await Promise.race([
         Promise.all([
           supabase

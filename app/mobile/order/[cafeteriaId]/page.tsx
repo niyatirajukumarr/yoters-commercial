@@ -344,7 +344,7 @@ export default function CafeteriaPage() {
       setLoading(true)
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Fetch timeout')), 10000)
+          setTimeout(() => reject(new Error('Fetch timeout')), 3000)
         )
         const [cafRes, menuRes] = await Promise.race([
           Promise.all([
