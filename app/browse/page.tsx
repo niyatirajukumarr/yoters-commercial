@@ -79,14 +79,7 @@ export default function StudentHome() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_queues' }, fetchData)
       .subscribe()
 
-    // Refetch when tab becomes visible again (handles back navigation)
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
-    document.addEventListener('visibilitychange', onVisible)
-
-    return () => {
-      supabase.removeChannel(ch)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
+    return () => { supabase.removeChannel(ch) }
   }, [fetchData])
 
   const filtered = cafeterias.filter(c =>

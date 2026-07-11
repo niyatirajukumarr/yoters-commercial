@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import GlobalReloadHandler from '@/components/GlobalReloadHandler'
 
 export const metadata: Metadata = {
   title: 'Yoters',
@@ -24,7 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://qbvwcpjjattwebdzexni.supabase.co" />
         <link rel="dns-prefetch" href="https://qbvwcpjjattwebdzexni.supabase.co" />
       </head>
-      <body>{children}</body>
+      <body>
+        <GlobalReloadHandler />
+        {children}
+      </body>
     </html>
   )
 }
