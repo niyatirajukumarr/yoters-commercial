@@ -288,25 +288,34 @@ export default function CafeteriaPage() {
   // Convert slug to ID if needed
   useEffect(() => {
     const convertSlugToId = async () => {
-      setResolving(true)
-      try {
-        // Check if it's already a UUID
-        if (slugOrId.includes('-') && slugOrId.length === 36) {
-          setCafeteriaId(slugOrId)
-          return
-        }
+      // Already a UUID
+      if (slugOrId.includes('-') && slugOrId.length === 36) {
+        setCafeteriaId(slugOrId)
+        setResolving(false)
+        return
+      }
 
+      // Check sessionStorage cache first (avoids extra network call on refresh)
+      const cacheKey = `slug-id:${slugOrId}`
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        setCafeteriaId(cached)
+        setResolving(false)
+        return
+      }
+
+      try {
         const { data, error } = await supabase.from('cafeterias').select('id, name')
         if (error || !data) throw new Error('fetch failed')
 
         const matching = data.find(c => generateSlug(c.name) === slugOrId)
         if (matching) {
+          sessionStorage.setItem(cacheKey, matching.id)
           setCafeteriaId(matching.id)
         } else {
           router.push('/browse')
         }
       } catch {
-        // On any error, retry once by reloading the page
         window.location.reload()
       } finally {
         setResolving(false)
