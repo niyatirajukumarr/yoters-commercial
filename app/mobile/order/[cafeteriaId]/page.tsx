@@ -1028,7 +1028,7 @@ export default function CafeteriaPage() {
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', emoji: '🥡' },
                 { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', emoji: '🛵' },
               ].map(opt => (
-                <button key={opt.key} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); if (opt.key !== 'delivery') setShowOrderTypeModal(false) }}
+                <button key={opt.key} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); if (opt.key !== 'delivery') { setShowOrderTypeModal(false); setStep('details') } }}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
                   <span style={{ fontSize: 32 }}>{opt.emoji}</span>
                   <div>
