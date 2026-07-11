@@ -340,11 +340,11 @@ export default function CafeteriaPage() {
   // Fetch cafeteria & menu
   useEffect(() => {
     if (!cafeteriaId) return
-    const fetch = async () => {
+    const doFetch = async (attempt = 1): Promise<void> => {
       setLoading(true)
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Fetch timeout')), 3000)
+          setTimeout(() => reject(new Error('Fetch timeout')), 8000)
         )
         const [cafRes, menuRes] = await Promise.race([
           Promise.all([
@@ -360,12 +360,16 @@ export default function CafeteriaPage() {
           if (cats.length > 0) setSelectedCategory(cats[0])
         }
       } catch (error) {
-        console.error('Cafeteria/menu fetch error:', error)
+        if (attempt < 3) {
+          // Auto-retry up to 3 times before giving up
+          return doFetch(attempt + 1)
+        }
+        console.error('Cafeteria/menu fetch error after retries:', error)
       } finally {
-        setLoading(false)
+        if (attempt >= 3) setLoading(false)
       }
     }
-    fetch()
+    doFetch().finally(() => setLoading(false))
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
