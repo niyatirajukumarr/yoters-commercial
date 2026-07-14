@@ -687,7 +687,7 @@ export default function CafeteriaPage() {
           {/* Sticky top: header + search + category pills */}
           <div className="menu-sticky-top">
             <div className="menu-header">
-              <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <button onClick={() => router.push('/browse')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <ChevronLeft size={24} color='var(--text)' />
               </button>
               <div style={{ flex: 1 }}>
@@ -1081,7 +1081,7 @@ export default function CafeteriaPage() {
       {/* TAB NAVIGATION */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
         <button
-          onClick={() => { window.location.href = '/browse' }}
+          onClick={() => router.push('/browse')}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home

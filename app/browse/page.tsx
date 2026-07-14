@@ -38,35 +38,29 @@ export default function StudentHome() {
   }, [router])
 
   const fetchData = useCallback(async () => {
-    setLoading(true)
     try {
-      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
-      const [cafesRes, queuesRes] = await Promise.race([
-        Promise.all([
-          supabase
-            .from('cafeterias')
-            .select('id, name, description, location, image_url, image_emoji, is_open')
-            .eq('is_open', true)
-            .order('name'),
-          supabase
-            .from('cafeteria_queues')
-            .select('cafeteria_id, avg_wait_mins, queue_count')
-        ]),
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+      const result = await Promise.race([
+        supabase
+          .from('cafeterias')
+          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
+          .eq('is_open', true)
+          .order('name'),
         timeout
-      ])
+      ]) as any
 
-      const queueMap = new Map()
-      queuesRes.data?.forEach((q: any) => queueMap.set(q.cafeteria_id, q))
-
-      const combined = (cafesRes.data ?? []).map((cafe: any) => ({
-        ...cafe,
-        queue: queueMap.get(cafe.id) || { avg_wait_mins: 0, queue_count: 0 }
-      }))
-
-      setCafeterias(combined as CafeteriaWithQueue[])
+      if (result.error) {
+        console.error('Error fetching data:', result.error)
+      } else if (result.data) {
+        const combined = result.data.map((cafe: any) => ({
+          ...cafe,
+          queue: cafe.queue && cafe.queue.length > 0 ? cafe.queue[0] : { avg_wait_mins: 0, queue_count: 0 }
+        }))
+        setCafeterias(combined as CafeteriaWithQueue[])
+      }
     } catch (error) {
+      // Keep any previously loaded restaurants instead of wiping the list on a transient timeout
       console.error('Error fetching data:', error)
-      setCafeterias([])
     } finally {
       setLoading(false)
     }
