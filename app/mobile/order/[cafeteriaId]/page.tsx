@@ -18,6 +18,7 @@ interface MenuItem {
   price: number
   category: string
   is_available: boolean
+  is_veg?: boolean
   image_url?: string
   stock_quantity?: number | null
 }
@@ -276,6 +277,7 @@ export default function CafeteriaPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
@@ -427,9 +429,19 @@ export default function CafeteriaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cafeteriaId, menuItems.length])
 
-  const categories = [...new Set(menuItems.map(m => m.category))]
+  // Treat items with no flag as veg by default
+  const itemIsVeg = (m: MenuItem) => m.is_veg !== false
+  const visibleItems = menuItems.filter(m => (vegMode === 'veg' ? itemIsVeg(m) : !itemIsVeg(m)))
+  const categories = [...new Set(visibleItems.map(m => m.category))]
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
+
+  // Keep the selected category valid when switching veg / non-veg
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(selectedCategory)) {
+      setSelectedCategory(categories[0])
+    }
+  }, [categories.join('|'), selectedCategory])
 
   const categoryDisplayMap: { [key: string]: string } = { 'Juice': 'Juice @59' }
   const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
@@ -656,7 +668,12 @@ export default function CafeteriaPage() {
 
   // RENDER BY TAB
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{
+      minHeight: '100vh',
+      paddingBottom: 80,
+      background: vegMode === 'nonveg' ? 'linear-gradient(160deg, #fff0e8 0%, #ffe9ee 100%)' : undefined,
+      transition: 'background 0.3s ease',
+    }}>
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
         <div>
@@ -699,7 +716,29 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
               </div>
-              <div style={{ fontSize: 26 }}>{cafeteria.image_emoji}</div>
+              {/* Veg / Non-veg toggle */}
+              <button
+                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                aria-label={vegMode === 'veg' ? 'Showing veg. Tap for non-veg' : 'Showing non-veg. Tap for veg'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: vegMode === 'veg' ? '#edfaf3' : '#fff0e8',
+                  border: `1.5px solid ${vegMode === 'veg' ? '#2e9e6b' : '#e8734a'}`,
+                  borderRadius: 999, padding: '5px 10px', cursor: 'pointer', flexShrink: 0,
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span style={{
+                  width: 14, height: 14, borderRadius: 4, flexShrink: 0,
+                  border: `2px solid ${vegMode === 'veg' ? '#2e9e6b' : '#e8734a'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: vegMode === 'veg' ? '#2e9e6b' : '#e8734a' }} />
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: vegMode === 'veg' ? '#2e9e6b' : '#e8734a' }}>
+                  {vegMode === 'veg' ? 'Veg' : 'Non-veg'}
+                </span>
+              </button>
             </div>
 
             {/* Search */}
@@ -762,7 +801,7 @@ export default function CafeteriaPage() {
               // Search results across all categories
               (() => {
                 const q = menuSearch.toLowerCase()
-                const results = menuItems.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q) || m.category.toLowerCase().includes(q))
+                const results = visibleItems.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q) || m.category.toLowerCase().includes(q))
                 return results.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>No items found for &quot;{menuSearch}&quot;</div>
                 ) : (
@@ -775,7 +814,14 @@ export default function CafeteriaPage() {
             ) : (
               // Items for selected category
               (() => {
-                const catItems = menuItems.filter(m => m.category === selectedCategory)
+                if (visibleItems.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
+                      No {vegMode === 'veg' ? 'veg' : 'non-veg'} items available here.
+                    </div>
+                  )
+                }
+                const catItems = visibleItems.filter(m => m.category === selectedCategory)
                 const catImg = CATEGORY_IMAGES[selectedCategory] || null
                 return (
                   <>

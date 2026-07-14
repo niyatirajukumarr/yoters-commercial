@@ -18,10 +18,10 @@ export default function VendorDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
   const [waitOverride, setWaitOverride] = useState('')
-  const [menuForm, setMenuForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', image_file: null as File | null })
+  const [menuForm, setMenuForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null as File | null })
   const [isOpen, setIsOpen] = useState(true)
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -146,12 +146,13 @@ export default function VendorDashboard() {
       price: parseFloat(editForm.price),
       category: editForm.category,
       stock_quantity: editForm.stock_quantity ? parseInt(editForm.stock_quantity) : null,
+      is_veg: editForm.is_veg,
       image_url: imageUrl
     }).eq('id', editingItem.id)
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item updated!')
     setEditingItem(null)
-    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', image_file: null })
+    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
     setImagePreview(null)
     if (cafeteria) {
       const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteria.id).order('category')
@@ -184,11 +185,12 @@ export default function VendorDashboard() {
       price: parseFloat(menuForm.price),
       category: menuForm.category,
       stock_quantity: menuForm.stock_quantity ? parseInt(menuForm.stock_quantity) : null,
+      is_veg: menuForm.is_veg,
       image_url: imageUrl
     })
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item added!')
-    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', image_file: null })
+    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
     setImagePreview(null)
     const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteria.id).order('category')
     if (data) setMenuItems(data)
@@ -593,6 +595,25 @@ export default function VendorDashboard() {
                     </select>
                   </div>
                   <div>
+                    <label style={lbl}>Food Type</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {([['veg', 'Veg', '#2e9e6b'], ['nonveg', 'Non-veg', '#e8734a']] as const).map(([val, label, color]) => {
+                        const isVeg = val === 'veg'
+                        const active = (editingItem ? editForm.is_veg : menuForm.is_veg) === isVeg
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => editingItem ? setEditForm(m => ({ ...m, is_veg: isVeg })) : setMenuForm(m => ({ ...m, is_veg: isVeg }))}
+                            style={{ flex: 1, padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? color : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? color : 'var(--border)'}` }}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div>
                     <label style={lbl}>Item Image (JPG, PNG, WebP - Max 2MB)</label>
                     <input
                       type="file"
@@ -627,7 +648,7 @@ export default function VendorDashboard() {
                       <button
                         onClick={() => {
                           setEditingItem(null)
-                          setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', image_file: null })
+                          setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
                           setImagePreview(null)
                         }}
                         style={{ padding: '13px 20px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
@@ -662,7 +683,8 @@ export default function VendorDashboard() {
                               description: item.description || '',
                               price: item.price.toString(),
                               category: item.category,
-                              stock_quantity: item.stock_quantity?.toString() || ''
+                              stock_quantity: item.stock_quantity?.toString() || '',
+                              is_veg: item.is_veg ?? true
                             })
                             setImagePreview(item.image_url || null)
                           }}

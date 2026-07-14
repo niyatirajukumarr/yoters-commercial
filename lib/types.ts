@@ -28,6 +28,7 @@ export interface MenuItem {
   price: number
   category: string
   is_available: boolean
+  is_veg?: boolean
   image_url?: string
   stock_quantity?: number | null
   max_stock?: number
