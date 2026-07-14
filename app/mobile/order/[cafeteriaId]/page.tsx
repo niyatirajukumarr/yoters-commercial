@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
-import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User } from 'lucide-react'
+import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 
@@ -278,6 +278,10 @@ export default function CafeteriaPage() {
   const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
+  const [showFilter, setShowFilter] = useState(false)
+  const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
+  const [priceRange, setPriceRange] = useState<'all' | 'under200' | 'mid' | 'above400'>('all')
+  const [collection, setCollection] = useState<'all' | 'previous' | 'new'>('all')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
@@ -442,6 +446,33 @@ export default function CafeteriaPage() {
       setSelectedCategory(categories[0])
     }
   }, [categories.join('|'), selectedCategory])
+
+  // ----- Dish filters (sort / price / collections) -----
+  const prevOrderedIds = new Set<string>()
+  const prevOrderedNames = new Set<string>()
+  cafeOrders.forEach(o => (o.items || []).forEach((it: any) => {
+    if (it?.menu_item_id) prevOrderedIds.add(it.menu_item_id)
+    if (it?.name) prevOrderedNames.add(String(it.name).toLowerCase())
+  }))
+  const isPreviouslyOrdered = (m: MenuItem) => prevOrderedIds.has(m.id) || prevOrderedNames.has(m.name.toLowerCase())
+  const filtersActive = sortBy !== 'relevance' || priceRange !== 'all' || collection !== 'all'
+  const applyDishFilters = (items: MenuItem[]) => {
+    let out = items
+    if (priceRange === 'under200') out = out.filter(m => m.price < 200)
+    else if (priceRange === 'mid') out = out.filter(m => m.price >= 200 && m.price <= 400)
+    else if (priceRange === 'above400') out = out.filter(m => m.price > 400)
+    if (collection === 'previous') out = out.filter(isPreviouslyOrdered)
+    else if (collection === 'new') out = out.filter(m => !isPreviouslyOrdered(m))
+    if (sortBy === 'cost_low') out = [...out].sort((a, b) => a.price - b.price)
+    else if (sortBy === 'cost_high') out = [...out].sort((a, b) => b.price - a.price)
+    return out
+  }
+  const pillStyle = (active: boolean): CSSProperties => ({
+    padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+    border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+    background: active ? '#fff0f2' : 'white',
+    color: active ? 'var(--accent)' : 'var(--text2)',
+  })
 
   const categoryDisplayMap: { [key: string]: string } = { 'Juice': 'Juice @59' }
   const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
@@ -741,17 +772,32 @@ export default function CafeteriaPage() {
               </button>
             </div>
 
-            {/* Search */}
-            <div className="menu-search-bar">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input
-                placeholder="Search food or drink..."
-                value={menuSearch}
-                onChange={e => setMenuSearch(e.target.value)}
-              />
-              {menuSearch && (
-                <button onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</button>
-              )}
+            {/* Filter + Search */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
+              <button
+                onClick={() => setShowFilter(true)}
+                aria-label="Filters"
+                style={{
+                  position: 'relative', width: 44, height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  border: `1px solid ${filtersActive ? 'var(--accent)' : 'rgba(26,31,46,0.12)'}`,
+                  background: filtersActive ? '#fff0f2' : '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <SlidersHorizontal size={18} color={filtersActive ? '#E8334A' : 'var(--text2)'} />
+                {filtersActive && <span style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: '50%', background: '#E8334A' }} />}
+              </button>
+              <div className="menu-search-bar" style={{ flex: 1, margin: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input
+                  placeholder="Search food or drink..."
+                  value={menuSearch}
+                  onChange={e => setMenuSearch(e.target.value)}
+                />
+                {menuSearch && (
+                  <button onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</button>
+                )}
+              </div>
             </div>
 
             {/* Category pills */}
@@ -801,7 +847,7 @@ export default function CafeteriaPage() {
               // Search results across all categories
               (() => {
                 const q = menuSearch.toLowerCase()
-                const results = visibleItems.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q) || m.category.toLowerCase().includes(q))
+                const results = applyDishFilters(visibleItems.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q) || m.category.toLowerCase().includes(q)))
                 return results.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>No items found for &quot;{menuSearch}&quot;</div>
                 ) : (
@@ -821,7 +867,7 @@ export default function CafeteriaPage() {
                     </div>
                   )
                 }
-                const catItems = visibleItems.filter(m => m.category === selectedCategory)
+                const catItems = applyDishFilters(visibleItems.filter(m => m.category === selectedCategory))
                 const catImg = CATEGORY_IMAGES[selectedCategory] || null
                 return (
                   <>
@@ -836,12 +882,71 @@ export default function CafeteriaPage() {
                       </div>
                     )}
                     <div className="menu-section-title" style={{ paddingTop: catImg ? 12 : 20 }}>{catImg ? '' : selectedCategory} {!catImg && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>• {catItems.length} items</span>}</div>
-                    {catItems.map(item => renderMenuCard(item))}
+                    {catItems.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>No dishes match your filters.</div>
+                    ) : (
+                      catItems.map(item => renderMenuCard(item))
+                    )}
                   </>
                 )
               })()
             )}
           </div>
+
+          {/* Filter Sheet */}
+          {showFilter && (
+            <>
+              <div onClick={() => setShowFilter(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 32px', maxHeight: '82vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUpMobile 0.3s ease' }}>
+                <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800 }}>Filters</div>
+                  <button onClick={() => { setSortBy('relevance'); setPriceRange('all'); setCollection('all') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Clear all</button>
+                </div>
+
+                {/* Sort by */}
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>Sort by</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+                  {([
+                    { v: 'relevance', l: 'Relevance' },
+                    { v: 'cost_low', l: 'Cost: Low to High' },
+                    { v: 'cost_high', l: 'Cost: High to Low' },
+                  ] as const).map(o => (
+                    <button key={o.v} onClick={() => setSortBy(o.v)} style={pillStyle(sortBy === o.v)}>{o.l}</button>
+                  ))}
+                </div>
+
+                {/* Dish price */}
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>Dish price</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+                  {([
+                    { v: 'all', l: 'All', sym: '' },
+                    { v: 'under200', l: 'Under 200', sym: '₹' },
+                    { v: 'mid', l: '200 – 400', sym: '₹₹' },
+                    { v: 'above400', l: '400 & above', sym: '₹₹₹' },
+                  ] as const).map(o => (
+                    <button key={o.v} onClick={() => setPriceRange(o.v)} style={pillStyle(priceRange === o.v)}>
+                      {o.sym && <span style={{ fontWeight: 800, marginRight: 6 }}>{o.sym}</span>}{o.l}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Collections */}
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', marginBottom: 10 }}>Collections</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+                  {([
+                    { v: 'all', l: 'All' },
+                    { v: 'previous', l: 'Previously ordered' },
+                    { v: 'new', l: 'New to you' },
+                  ] as const).map(o => (
+                    <button key={o.v} onClick={() => setCollection(o.v)} style={pillStyle(collection === o.v)}>{o.l}</button>
+                  ))}
+                </div>
+
+                <button onClick={() => setShowFilter(false)} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Show results</button>
+              </div>
+            </>
+          )}
 
           {/* Cart Sheet */}
           {showCartSheet && (
