@@ -263,17 +263,19 @@ export default function MobileOrders() {
                             if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
                               try {
                                 setDeleting(order.id)
-                                const { error } = await supabase
-                                  .from('orders')
-                                  .delete()
-                                  .eq('id', order.id)
+                                const res = await fetch('/api/delete-order', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone }),
+                                })
+                                const data = await res.json()
 
-                                if (error) {
-                                  console.error('Delete error:', error)
-                                  alert('Failed to delete order: ' + error.message)
+                                if (!res.ok) {
+                                  console.error('Delete error:', data.error)
+                                  alert('Failed to delete order: ' + data.error)
                                   setDeleting(null)
                                 } else {
-                                  // Remove from local state
+                                  // Server confirmed deletion — remove from local state
                                   setOrders(orders.filter(o => o.id !== order.id))
                                   setExpandedOrderId(null)
                                   setDeleting(null)

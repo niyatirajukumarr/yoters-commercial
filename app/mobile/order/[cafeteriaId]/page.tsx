@@ -494,12 +494,17 @@ export default function CafeteriaPage() {
 
     if (!confirm('Delete this order?')) return
     try {
-      const { error } = await supabase.from('orders').delete().eq('id', orderId)
-      if (error) {
-        console.error('Delete error:', error)
-        alert('Failed to delete order: ' + error.message)
+      const res = await fetch('/api/delete-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, studentPhone: user?.phone }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        console.error('Delete error:', data.error)
+        alert('Failed to delete order: ' + data.error)
       } else {
-        // Immediately update UI
+        // Server confirmed deletion — update UI
         setCafeOrders(prev => prev.filter(o => o.id !== orderId))
         alert('Order deleted successfully')
       }
