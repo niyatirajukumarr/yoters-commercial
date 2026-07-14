@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { generateSlug } from '@/lib/utils/slug'
 import Script from 'next/script'
 
 interface RazorpayWindow extends Window {
@@ -25,6 +26,36 @@ function PaymentPageContent() {
   const [sdkLoaded, setSdkLoaded] = useState(false)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const razorpayOrderIdRef = useRef<string | null>(null)
+  const cafeSlugRef = useRef<string | null>(null)
+
+  // Get cafeteria slug from order
+  const getCafeSlug = async (orderId: string) => {
+    try {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('cafeteria_id')
+        .eq('id', orderId)
+        .single()
+
+      if (order?.cafeteria_id) {
+        const { data: cafe } = await supabase
+          .from('cafeterias')
+          .select('name')
+          .eq('id', order.cafeteria_id)
+          .single()
+
+        if (cafe) {
+          const slug = generateSlug(cafe.name)
+          cafeSlugRef.current = slug
+          return slug
+        }
+      }
+      return null
+    } catch (err) {
+      console.error('Error getting cafe slug:', err)
+      return null
+    }
+  }
 
   // Initialize payment on mount
   useEffect(() => {
@@ -115,9 +146,12 @@ function PaymentPageContent() {
           if (window.opener) {
             window.opener.postMessage({ type: 'PAYMENT_SUCCESS', orderId }, '*')
           }
+          // Get cafeteria slug for redirect
+          const slug = cafeSlugRef.current || (orderId ? await getCafeSlug(orderId) : null)
+
           setTimeout(() => {
             if (window.opener) window.close()
-            else router.push(`/mobile/home`)
+            else router.push(slug ? `/mobile/order/${slug}` : `/mobile`)
           }, 4000)
           return
         }
@@ -202,7 +236,8 @@ function PaymentPageContent() {
             window.opener.postMessage({ type: 'PAYMENT_SUCCESS', orderId }, '*')
             setTimeout(() => window.close(), 3000)
           } else {
-            setTimeout(() => router.push(`/mobile/home`), 3000)
+            const slug = cafeSlugRef.current || (orderId ? await getCafeSlug(orderId) : null)
+            setTimeout(() => router.push(slug ? `/mobile/order/${slug}` : `/mobile`), 3000)
           }
         },
         modal: {
