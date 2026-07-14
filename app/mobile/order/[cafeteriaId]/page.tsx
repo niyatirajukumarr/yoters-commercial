@@ -284,6 +284,8 @@ export default function CafeteriaPage() {
   const [collection, setCollection] = useState<'all' | 'previous' | 'new'>('all')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
+  const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set())
+  const [popularity, setPopularity] = useState<{ byName: Record<string, number>; byId: Record<string, number>; max: number }>({ byName: {}, byId: {}, max: 0 })
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [showOrderTypeModal, setShowOrderTypeModal] = useState(false)
@@ -404,6 +406,28 @@ export default function CafeteriaPage() {
       supabase.removeChannel(channel)
     }
   }, [cafeteriaId, user?.phone])
+
+  // Real-time "highly ordered" popularity for this cafeteria
+  useEffect(() => {
+    if (!cafeteriaId) return
+    let active = true
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/menu-popularity?cafeteriaId=${cafeteriaId}`)
+        const data = await res.json()
+        if (active && res.ok) {
+          setPopularity({ byName: data.byName || {}, byId: data.byId || {}, max: data.max || 0 })
+        }
+      } catch (e) {
+        console.error('Popularity fetch error:', e)
+      }
+    }
+    load()
+    const ch = supabase.channel(`menu-pop-${cafeteriaId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, load)
+      .subscribe()
+    return () => { active = false; supabase.removeChannel(ch) }
+  }, [cafeteriaId])
 
   // Populate form with user data
   useEffect(() => {
@@ -622,33 +646,78 @@ export default function CafeteriaPage() {
   const renderMenuCard = (item: MenuItem) => {
     const inCart = itemInCart(item.id)
     const fav = isFavourite(item.id)
+    const isVeg = itemIsVeg(item)
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
+    const showImg = catImg && !imgErrors.has(item.id)
+
+    // Real-time "highly ordered" indicator
+    const count = popularity.byId[item.id] ?? popularity.byName[item.name.toLowerCase()] ?? 0
+    const ratio = popularity.max > 0 ? count / popularity.max : 0
+    const popLabel = ratio >= 0.5 ? 'Highly ordered' : ratio > 0 ? 'Popular' : ''
+
+    const descExpanded = expandedDesc.has(item.id)
+    const toggleDesc = () => setExpandedDesc(prev => {
+      const next = new Set(prev)
+      next.has(item.id) ? next.delete(item.id) : next.add(item.id)
+      return next
+    })
+
     return (
-      <div key={item.id} className="menu-item-card" style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}>
-        {catImg && !imgErrors.has(item.id)
-          ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={() => setImgErrors(prev => new Set(prev).add(item.id))} />
-          : <div className="menu-item-thumb-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
-        <div className="menu-item-info">
-          <div className="menu-item-name-sw">{item.name}</div>
-          {item.description && <div className="menu-item-desc">{item.description}</div>}
-          <div className="menu-item-price-sw">₹{item.price}</div>
-        </div>
-        <div className="menu-item-actions">
-          {inCart ? (
-            <div className="qty-box">
-              <button className="qty-btn" onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</button>
-              <span className="qty-num">{inCart.quantity}</span>
-              <button className="qty-btn" onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</button>
+      <div key={item.id} className="dish-card" style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}>
+        <div className="dish-main">
+          {/* Veg / Non-veg badge */}
+          <span className="veg-badge" style={{ border: `1.5px solid ${isVeg ? '#2e9e6b' : '#b8321f'}` }}>
+            {isVeg
+              ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2e9e6b' }} />
+              : <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #b8321f' }} />}
+          </span>
+
+          <div className="dish-title2">{item.name}</div>
+
+          {popLabel && (
+            <div className="pop-row">
+              <div className="pop-bar"><div className="pop-bar-fill" style={{ width: `${Math.max(ratio * 100, 18)}%` }} /></div>
+              <span className="pop-text">{popLabel}</span>
             </div>
-          ) : (
-            <button className="add-btn-sw" onClick={() => handleAddItem(item)}>
-              <Plus size={14} /> ADD
-            </button>
           )}
-          <button onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
-            <Heart size={15} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#ccc'} />
-          </button>
+
+          <div className="dish-price2">₹{item.price}</div>
+
+          {item.description && (
+            <div className={`dish-desc2 ${descExpanded ? '' : 'clamped'}`} onClick={toggleDesc}>
+              {item.description}
+            </div>
+          )}
+          {item.description && item.description.length > 60 && (
+            <span className="dish-more" onClick={toggleDesc}>{descExpanded ? 'less' : 'more'}</span>
+          )}
+
+          <div className="dish-actions2" style={{ marginTop: 10 }}>
+            <button
+              className="dish-icon-btn"
+              onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
+            >
+              <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#999'} />
+            </button>
+          </div>
+        </div>
+
+        {/* Big visible image on the right with ADD overlapping */}
+        <div className="dish-right">
+          {showImg
+            ? <img src={catImg!} alt={item.name} className="dish-img2" onError={() => setImgErrors(prev => new Set(prev).add(item.id))} />
+            : <div className="dish-img2-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
+          <div className="dish-add-float">
+            {inCart ? (
+              <div className="qty-box2">
+                <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</button>
+                <span>{inCart.quantity}</span>
+                <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</button>
+              </div>
+            ) : (
+              <button className="add-btn2" onClick={() => handleAddItem(item)}>ADD +</button>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -735,6 +804,30 @@ export default function CafeteriaPage() {
             .qty-num { font-size: 14px; font-weight: 700; color: var(--text); min-width: 18px; text-align: center; }
             .add-btn-sw { width: 72px; height: 32px; background: white; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
             @keyframes slideUpMobile { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+
+            /* Swiggy-style dish card */
+            .dish-card { display: flex; justify-content: space-between; gap: 14px; padding: 20px 16px; border-bottom: 1px solid #eee; }
+            .dish-main { flex: 1; min-width: 0; }
+            .veg-badge { width: 16px; height: 16px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+            .dish-title2 { font-size: 16px; font-weight: 700; color: var(--navy); line-height: 1.25; margin-bottom: 8px; }
+            .pop-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+            .pop-bar { width: 54px; height: 6px; border-radius: 3px; background: #e6e6e6; overflow: hidden; }
+            .pop-bar-fill { height: 100%; background: #2e9e6b; border-radius: 3px; }
+            .pop-text { font-size: 12px; color: #555; font-weight: 500; }
+            .dish-price2 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+            .dish-desc2 { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+            .dish-desc2.clamped { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .dish-more { color: var(--navy); font-weight: 700; cursor: pointer; }
+            .dish-actions2 { display: flex; gap: 12px; }
+            .dish-icon-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #eee; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+            .dish-right { width: 132px; flex-shrink: 0; position: relative; }
+            .dish-img2 { width: 132px; height: 132px; border-radius: 16px; object-fit: cover; background: #f5f5f7; }
+            .dish-img2-emoji { width: 132px; height: 132px; border-radius: 16px; background: linear-gradient(135deg, #ffecd2, #fcb69f); display: flex; align-items: center; justify-content: center; font-size: 52px; }
+            .dish-add-float { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); width: 112px; }
+            .add-btn2 { width: 112px; height: 38px; background: white; border: 1px solid #ddd; color: var(--accent); border-radius: 10px; font-weight: 800; font-size: 15px; letter-spacing: 0.5px; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+            .qty-box2 { width: 112px; height: 38px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; border-radius: 10px; background: white; box-shadow: 0 6px 16px rgba(0,0,0,0.12); overflow: hidden; }
+            .qty-box2 button { width: 38px; height: 100%; background: white; border: none; color: var(--accent); font-size: 18px; font-weight: 800; cursor: pointer; }
+            .qty-box2 span { font-weight: 800; font-size: 15px; color: var(--navy); }
           `}</style>
 
           {/* Sticky top: header + search + category pills */}
