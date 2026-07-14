@@ -850,11 +850,19 @@ export default function CafeteriaPage() {
             ) : (
               cafeOrders.map(order => (
                 <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>₹{order.total_amount}</div>
                       <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        {new Date(order.created_at).toLocaleDateString()}
+                        #{order.id.slice(0, 8)}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                        🕐 {new Date(order.created_at).toLocaleString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -870,6 +878,22 @@ export default function CafeteriaPage() {
                         </button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Items */}
+                  <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                    {order.items?.map((item, i) => (
+                      <div key={i} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{item.quantity}x {item.name}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total */}
+                  <div style={{ paddingTop: 10, marginTop: 6, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>₹{order.total_amount}</span>
                   </div>
                 </div>
               ))
