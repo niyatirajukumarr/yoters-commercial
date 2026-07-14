@@ -852,8 +852,8 @@ export default function CafeteriaPage() {
                 <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        #{order.id.slice(0, 8)}
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                        {order.student_name || 'Order'}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                         🕐 {new Date(order.created_at).toLocaleString('en-IN', {
