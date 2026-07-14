@@ -593,7 +593,7 @@ export default function CafeteriaPage() {
     const fav = isFavourite(item.id)
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
     return (
-      <div key={item.id} className="menu-item-card">
+      <div key={item.id} className="menu-item-card" style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}>
         {catImg && !imgErrors.has(item.id)
           ? <img src={catImg} alt={item.name} className="menu-item-thumb" onError={() => setImgErrors(prev => new Set(prev).add(item.id))} />
           : <div className="menu-item-thumb-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
@@ -707,7 +707,7 @@ export default function CafeteriaPage() {
           `}</style>
 
           {/* Sticky top: header + search + category pills */}
-          <div className="menu-sticky-top">
+          <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
             <div className="menu-header">
               <button onClick={() => router.push('/browse')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <ChevronLeft size={24} color='var(--text)' />
