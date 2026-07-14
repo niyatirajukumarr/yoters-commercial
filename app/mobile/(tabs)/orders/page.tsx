@@ -165,8 +165,17 @@ export default function MobileOrders() {
                       <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
                         {cafe?.name || 'Cafeteria'}
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>
                         #{order.id.slice(0, 8)}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                        🕐 {new Date(order.created_at).toLocaleString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -194,19 +203,15 @@ export default function MobileOrders() {
 
                   {/* Items */}
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </div>
-                    {order.items.slice(0, 2).map((item, i) => (
-                      <div key={i} style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 2 }}>
-                        {item.quantity}x {item.name}
+                    {order.items.map((item, i) => (
+                      <div key={i} style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{item.quantity}x {item.name}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
                       </div>
                     ))}
-                    {order.items.length > 2 && (
-                      <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                        +{order.items.length - 2} more item{order.items.length - 2 !== 1 ? 's' : ''}
-                      </div>
-                    )}
                   </div>
 
                   {/* Total */}
