@@ -16,21 +16,6 @@ export default function LandingPage() {
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
   const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
-  // Detect mobile and redirect only from landing page
-  useEffect(() => {
-    const isMobileDevice = () => {
-      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : ''
-      return /iPhone|iPad|iPod|Android|Mobile|Tablet|webOS|BlackBerry|Windows Phone/i.test(userAgent)
-    }
-
-    // Only redirect on landing page (/) not on browse or other routes
-    const currentPath = window.location.pathname
-    if (isMobileDevice() && (currentPath === '/' || currentPath === '')) {
-      router.replace('/mobile')
-      return
-    }
-  }, [router])
-
   // Safety timeout: Force page to render after 15 seconds max
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
