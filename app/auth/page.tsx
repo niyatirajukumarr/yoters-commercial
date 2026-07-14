@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -19,13 +19,34 @@ export default function AuthPage() {
   const [success, setSuccess] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
 
+  // Open the correct tab when arriving from the landing page (?mode=signup)
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get('mode')
+    if (m === 'signup' || m === 'login') setMode(m)
+  }, [])
+
+  // After auth, send students to the landing page and vendors to their dashboard
+  async function goAfterAuth(userEmail?: string | null) {
+    try {
+      if (userEmail) {
+        const { data: cafeteria } = await supabase
+          .from('cafeterias')
+          .select('id')
+          .eq('vendor_email', userEmail)
+          .single()
+        if (cafeteria) { router.push('/vendor'); return }
+      }
+    } catch { /* not a vendor — fall through */ }
+    router.push('/?splash=true')
+  }
+
   async function handleLogin() {
     if (!email || !password) { setError('Enter your email and password.'); return }
     setLoading(true); setError('')
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) { setError('Invalid credentials. Try again.'); setLoading(false); return }
-      router.push('/')
+      await goAfterAuth(email)
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
   }
 
@@ -44,7 +65,7 @@ export default function AuthPage() {
             phone: phone || null,
             email,
         })
-        router.push('/')  // session is already created, go straight in
+        await goAfterAuth(email)  // session is already created, go straight in
         return
         }
         // Only hits here if data.user is null (email confirmation required by Supabase settings)

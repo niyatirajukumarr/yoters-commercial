@@ -13,8 +13,8 @@ export default function SplashPage() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
-        // Unauthenticated → go to auth
-        router.push('/auth')
+        // Unauthenticated → show the landing page (with Log in / Sign up)
+        router.push('/?splash=true')
       } else {
         // Authenticated → check if vendor or student
         const { data: cafeteria } = await supabase

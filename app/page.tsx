@@ -14,6 +14,7 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
+  const [isAuthed, setIsAuthed] = useState(false)
   const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
   // Safety timeout: Force page to render after 15 seconds max
@@ -48,6 +49,8 @@ export default function LandingPage() {
         const { data: { session } } = await sessionPromise as any
 
         if (!isMounted) return
+
+        setIsAuthed(!!session)
 
         if (!session && !hasSplash) {
           router.replace('/splash')
@@ -433,13 +436,18 @@ export default function LandingPage() {
             ))}
           </ul>
           <div className="lp-nav-right">
-            {user && (
+            {user ? (
               <div style={{ position: 'relative' }}>
                 <div className="profile-avatar" onClick={() => router.push('/profile')}>
                   {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                 </div>
               </div>
-            )}
+            ) : !isAuthed ? (
+              <>
+                <button className="lp-vendor-btn" onClick={() => router.push('/auth?mode=login')}>Log in</button>
+                <button className="lp-join-btn" onClick={() => router.push('/auth?mode=signup')}>Sign up</button>
+              </>
+            ) : null}
             <button
               type="button"
               className="hamburger-btn"
