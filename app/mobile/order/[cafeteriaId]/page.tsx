@@ -853,7 +853,7 @@ export default function CafeteriaPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                        {order.student_name || 'Order'}
+                        {order.items?.map(item => item.name).join(', ') || 'Order'}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                         🕐 {new Date(order.created_at).toLocaleString('en-IN', {
