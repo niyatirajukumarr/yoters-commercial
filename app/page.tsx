@@ -220,6 +220,10 @@ export default function LandingPage() {
     setMenuOpen(false)
   }
 
+  // Ordering CTAs: logged-in users browse, logged-out users are sent to auth first
+  const orderHref = (user || isAuthed) ? '/browse' : '/auth?mode=login'
+  const goOrder = () => router.push(orderHref)
+
 
   const steps = [
     { n: '01', title: 'Browse & Choose', desc: "Open Yoters, pick your restaurant, browse today's menu and add items to your cart — all before your break starts.", img: '🍽️', bg: '#fff0f2' },
@@ -530,7 +534,7 @@ export default function LandingPage() {
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
               style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button className="btn-primary" onClick={() => router.push('/browse')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
+              <button className="btn-primary" onClick={goOrder} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
               <button className="btn-outline" onClick={() => scrollTo('howitworks')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Learn How →</button>
             </motion.div>
           </motion.div>
@@ -584,7 +588,7 @@ export default function LandingPage() {
 
             {/* CTA Button - Separate Below */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ marginTop: 48 }}>
-              <Link href="/browse" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 40px', background: '#E8334A', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 16, textDecoration: 'none', transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)', letterSpacing: 0.5 }}
+              <Link href={orderHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 40px', background: '#E8334A', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 16, textDecoration: 'none', transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)', letterSpacing: 0.5 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(232,51,74,0.35)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(232,51,74,0.15)' }}>
                 Wanna start ordering? →
@@ -687,7 +691,7 @@ export default function LandingPage() {
             </motion.p>
             <motion.div variants={scaleIn} style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ padding: '18px 44px', fontSize: 17, fontWeight: 700 }}
-                onClick={() => router.push('/browse')}>
+                onClick={goOrder}>
                 Start Ordering Now →
               </button>
             </motion.div>
@@ -732,7 +736,7 @@ export default function LandingPage() {
                 <a key={item.id} className="glitch" data-text={item.label} onClick={() => scrollTo(item.id)}
                   style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontWeight: 500, marginBottom: 12, display: 'block' }}>{item.label}</a>
               ))}
-              <Link href="/browse" className="glitch" data-text="Browse Restaurants"
+              <Link href={orderHref} className="glitch" data-text="Browse Restaurants"
                 style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Restaurants</Link>
               <button className="footer-back-btn" onClick={() => scrollTo('hero')}>↑ Back to Top</button>
             </div>
