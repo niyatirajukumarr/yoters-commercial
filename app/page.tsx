@@ -37,9 +37,11 @@ export default function LandingPage() {
 
     const checkAuth = async () => {
       try {
-        // Check if we've already shown splash (splash=true param means user already saw it)
+        // Show the logo splash only once per browser session — not on every visit to '/'
         const params = new URLSearchParams(window.location.search)
         const hasSplash = params.get('splash') === 'true'
+        const splashSeen = sessionStorage.getItem('yoters_splash_seen') === '1'
+        const skipSplash = hasSplash || splashSeen
 
         const sessionPromise = Promise.race([
           supabase.auth.getSession(),
@@ -52,12 +54,18 @@ export default function LandingPage() {
 
         setIsAuthed(!!session)
 
-        if (!session && !hasSplash) {
+        if (!skipSplash) {
+          // First open this session → play the splash once, then never again this session
+          sessionStorage.setItem('yoters_splash_seen', '1')
           router.replace('/splash')
-        } else if (session && !hasSplash) {
-          router.replace('/splash')
-        } else if (session && hasSplash) {
-          // Authenticated & already seen splash → show landing page
+          return
+        }
+
+        // Splash already seen → go straight to the landing page
+        sessionStorage.setItem('yoters_splash_seen', '1')
+
+        if (session) {
+          // Authenticated → show landing page with profile
           if (isMounted) setIsChecking(false)
 
           // Fetch user profile for students
@@ -84,7 +92,7 @@ export default function LandingPage() {
             if (isMounted) setUser({ id: session.user.id, email: session.user.email })
           }
         } else {
-          // Unauthenticated with splash=true
+          // Unauthenticated → render landing (with Log in / Sign up)
           if (isMounted) setIsChecking(false)
         }
       } catch (error) {
