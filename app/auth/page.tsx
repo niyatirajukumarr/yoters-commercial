@@ -125,10 +125,48 @@ export default function AuthPage() {
         .auth-bg-blob {
           position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: 0.18;
         }
-        .auth-card { animation: authFadeUp 0.45s cubic-bezier(.22,1,.36,1) both; }
-        @keyframes authFadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
+        /* Penguin drops in and pulls the card to center, then everything is static */
+        .auth-card { animation: authPull 1s cubic-bezier(.34,1.5,.5,1) 0.15s both; }
+        @keyframes authPull {
+          0%   { transform: translateY(160px) scale(0.94); }
+          100% { transform: translateY(0) scale(1); }
+        }
+        .auth-penguin {
+          position: absolute;
+          top: -40px;
+          right: 16px;
+          font-size: 56px;
+          line-height: 1;
+          z-index: 6;
+          transform-origin: bottom center;
+          filter: drop-shadow(0 6px 8px rgba(0,0,0,0.18));
+          animation: penguinDrop 1.15s cubic-bezier(.34,1.6,.5,1) both;
+          pointer-events: none;
+        }
+        @keyframes penguinDrop {
+          0%   { transform: translateY(-360px) rotate(-12deg); opacity: 0; }
+          55%  { opacity: 1; }
+          70%  { transform: translateY(10px) rotate(4deg) scaleY(0.84); }
+          84%  { transform: translateY(-6px) rotate(-2deg) scaleY(1.05); }
+          100% { transform: translateY(0) rotate(0deg) scaleY(1); }
+        }
+        /* Rope the penguin uses to pull the card in */
+        .auth-rope {
+          position: absolute;
+          top: 14px;
+          right: 40px;
+          width: 2px;
+          height: 34px;
+          background: linear-gradient(#8a8a8a, rgba(138,138,138,0));
+          transform-origin: top center;
+          z-index: 5;
+          opacity: 0;
+          animation: ropeShow 0.5s ease 0.5s both;
+          pointer-events: none;
+        }
+        @keyframes ropeShow {
+          0%   { opacity: 0; transform: scaleY(0); }
+          100% { opacity: 0.5; transform: scaleY(1); }
         }
         .tab-pill {
           flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 600;
@@ -210,6 +248,10 @@ export default function AuthPage() {
           </div>
 
           {/* Card */}
+          <div style={{ position: 'relative' }}>
+            {/* Penguin drops in and pulls the card to center */}
+            <div className="auth-rope" />
+            <div className="auth-penguin" aria-hidden="true">🐧</div>
           <div className="auth-inner" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '28px 28px', boxShadow: '0 4px 32px rgba(0,0,0,0.06)' }}>
 
             {/* Tab toggle */}
@@ -326,6 +368,7 @@ export default function AuthPage() {
                 }
               </button>
             </div>
+          </div>
           </div>
 
           {/* Footer */}
