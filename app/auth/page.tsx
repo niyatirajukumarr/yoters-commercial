@@ -133,16 +133,18 @@ export default function AuthPage() {
         }
         .auth-penguin {
           position: absolute;
-          top: -40px;
-          right: 16px;
-          font-size: 56px;
-          line-height: 1;
+          top: -60px;
+          right: 12px;
           z-index: 6;
           transform-origin: bottom center;
-          filter: drop-shadow(0 6px 8px rgba(0,0,0,0.18));
+          filter: drop-shadow(0 8px 10px rgba(0,0,0,0.22));
           animation: penguinDrop 1.15s cubic-bezier(.34,1.6,.5,1) both;
           pointer-events: none;
         }
+        .peng { display: block; transform-box: fill-box; transform-origin: 50% 100%; animation: pengWaddle 2.6s ease-in-out 1.25s infinite; }
+        .peng .flip-l, .peng .flip-r { transform-box: fill-box; transform-origin: top center; }
+        .peng .flip-l { animation: flapL 1.7s ease-in-out 1.25s infinite; }
+        .peng .flip-r { animation: flapR 1.7s ease-in-out 1.25s infinite; }
         @keyframes penguinDrop {
           0%   { transform: translateY(-360px) rotate(-12deg); opacity: 0; }
           55%  { opacity: 1; }
@@ -150,24 +152,9 @@ export default function AuthPage() {
           84%  { transform: translateY(-6px) rotate(-2deg) scaleY(1.05); }
           100% { transform: translateY(0) rotate(0deg) scaleY(1); }
         }
-        /* Rope the penguin uses to pull the card in */
-        .auth-rope {
-          position: absolute;
-          top: 14px;
-          right: 40px;
-          width: 2px;
-          height: 34px;
-          background: linear-gradient(#8a8a8a, rgba(138,138,138,0));
-          transform-origin: top center;
-          z-index: 5;
-          opacity: 0;
-          animation: ropeShow 0.5s ease 0.5s both;
-          pointer-events: none;
-        }
-        @keyframes ropeShow {
-          0%   { opacity: 0; transform: scaleY(0); }
-          100% { opacity: 0.5; transform: scaleY(1); }
-        }
+        @keyframes pengWaddle { 0%, 100% { transform: rotate(-3.5deg); } 50% { transform: rotate(3.5deg); } }
+        @keyframes flapL { 0%, 100% { transform: rotate(6deg); } 50% { transform: rotate(-16deg); } }
+        @keyframes flapR { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(16deg); } }
         .tab-pill {
           flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 600;
           font-family: var(--font-body); cursor: pointer; transition: all 0.2s; border-radius: 9px;
@@ -249,9 +236,28 @@ export default function AuthPage() {
 
           {/* Card */}
           <div style={{ position: 'relative' }}>
-            {/* Penguin drops in and pulls the card to center */}
-            <div className="auth-rope" />
-            <div className="auth-penguin" aria-hidden="true">🐧</div>
+            {/* Penguin drops in and pulls the card to center, then idles */}
+            <div className="auth-penguin" aria-hidden="true">
+              <svg className="peng" viewBox="0 0 100 120" width="76" height="90" xmlns="http://www.w3.org/2000/svg">
+                {/* feet */}
+                <ellipse cx="39" cy="113" rx="12" ry="5.5" fill="#f6a11d" />
+                <ellipse cx="61" cy="113" rx="12" ry="5.5" fill="#f6a11d" />
+                {/* body */}
+                <ellipse cx="50" cy="60" rx="35" ry="52" fill="#20222e" />
+                {/* belly */}
+                <ellipse cx="50" cy="78" rx="24" ry="32" fill="#ffffff" />
+                {/* flippers */}
+                <ellipse className="flip-l" cx="15" cy="64" rx="8" ry="24" fill="#20222e" />
+                <ellipse className="flip-r" cx="85" cy="64" rx="8" ry="24" fill="#20222e" />
+                {/* eyes */}
+                <circle cx="41" cy="36" r="8" fill="#ffffff" />
+                <circle cx="59" cy="36" r="8" fill="#ffffff" />
+                <circle cx="43" cy="37" r="3.6" fill="#15161f" />
+                <circle cx="57" cy="37" r="3.6" fill="#15161f" />
+                {/* beak */}
+                <path d="M50 42 l8 8 -16 0 z" fill="#f6a11d" />
+              </svg>
+            </div>
           <div className="auth-inner" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '28px 28px', boxShadow: '0 4px 32px rgba(0,0,0,0.06)' }}>
 
             {/* Tab toggle */}
