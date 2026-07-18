@@ -13,12 +13,24 @@ export default function VendorLogin() {
   const [error, setError] = useState('')
 
   async function login() {
-    if (!email || !password) { setError('Enter email and password.'); return }
+    if (!email || !password) { setError('Incorrect email or password'); return }
     setLoading(true)
     setError('')
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) { setError('Invalid credentials. Try again.'); setLoading(false); return }
+      // Go through the hardened server route (validation + rate limit + lockout).
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.session) {
+        setError(data?.error || 'Incorrect email or password')
+        setLoading(false)
+        return
+      }
+      const { error: setErr } = await supabase.auth.setSession(data.session)
+      if (setErr) { setError('Incorrect email or password'); setLoading(false); return }
       const { data: cafeteria } = await supabase.from('cafeterias').select('id').eq('vendor_email', email).single()
       if (!cafeteria) { setError('No cafeteria linked to this account.'); await supabase.auth.signOut(); setLoading(false); return }
       router.push('/vendor')
