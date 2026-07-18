@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { isAdmin } from '@/lib/config'
 
 interface Cafeteria {
   id: string
@@ -36,8 +37,8 @@ export default function AdminDashboard() {
           return
         }
 
-        // Check if user is admin (only allow specific email)
-        if (session.user.email !== 'niyati.rajukumar@gmail.com') {
+        // Check if user is admin (allowlist driven by env config, not a literal)
+        if (!isAdmin(session.user.email)) {
           setLoading(false)
           return
         }
@@ -177,9 +178,15 @@ export default function AdminDashboard() {
     setPayoutMessage({ ...payoutMessage, [cafe.id]: '' })
 
     try {
+      // Send the current session's access token so the API can verify the
+      // caller is an authenticated admin server-side.
+      const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch('/api/admin/initiate-payout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           vendorName: cafe.name,
           upiId: cafe.upi_id,

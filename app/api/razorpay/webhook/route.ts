@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { verifyWebhookSignature, getPaymentDetails } from '@/lib/razorpay'
+import { createClient } from '@supabase/supabase-js'
+import { verifyWebhookSignature } from '@/lib/razorpay'
+import { logger, shortId } from '@/lib/logger'
+
+// Webhooks run server-side with no user session; use the service-role client so
+// order updates work regardless of RLS.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text()
     const signature = req.headers.get('x-razorpay-signature') || ''
 
-    console.log('[Razorpay Webhook] Received event')
+    logger.debug('[Razorpay Webhook] Received event')
 
     // Verify signature
     if (!verifyWebhookSignature(body, signature)) {
-      console.error('[Razorpay Webhook] Invalid signature')
+      logger.error('[Razorpay Webhook] Invalid signature')
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -19,19 +28,16 @@ export async function POST(req: NextRequest) {
     }
 
     const event = JSON.parse(body)
-    console.log('[Razorpay Webhook] Event type:', event.event)
+    logger.debug('[Razorpay Webhook] Event type:', event.event)
 
     // Handle payment.authorized event
     if (event.event === 'payment.authorized') {
       const { payment_id, order_id } = event.payload.payment.entity
 
-      console.log('[Razorpay Webhook] Payment authorized:', {
-        paymentId: payment_id,
-        orderId: order_id,
+      logger.debug('[Razorpay Webhook] Payment authorized:', {
+        paymentId: shortId(payment_id),
+        orderId: shortId(order_id),
       })
-
-      // Get full payment details
-      const paymentDetails = await getPaymentDetails(payment_id)
 
       // Find order by razorpay_order_id
       const { data: order, error: orderError } = await supabase
@@ -41,7 +47,7 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (orderError || !order) {
-        console.error('[Razorpay Webhook] Order not found:', order_id)
+        logger.error('[Razorpay Webhook] Order not found:', shortId(order_id))
         return NextResponse.json(
           { error: 'Order not found' },
           { status: 404 }
@@ -59,14 +65,14 @@ export async function POST(req: NextRequest) {
         .eq('id', order.id)
 
       if (updateError) {
-        console.error('[Razorpay Webhook] Error updating order:', updateError)
+        logger.error('[Razorpay Webhook] Error updating order:', updateError)
         return NextResponse.json(
           { error: 'Failed to update order' },
           { status: 500 }
         )
       }
 
-      console.log('[Razorpay Webhook] Order updated to paid:', order.id)
+      logger.debug('[Razorpay Webhook] Order updated to paid:', shortId(order.id))
 
       // TODO: Implement vendor payouts when Razorpay setup is complete
       // For now, payouts are paused - will be implemented later
@@ -84,11 +90,48 @@ export async function POST(req: NextRequest) {
             read: false,
           })
       } catch (notifError) {
-        console.error('[Razorpay Webhook] Notification error:', notifError)
+        logger.error('[Razorpay Webhook] Notification error:', notifError)
       }
 
       return NextResponse.json(
         { success: true, message: 'Payment processed' },
+        { status: 200 }
+      )
+    }
+
+    // Handle refund lifecycle events. A denied order requests a refund and is
+    // left at `refund_initiated`; only once Razorpay confirms settlement here do
+    // we promote it to `refund_successful`.
+    if (event.event === 'refund.processed') {
+      const refundEntity = event.payload.refund?.entity
+      const refundedPaymentId = refundEntity?.payment_id
+      if (refundedPaymentId) {
+        const { error: refundUpdateError } = await supabase
+          .from('orders')
+          .update({ payment_status: 'refund_successful' })
+          .eq('razorpay_payment_id', refundedPaymentId)
+        if (refundUpdateError) {
+          logger.error('[Razorpay Webhook] Failed to mark refund successful:', refundUpdateError)
+        } else {
+          logger.debug('[Razorpay Webhook] Refund settled for payment', shortId(refundedPaymentId))
+        }
+      }
+      return NextResponse.json(
+        { success: true, message: 'Refund settlement recorded' },
+        { status: 200 }
+      )
+    }
+
+    if (event.event === 'refund.failed') {
+      const refundEntity = event.payload.refund?.entity
+      const refundedPaymentId = refundEntity?.payment_id
+      if (refundedPaymentId) {
+        // Leave the order at `refund_initiated` so it can be retried, but log it
+        // for operator follow-up.
+        logger.error('[Razorpay Webhook] Refund FAILED for payment', shortId(refundedPaymentId))
+      }
+      return NextResponse.json(
+        { success: true, message: 'Refund failure recorded' },
         { status: 200 }
       )
     }
@@ -98,10 +141,9 @@ export async function POST(req: NextRequest) {
       const { payment_id, order_id } = event.payload.payment.entity
       const reason = event.payload.payment.entity.error_reason || 'Unknown error'
 
-      console.log('[Razorpay Webhook] Payment failed:', {
-        paymentId: payment_id,
-        orderId: order_id,
-        reason,
+      logger.debug('[Razorpay Webhook] Payment failed:', {
+        paymentId: shortId(payment_id),
+        orderId: shortId(order_id),
       })
 
       // Find and update order
@@ -135,9 +177,9 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('[Razorpay Webhook] Error:', error)
+    logger.error('[Razorpay Webhook] Error:', error)
     return NextResponse.json(
-      { error: 'Webhook processing failed: ' + error.message },
+      { error: 'Webhook processing failed.' },
       { status: 500 }
     )
   }

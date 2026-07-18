@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +13,9 @@ const supabase = createClient(
 // so the menu can show a real-time "Highly ordered" indicator.
 export async function GET(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'menu-popularity', 60, 60_000)
+    if (limited) return limited
+
     const cafeteriaId = req.nextUrl.searchParams.get('cafeteriaId')
     if (!cafeteriaId) {
       return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
@@ -22,7 +27,8 @@ export async function GET(req: NextRequest) {
       .eq('cafeteria_id', cafeteriaId)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      logger.error('Menu popularity query error:', error)
+      return NextResponse.json({ error: 'Failed to load menu popularity.' }, { status: 500 })
     }
 
     const byName: Record<string, number> = {}
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ byName, byId, max }, { status: 200 })
   } catch (e: any) {
-    console.error('Menu popularity error:', e)
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    logger.error('Menu popularity error:', e)
+    return NextResponse.json({ error: 'Failed to load menu popularity.' }, { status: 500 })
   }
 }

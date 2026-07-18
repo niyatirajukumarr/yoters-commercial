@@ -1,5 +1,6 @@
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
+import { logger, shortId } from './logger'
 
 const KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
@@ -35,7 +36,7 @@ export async function createRazorpayOrder(
   const razorpay = getRazorpayInstance()
 
   try {
-    console.log('[Razorpay] Creating order:', { orderId, amount })
+    logger.debug('[Razorpay] Creating order:', { orderId: shortId(orderId) })
 
     const order = await razorpay.orders.create({
       amount: amount * 100, // Convert to paise
@@ -49,10 +50,10 @@ export async function createRazorpayOrder(
       },
     })
 
-    console.log('[Razorpay] Order created:', order.id)
+    logger.debug('[Razorpay] Order created:', order.id)
     return order
   } catch (error: any) {
-    console.error('Razorpay order creation error:', error)
+    logger.error('Razorpay order creation error:', error)
     throw error
   }
 }
@@ -67,7 +68,7 @@ export function verifyPaymentSignature(
   razorpaySignature: string
 ): boolean {
   if (!KEY_SECRET) {
-    console.error('Razorpay secret not configured')
+    logger.error('Razorpay secret not configured')
     return false
   }
 
@@ -95,7 +96,7 @@ export function verifyWebhookSignature(
   signature: string
 ): boolean {
   if (!KEY_SECRET) {
-    console.error('Razorpay secret not configured')
+    logger.error('Razorpay secret not configured')
     return false
   }
 
@@ -105,9 +106,13 @@ export function verifyWebhookSignature(
       .update(body)
       .digest('hex')
 
-    return signature === expectedSignature
+    // Constant-time comparison to avoid timing side-channels (R9).
+    return crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'hex'),
+      Buffer.from(signature, 'hex')
+    )
   } catch (error) {
-    console.error('Signature verification error:', error)
+    logger.error('Signature verification error:', error)
     return false
   }
 }
@@ -122,7 +127,7 @@ export async function getPaymentDetails(paymentId: string): Promise<any> {
     const payment = await razorpay.payments.fetch(paymentId)
     return payment
   } catch (error: any) {
-    console.error('Razorpay payment fetch error:', error)
+    logger.error('Razorpay payment fetch error:', error)
     throw error
   }
 }
@@ -137,10 +142,9 @@ export async function sendVendorPayout(
   orderId: string,
   vendorName: string
 ): Promise<any> {
-  console.log('[Razorpay] Payout queued (implementation paused):', {
-    vendor: vendorName,
+  logger.debug('[Razorpay] Payout queued (implementation paused):', {
+    orderId: shortId(orderId),
     amount,
-    upi: vendorUpiId,
   })
 
   // TODO: Implement actual payout when Razorpay setup is complete
@@ -165,10 +169,10 @@ export async function refundPayment(
       amount: amount ? amount * 100 : undefined, // Convert to paise if provided
     })
 
-    console.log('[Razorpay] Refund created:', refund.id)
+    logger.debug('[Razorpay] Refund created:', refund.id)
     return refund
   } catch (error: any) {
-    console.error('Razorpay refund error:', error)
+    logger.error('Razorpay refund error:', error)
     throw error
   }
 }

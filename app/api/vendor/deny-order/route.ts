@@ -1,53 +1,40 @@
-import { createClient } from '@supabase/supabase-js'
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
 import { notifyStudentOrderDenied, notifyManagerVendorDenied } from '@/lib/notifications'
 import { refundPayment } from '@/lib/razorpay'
+import { logger, shortId } from '@/lib/logger'
+import { isNonEmptyString } from '@/lib/validation'
+import { getAdminClient, requireVendorForOrder, authErrorStatus } from '@/lib/auth-server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
+
+const supabase = getAdminClient()
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { orderId, vendorEmail, denialReason } = body
+    const limited = enforceRateLimit(req, 'deny-order', 30, 60_000)
+    if (limited) return limited
 
-    if (!orderId || !vendorEmail || !denialReason) {
+    const body = await req.json()
+    const { orderId, denialReason } = body
+
+    // Identity is NOT read from the body — it comes from the verified session
+    // token. (R7: never trust request-body identity like vendorEmail.)
+    if (!orderId || !isNonEmptyString(denialReason, 500)) {
       return NextResponse.json(
-        { error: 'Missing orderId, vendorEmail, or denialReason' },
+        { error: 'Missing orderId or denialReason' },
         { status: 400 }
       )
     }
 
-    // Get order details
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single()
-
-    if (orderError || !order) {
+    const auth = await requireVendorForOrder(req, orderId)
+    if ('error' in auth) {
+      const status = authErrorStatus(auth.error)
       return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
+        { error: status === 404 ? 'Order not found' : 'Unauthorized' },
+        { status }
       )
     }
-
-    // Verify vendor owns this cafeteria
-    const { data: cafeteria, error: cafError } = await supabase
-      .from('cafeterias')
-      .select('*')
-      .eq('id', order.cafeteria_id)
-      .eq('vendor_email', vendorEmail)
-      .single()
-
-    if (cafError || !cafeteria) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
-    }
+    const { order, ctx } = auth
+    const cafeteria = ctx.cafeteria
 
     // Update order status to 'cancelled'
     const { error: updateError } = await supabase
@@ -60,24 +47,26 @@ export async function POST(req: NextRequest) {
       .eq('id', orderId)
 
     if (updateError) {
+      logger.error('Deny order update failed:', updateError)
       return NextResponse.json(
-        { error: 'Failed to deny order: ' + updateError.message },
+        { error: 'Failed to deny order.' },
         { status: 500 }
       )
     }
 
-    // Process refund if payment was made
+    // Process refund if payment was made.
+    // The refund is only *requested* here — Razorpay processes it
+    // asynchronously. We mark the order `refund_initiated` and leave it there;
+    // it is only promoted to `refund_successful` when the `refund.processed`
+    // webhook confirms settlement (see app/api/razorpay/webhook/route.ts).
     if (order.payment_status === 'paid' && order.razorpay_payment_id) {
-      // Mark as refund initiated immediately
       await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
       try {
         await refundPayment(order.razorpay_payment_id, order.total_amount)
-        // Razorpay accepted the refund request — mark as successful
-        await supabase.from('orders').update({ payment_status: 'refund_successful' }).eq('id', orderId)
-        console.log(`Refund processed for order ${orderId}`)
+        logger.debug('Refund requested for order', shortId(orderId))
       } catch (refundError: any) {
-        console.error('Refund processing error:', refundError)
-        // Keep as refund_initiated so it can be retried
+        logger.error('Refund request error:', refundError)
+        // Keep as refund_initiated so it can be retried; do not mark successful.
       }
     }
 
@@ -94,9 +83,9 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('Deny order error:', error)
+    logger.error('Deny order error:', error)
     return NextResponse.json(
-      { error: 'Internal server error: ' + error.message },
+      { error: 'Internal server error.' },
       { status: 500 }
     )
   }

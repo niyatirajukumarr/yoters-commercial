@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +11,9 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'delete-order', 20, 60_000)
+    if (limited) return limited
+
     const { orderId, studentPhone } = await req.json()
 
     if (!orderId) {
@@ -26,8 +31,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Only the customer who placed the order can delete it
-    if (studentPhone && order.student_phone && order.student_phone !== studentPhone) {
+    // Only the customer who placed the order can delete it. The phone must be
+    // supplied and must match — previously an omitted studentPhone skipped the
+    // check entirely, letting anyone delete another customer's order.
+    if (!studentPhone || order.student_phone !== studentPhone) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
@@ -46,17 +53,18 @@ export async function POST(req: NextRequest) {
       .eq('id', orderId)
 
     if (deleteError) {
+      logger.error('Delete order failed:', deleteError)
       return NextResponse.json(
-        { error: 'Failed to delete order: ' + deleteError.message },
+        { error: 'Failed to delete order.' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ success: true }, { status: 200 })
   } catch (error: any) {
-    console.error('Delete order error:', error)
+    logger.error('Delete order error:', error)
     return NextResponse.json(
-      { error: 'Internal server error: ' + error.message },
+      { error: 'Internal server error.' },
       { status: 500 }
     )
   }

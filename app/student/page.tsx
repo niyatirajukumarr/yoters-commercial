@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, MenuItem, Order, OrderItem, formatWait } from '@/lib/types'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
+import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 
@@ -174,6 +175,16 @@ function StudentPageInner() {
 
   async function placeOrder() {
     if (!cafeteria || !form.name || !form.phone || cart.length === 0) return
+    // Validate contact details before creating the order — Razorpay records,
+    // refunds and SMS all depend on a real phone/email (no placeholders).
+    if (!isValidPhone(form.phone)) {
+      alert('Please enter a valid phone number (e.g. +91 98765 43210).')
+      return
+    }
+    if (!isValidEmail(form.email)) {
+      alert('Please enter a valid email address so we can send your receipt and process refunds.')
+      return
+    }
     setSubmitting(true)
     const { data: existing } = await supabase.from('orders').select('queue_position').eq('cafeteria_id', cafeteria.id).in('status', ['pending', 'paid', 'preparing']).order('queue_position', { ascending: false }).limit(1)
     const nextPos = existing && existing.length > 0 ? existing[0].queue_position + 1 : 1

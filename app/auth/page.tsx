@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
+import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 
 // 3D penguin (Three.js) — client only, lazy-loaded so it never blocks the form
 const PenguinScene = dynamic(() => import('@/components/PenguinScene'), { ssr: false })
@@ -45,37 +46,59 @@ export default function AuthPage() {
   }
 
   async function handleLogin() {
-    if (!email || !password) { setError('Enter your email and password.'); return }
+    // Client checks are a UX convenience only — the /api/auth/login route
+    // re-validates everything server-side and enforces rate limiting + lockout.
+    if (!email || !password) { setError('Incorrect email or password'); return }
     setLoading(true); setError('')
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) { setError('Invalid credentials. Try again.'); setLoading(false); return }
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.session) {
+        // Single generic message for wrong email, wrong password, OR lockout.
+        setError(data?.error || 'Incorrect email or password')
+        setLoading(false)
+        return
+      }
+      // Establish the browser session from the server-verified tokens.
+      const { error: setErr } = await supabase.auth.setSession(data.session)
+      if (setErr) { setError('Incorrect email or password'); setLoading(false); return }
       await goAfterAuth(email)
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
   }
 
   async function handleSignup() {
-    if (!name || !email || !password || !phone) { setError('Name, email, password, and phone are required.'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+    // Mirror the server rules for fast feedback; the server is authoritative.
+    if (!name || !email || !password || !phone) { setError('Please check your details and try again.'); return }
+    if (!isValidEmail(email)) { setError('Please check your details and try again.'); return }
+    if (!isValidPhone(phone)) { setError('Please check your details and try again.'); return }
+    const pw = validatePassword(password)
+    if (!pw.ok) { setError(pw.message!); return }
     setLoading(true); setError('')
     try {
-      const { data, error: authError } = await supabase.auth.signUp({ email, password })
-      if (authError) { setError(authError.message); setLoading(false); return }
-      // Store extra profile info
-      if (data.user) {
-        await supabase.from('profiles').upsert({
-            id: data.user.id,
-            name,
-            phone: phone || null,
-            email,
-        })
-        await goAfterAuth(email)  // session is already created, go straight in
-        return
-        }
-        // Only hits here if data.user is null (email confirmation required by Supabase settings)
-        setSuccess('Account created! Check your email to confirm, then log in.')
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, phone }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        // Never confirms whether the email already exists.
+        setError(data?.error || 'Could not create your account. Please check your details and try again.')
         setLoading(false)
-        setTimeout(() => { setMode('login'); setSuccess('') }, 3000)
+        return
+      }
+      if (data.session) {
+        const { error: setErr } = await supabase.auth.setSession(data.session)
+        if (!setErr) { await goAfterAuth(email); return }
+      }
+      // No session → email confirmation is required by Supabase settings.
+      setSuccess('Account created! Check your email to confirm, then log in.')
+      setLoading(false)
+      setTimeout(() => { setMode('login'); setSuccess('') }, 3000)
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
   }
 
@@ -91,12 +114,29 @@ export default function AuthPage() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetUrl,
       })
-      if (resetError) { setError(resetError.message); setLoading(false); return }
+      // Do not reveal whether the email exists — show the same confirmation
+      // regardless (prevents account enumeration). We intentionally swallow the
+      // error and never log any credential material.
+      void resetError
       setForgotSent(true)
-      setSuccess('Password reset link sent to your email! Check your inbox.')
+      setSuccess("If that email is registered, you'll receive a reset link")
       setLoading(false)
       setTimeout(() => { setMode('login'); setForgotSent(false); setSuccess('') }, 4000)
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
+  }
+
+  // Social login via Supabase Auth (provider must be enabled in the Supabase
+  // dashboard: Authentication → Providers → Google / GitHub).
+  async function handleOAuth(provider: 'google' | 'github') {
+    setError('')
+    const redirectTo = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/`
+      : `${window.location.origin}/`
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    })
+    if (oauthError) setError('Could not start social sign-in. Please try again.')
   }
 
   const handleSubmit = mode === 'login' ? handleLogin : (mode === 'signup' ? handleSignup : handleForgotPassword)
@@ -293,7 +333,7 @@ export default function AuthPage() {
                     style={inp}
                   />
                   {mode === 'signup' && (
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>Minimum 6 characters</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
                   )}
                 </div>
               )}
@@ -342,6 +382,25 @@ export default function AuthPage() {
                   : (mode === 'login' ? 'Sign In →' : mode === 'signup' ? 'Create Account →' : 'Send Reset Link →')
                 }
               </button>
+
+              {/* Social login (Google / GitHub) — only on sign in / sign up */}
+              {mode !== 'forgot' && (
+                <>
+                  <div className="divider-row">
+                    <div className="divider-line" />
+                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>or continue with</span>
+                    <div className="divider-line" />
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button type="button" className="guest-btn" onClick={() => handleOAuth('google')} disabled={loading} style={{ flex: 1 }}>
+                      Google
+                    </button>
+                    <button type="button" className="guest-btn" onClick={() => handleOAuth('github')} disabled={loading} style={{ flex: 1 }}>
+                      GitHub
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           </div>

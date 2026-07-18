@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria, Notification } from '@/lib/types'
+import { isManager } from '@/lib/config'
 import { LogOut, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function ManagerDashboard() {
@@ -26,7 +27,7 @@ export default function ManagerDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session || session.user.email !== 'niyati.rajukumar@gmail.com') {
+      if (!session || !isManager(session.user.email)) {
         router.push('/')
         return
       }

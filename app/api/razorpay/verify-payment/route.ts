@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyPaymentSignature } from '@/lib/razorpay'
+import { logger, shortId } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +12,9 @@ const adminSupabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'verify-payment', 30, 60_000)
+    if (limited) return limited
+
     const body = await req.json()
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = body
 
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
     )
 
     if (!isValid) {
-      console.error('[Razorpay Verify] Signature mismatch for order:', orderId)
+      logger.error('[Razorpay Verify] Signature mismatch for order:', shortId(orderId))
       return NextResponse.json(
         { success: false, error: 'Payment signature verification failed' },
         { status: 400 }
@@ -49,18 +54,18 @@ export async function POST(req: NextRequest) {
       .eq('id', orderId)
 
     if (updateError) {
-      console.error('[Razorpay Verify] Error updating order:', updateError)
+      logger.error('[Razorpay Verify] Error updating order:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update order: ' + updateError.message },
+        { error: 'Failed to update order.' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ success: true, message: 'Payment verified' }, { status: 200 })
   } catch (error: any) {
-    console.error('[Razorpay Verify] Error:', error)
+    logger.error('[Razorpay Verify] Error:', error)
     return NextResponse.json(
-      { error: 'Payment verification failed: ' + error.message },
+      { error: 'Payment verification failed.' },
       { status: 500 }
     )
   }

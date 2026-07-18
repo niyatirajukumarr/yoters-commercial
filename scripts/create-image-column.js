@@ -1,8 +1,16 @@
 // Create image_url column in cafeterias table using admin API
 const https = require('https')
 
-const supabaseUrl = 'https://qbvwcpjjattwebdzexni.supabase.co'
+// Read the project URL from env so this script is not tied to one project.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars')
+  process.exit(1)
+}
+
+const supabaseHostname = new URL(supabaseUrl).hostname
 
 // SQL to add column if it doesn't exist
 const sql = `
@@ -13,7 +21,7 @@ ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
 async function createColumn() {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'qbvwcpjjattwebdzexni.supabase.co',
+      hostname: supabaseHostname,
       port: 443,
       path: '/rest/v1/rpc/query',
       method: 'POST',
@@ -51,14 +59,14 @@ async function createColumn() {
 
 function execSql(sql, resolve, reject) {
   const { createClient } = require('@supabase/supabase-js')
-  const sb = createClient('https://qbvwcpjjattwebdzexni.supabase.co', process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const sb = createClient(supabaseUrl, serviceRoleKey)
 
   // Since we can't directly execute raw SQL with the JS client, we'll just try to update the image_url field
   // If the column exists, it will work. If not, we'll get an error but at least we tried.
   console.log('Attempting to add column via direct Supabase update...')
 
   sb.from('cafeterias')
-    .update({ image_url: 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/cafeteria-images/public/lit-bites-prof-cafe.webp' })
+    .update({ image_url: `${supabaseUrl}/storage/v1/object/public/cafeteria-images/public/lit-bites-prof-cafe.webp` })
     .eq('name', 'Lit Bites Prof\'s Cafe')
     .then(({ error }) => {
       if (error && error.code === 'PGRST204') {
