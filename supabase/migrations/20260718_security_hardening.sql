@@ -45,19 +45,36 @@ as $$
   select nullif(auth.jwt() ->> 'email', '');
 $$;
 
+-- Helper: phone number of the current authenticated user, from their profile.
+-- orders.student_phone is NOT NULL (always set at checkout) while
+-- orders.student_email is nullable, so phone is the more reliable match —
+-- security definer so the lookup works regardless of the caller's own RLS
+-- visibility into `profiles`.
+create or replace function public.current_phone()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select nullif(phone, '') from profiles where id = auth.uid();
+$$;
+
 -- ---------- M1: scope order reads to owner / owning vendor ----------
 -- Remove the permissive policies that allowed anyone to read/update any order.
 drop policy if exists "Public read orders" on orders;
 drop policy if exists "Update orders" on orders;
 
--- Owners (authenticated) may read their own orders, matched by the email they
--- placed the order with. Vendors may read orders for the cafeteria they own.
--- Managers/admins may read all. The service-role key (used by API routes and
--- webhooks) bypasses RLS entirely, so server flows are unaffected.
+-- Owners (authenticated) may read their own orders, matched by phone (always
+-- set at checkout) or by the email they placed the order with (if any).
+-- Vendors may read orders for the cafeteria they own. Managers/admins may
+-- read all. The service-role key (used by API routes and webhooks) bypasses
+-- RLS entirely, so server flows are unaffected.
 create policy "Owner or vendor read orders" on orders
   for select
   using (
-    (student_email is not null and student_email = public.current_email())
+    (student_phone is not null and student_phone = public.current_phone())
+    or (student_email is not null and student_email = public.current_email())
     or exists (
       select 1 from cafeterias c
       where c.id = orders.cafeteria_id
