@@ -1,30 +1,65 @@
-// @ts-ignore
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { isManager } from '@/lib/config'
+
+// Page-level auth gate. Standardised on @supabase/ssr (the rest of the app uses
+// it) — no more deprecated @supabase/auth-helpers-nextjs and no @ts-ignore.
+//
+// Note on /api: middleware no longer pretends to guard API routes. Redirecting
+// an API request to an HTML /auth page is wrong (and would break the Razorpay
+// webhook and guest order/payment endpoints, which are intentionally
+// session-less). Instead, every sensitive API route self-protects
+// (authenticated admin token for payouts, vendor-ownership checks for
+// deny-order, ownership checks for delete-order, signature verification for
+// payment/webhook routes). API routes are therefore excluded from the matcher.
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-  const { data: { session } } = await supabase.auth.getSession()
+  let res = NextResponse.next({ request: req })
 
-  const PUBLIC = ['/', '/auth', '/vendor', '/api']
-  const isPublic = PUBLIC.some(p => req.nextUrl.pathname.startsWith(p))
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
+          res = NextResponse.next({ request: req })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
 
-  // Manager route protection - only niyati.rajukumar@gmail.com can access /manager
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Public pages that never require a session.
+  const PUBLIC = ['/', '/auth', '/vendor']
+  const isPublic = PUBLIC.some(
+    p => req.nextUrl.pathname === p || req.nextUrl.pathname.startsWith(p + '/')
+  )
+
+  // Manager route protection — role-based, not a hardcoded email literal.
   if (req.nextUrl.pathname.startsWith('/manager')) {
-    if (!session || session.user.email !== 'niyati.rajukumar@gmail.com') {
+    if (!user || !isManager(user.email)) {
       return NextResponse.redirect(new URL('/', req.url))
     }
   }
 
-  // Not logged in + trying to access protected route → redirect to /auth
-  if (!session && !isPublic) {
+  // Not logged in + trying to access a protected page → redirect to /auth
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/auth', req.url))
   }
 
   // Already logged in + hitting /auth → redirect to /browse
-  if (session && req.nextUrl.pathname === '/auth') {
+  if (user && req.nextUrl.pathname === '/auth') {
     return NextResponse.redirect(new URL('/browse', req.url))
   }
 
@@ -32,5 +67,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png).*)'],
+  // Exclude API routes (they self-protect), Next internals, and static assets.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|logo.png).*)'],
 }

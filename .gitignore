@@ -43,3 +43,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# committed env dump (removed) — never re-add
+env.download

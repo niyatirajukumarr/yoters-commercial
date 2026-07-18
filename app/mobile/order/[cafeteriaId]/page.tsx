@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
+import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
@@ -508,6 +509,16 @@ export default function CafeteriaPage() {
   const handlePlaceOrder = async () => {
     if (!formData.name || !formData.phone || !cartItem.length) {
       alert('Please fill in name and phone, and add items to cart')
+      return
+    }
+    // Contact details must be valid — Razorpay records, refunds and SMS depend
+    // on a real phone/email (no placeholders reach the payment gateway).
+    if (!isValidPhone(formData.phone)) {
+      alert('Please enter a valid phone number (e.g. +91 98765 43210).')
+      return
+    }
+    if (!isValidEmail(formData.email)) {
+      alert('Please enter a valid email address so we can send your receipt and process refunds.')
       return
     }
     setIsPlacingOrder(true)

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,10 +18,14 @@ export async function POST(req: NextRequest) {
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', orderId)
 
-    if (error) return NextResponse.json({ error: 'Failed to approve order: ' + error.message }, { status: 500 })
+    if (error) {
+      logger.error('Approve order failed:', error)
+      return NextResponse.json({ error: 'Failed to approve order.' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    logger.error('Approve order error:', error)
+    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 })
   }
 }

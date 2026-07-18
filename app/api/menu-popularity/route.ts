@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +23,8 @@ export async function GET(req: NextRequest) {
       .eq('cafeteria_id', cafeteriaId)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      logger.error('Menu popularity query error:', error)
+      return NextResponse.json({ error: 'Failed to load menu popularity.' }, { status: 500 })
     }
 
     const byName: Record<string, number> = {}
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ byName, byId, max }, { status: 200 })
   } catch (e: any) {
-    console.error('Menu popularity error:', e)
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    logger.error('Menu popularity error:', e)
+    return NextResponse.json({ error: 'Failed to load menu popularity.' }, { status: 500 })
   }
 }

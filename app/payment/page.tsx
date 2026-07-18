@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { generateSlug } from '@/lib/utils/slug'
+import { isValidEmail, isValidPhone } from '@/lib/validation'
 import Script from 'next/script'
 
 interface RazorpayWindow extends Window {
@@ -27,6 +28,8 @@ function PaymentPageContent() {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const razorpayOrderIdRef = useRef<string | null>(null)
   const cafeSlugRef = useRef<string | null>(null)
+  // Real, validated contact info pulled from the order record (never placeholders).
+  const contactRef = useRef<{ name: string; email: string; phone: string } | null>(null)
 
   // Get cafeteria slug from order
   const getCafeSlug = async (orderId: string) => {
@@ -67,11 +70,30 @@ function PaymentPageContent() {
       }
 
       try {
-        console.log('[Payment] Initializing payment for order:', orderId)
+        console.log('[Payment] Initializing payment for order')
 
-        // Get user email from Supabase session
+        // Pull the real contact details captured when the order was placed.
+        // These are validated below — no placeholder phone/email is ever sent to
+        // Razorpay, so refunds, receipts and SMS reach the actual customer.
+        const { data: order } = await supabase
+          .from('orders')
+          .select('student_name, student_email, student_phone')
+          .eq('id', orderId)
+          .single()
+
+        // Fall back to the authenticated session email if the order has none.
         const { data: { session } } = await supabase.auth.getSession()
-        const email = session?.user?.email || `student-${orderId}@yoters.local`
+        const email = order?.student_email || session?.user?.email || ''
+        const phone = order?.student_phone || ''
+        const contactName = order?.student_name || name || ''
+
+        if (!isValidEmail(email) || !isValidPhone(phone)) {
+          setError('This order is missing valid contact details. Please re-place your order with a valid phone and email.')
+          setLoading(false)
+          return
+        }
+
+        contactRef.current = { name: contactName, email, phone }
 
         // Create Razorpay order
         const response = await fetch('/api/razorpay/create-order', {
@@ -81,8 +103,8 @@ function PaymentPageContent() {
             orderId,
             amount: parseInt(amount),
             studentEmail: email,
-            studentPhone: '9999999999',
-            studentName: name,
+            studentPhone: phone,
+            studentName: contactName,
           }),
         })
 
@@ -194,9 +216,9 @@ function PaymentPageContent() {
         name: 'Yoters',
         description: 'Food Order',
         prefill: {
-          name: name || 'Student',
-          email: `student@yoters.local`,
-          contact: '9999999999',
+          name: contactRef.current?.name || name || 'Customer',
+          email: contactRef.current?.email || '',
+          contact: contactRef.current?.phone || '',
         },
         theme: {
           color: '#E8334A',

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
@@ -52,11 +53,20 @@ export default function AuthPage() {
 
   async function handleSignup() {
     if (!name || !email || !password || !phone) { setError('Name, email, password, and phone are required.'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+    if (!isValidEmail(email)) { setError('Please enter a valid email address.'); return }
+    if (!isValidPhone(phone)) { setError('Please enter a valid phone number.'); return }
+    const pw = validatePassword(password)
+    if (!pw.ok) { setError(pw.message!); return }
     setLoading(true); setError('')
     try {
       const { data, error: authError } = await supabase.auth.signUp({ email, password })
-      if (authError) { setError(authError.message); setLoading(false); return }
+      if (authError) {
+        // Generic message — avoid leaking whether an email is already registered
+        // (user enumeration). Full detail stays server-side in Supabase logs.
+        setError('Could not create your account. Please check your details and try again.')
+        setLoading(false)
+        return
+      }
       // Store extra profile info
       if (data.user) {
         await supabase.from('profiles').upsert({
@@ -87,7 +97,9 @@ export default function AuthPage() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetUrl,
       })
-      if (resetError) { setError(resetError.message); setLoading(false); return }
+      // Do not reveal whether the email exists — show the same confirmation
+      // regardless (prevents account enumeration).
+      if (resetError) { console.error('Password reset error'); }
       setForgotSent(true)
       setSuccess('Password reset link sent to your email! Check your inbox.')
       setLoading(false)
@@ -319,7 +331,7 @@ export default function AuthPage() {
                     style={inp}
                   />
                   {mode === 'signup' && (
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>Minimum 6 characters</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
                   )}
                 </div>
               )}

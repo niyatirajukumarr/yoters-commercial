@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { validatePassword } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,8 +34,9 @@ function ResetPasswordContent() {
       setError('Please enter and confirm your password.')
       return
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    const pw = validatePassword(password)
+    if (!pw.ok) {
+      setError(pw.message!)
       return
     }
     if (password !== confirmPassword) {
@@ -51,7 +53,7 @@ function ResetPasswordContent() {
       })
 
       if (updateError) {
-        setError(updateError.message)
+        setError('Could not reset your password. The link may have expired — please request a new one.')
         setLoading(false)
         return
       }
@@ -166,7 +168,7 @@ function ResetPasswordContent() {
                     onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
                     style={inp}
                   />
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>Minimum 6 characters</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
                 </div>
 
                 <div>
