@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { logger, shortId } from '@/lib/logger'
 import { isValidUpiId, isValidAmount, isNonEmptyString } from '@/lib/validation'
 import { isAdmin } from '@/lib/config'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 // Service-role client for verifying the caller's token and (future) recording
 // payouts. Never exposed to the client.
@@ -59,6 +60,9 @@ async function requireAdmin(req: NextRequest): Promise<{ ok: boolean; email?: st
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'initiate-payout', 10, 60_000)
+    if (limited) return limited
+
     // 1) AuthN + AuthZ — only an authenticated admin may trigger payouts.
     const admin = await requireAdmin(req)
     if (!admin.ok) {

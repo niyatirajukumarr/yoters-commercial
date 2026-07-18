@@ -1,40 +1,28 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { getAdminClient, requireVendorForOrder, authErrorStatus } from '@/lib/auth-server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+const supabase = getAdminClient()
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, vendorEmail, prepTimeMinutes } = await req.json()
-    if (!orderId || !vendorEmail) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    const limited = enforceRateLimit(req, 'approve-order', 30, 60_000)
+    if (limited) return limited
 
-    // Verify the caller's vendor owns the cafeteria this order belongs to before
-    // mutating it — otherwise any caller could approve any order.
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('id, cafeteria_id')
-      .eq('id', orderId)
-      .single()
+    const { orderId } = await req.json()
+    if (!orderId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-    if (orderError || !order) {
-      return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+    // Identity comes from the verified session token, not the request body (R7).
+    const auth = await requireVendorForOrder(req, orderId)
+    if ('error' in auth) {
+      const status = authErrorStatus(auth.error)
+      return NextResponse.json(
+        { error: status === 404 ? 'Order not found.' : 'Unauthorized' },
+        { status }
+      )
     }
-
-    const { data: cafeteria, error: cafError } = await supabase
-      .from('cafeterias')
-      .select('id')
-      .eq('id', order.cafeteria_id)
-      .eq('vendor_email', vendorEmail)
-      .single()
-
-    if (cafError || !cafeteria) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    const { order } = auth
 
     const { error } = await supabase
       .from('orders')

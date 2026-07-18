@@ -34,7 +34,12 @@ export default function VendorDashboard() {
   const prevOrderCount = useState({ count: 0 })
 
   const fetchOrders = useCallback(async (cafId: string, notify = false) => {
-    const res = await fetch(`/api/vendor/orders?cafeteriaId=${cafId}`)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    const res = await fetch(`/api/vendor/orders?cafeteriaId=${cafId}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (!res.ok) return
     const json = await res.json()
     const data = json.orders
     if (data) {
@@ -207,14 +212,16 @@ export default function VendorDashboard() {
     setApproveLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user.email) return
+      if (!session?.access_token) return
 
       const response = await fetch('/api/vendor/approve-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           orderId: order.id,
-          vendorEmail: session.user.email,
           prepTimeMinutes: parseInt(prepTime),
         }),
       })
@@ -242,14 +249,16 @@ export default function VendorDashboard() {
     setApproveLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user.email) return
+      if (!session?.access_token) return
 
       const response = await fetch('/api/vendor/deny-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           orderId: order.id,
-          vendorEmail: session.user.email,
           denialReason: denialReason.trim(),
         }),
       })

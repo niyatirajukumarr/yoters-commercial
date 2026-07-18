@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +13,9 @@ const supabase = createClient(
 // so the menu can show a real-time "Highly ordered" indicator.
 export async function GET(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'menu-popularity', 60, 60_000)
+    if (limited) return limited
+
     const cafeteriaId = req.nextUrl.searchParams.get('cafeteriaId')
     if (!cafeteriaId) {
       return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })

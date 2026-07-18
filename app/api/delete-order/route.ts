@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,9 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'delete-order', 20, 60_000)
+    if (limited) return limited
+
     const { orderId, studentPhone } = await req.json()
 
     if (!orderId) {
@@ -27,8 +31,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Only the customer who placed the order can delete it
-    if (studentPhone && order.student_phone && order.student_phone !== studentPhone) {
+    // Only the customer who placed the order can delete it. The phone must be
+    // supplied and must match — previously an omitted studentPhone skipped the
+    // check entirely, letting anyone delete another customer's order.
+    if (!studentPhone || order.student_phone !== studentPhone) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 

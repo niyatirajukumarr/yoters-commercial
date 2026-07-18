@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createRazorpayOrder } from '@/lib/razorpay'
 import { logger } from '@/lib/logger'
 import { isValidEmail, isValidPhone, isValidAmount, isNonEmptyString } from '@/lib/validation'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 // Service-role client: this route reads the order and writes the Razorpay order
 // id, which must work even once RLS is tightened to owner-scoped policies.
@@ -14,6 +15,9 @@ const adminSupabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'create-order', 15, 60_000)
+    if (limited) return limited
+
     const body = await req.json()
     const { orderId, amount, studentEmail, studentPhone, studentName } = body
 
