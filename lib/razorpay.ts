@@ -106,7 +106,11 @@ export function verifyWebhookSignature(
       .update(body)
       .digest('hex')
 
-    return signature === expectedSignature
+    // Constant-time comparison to avoid timing side-channels (R9).
+    return crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'hex'),
+      Buffer.from(signature, 'hex')
+    )
   } catch (error) {
     logger.error('Signature verification error:', error)
     return false

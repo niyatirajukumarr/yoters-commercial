@@ -84,3 +84,16 @@ create policy "Vendor update orders" on orders
 
 -- Order inserts remain open (guests place orders); the API validates contents.
 -- (Existing "Customers place orders" INSERT policy is left in place.)
+
+-- ---------- R5: payout / audit tables are service-role only ----------
+-- The permissive payout policies allowed anon read/write of financial rows.
+-- Remove them entirely: payouts are only ever touched by server routes using the
+-- service-role key, which bypasses RLS. With RLS enabled and no policy, anon/
+-- authenticated clients get zero access.
+drop policy if exists "Public read payouts" on payouts;
+drop policy if exists "Manage payouts" on payouts;
+
+-- manager_audit_log has RLS enabled and (intentionally) no policy → service-role
+-- only. This statement is a no-op safety net in case a permissive one was added.
+drop policy if exists "Public read audit" on manager_audit_log;
+drop policy if exists "Manage audit" on manager_audit_log;
