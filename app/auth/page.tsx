@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
+
+// 3D penguin (Three.js) — client only, lazy-loaded so it never blocks the form
+const PenguinScene = dynamic(() => import('@/components/PenguinScene'), { ssr: false })
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
@@ -125,33 +129,14 @@ export default function AuthPage() {
         .auth-bg-blob {
           position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: 0.18;
         }
-        /* Penguin lands at the left, then slide-pulls the card from center-right into the center */
-        .auth-card { animation: authSlide 0.9s cubic-bezier(.45,0,.15,1) 1.1s both; }
-        @keyframes authSlide {
-          0%   { transform: translateX(74%); }
-          100% { transform: translateX(0); }
-        }
-        .auth-penguin-pos { position: absolute; left: -6px; top: -58px; z-index: 6; pointer-events: none; }
-        .auth-penguin {
-          display: block;
-          transform-origin: bottom center;
-          filter: drop-shadow(0 8px 10px rgba(0,0,0,0.22));
-          animation: penguinDrop 1.1s cubic-bezier(.34,1.6,.5,1) both;
-        }
-        .peng { display: block; transform-box: fill-box; transform-origin: 50% 100%; animation: pengWaddle 2.6s ease-in-out 1.2s infinite; }
-        .peng .flip-l, .peng .flip-r { transform-box: fill-box; transform-origin: top center; }
-        .peng .flip-l { animation: flapL 0.55s ease-in-out 1.1s 3, flapL 2s ease-in-out 2.75s infinite; }
-        .peng .flip-r { animation: flapR 0.55s ease-in-out 1.1s 3, flapR 2s ease-in-out 2.75s infinite; }
-        @keyframes penguinDrop {
-          0%   { transform: translateY(-340px) rotate(-12deg); opacity: 0; }
-          55%  { opacity: 1; }
-          70%  { transform: translateY(10px) rotate(4deg) scaleY(0.84); }
-          84%  { transform: translateY(-6px) rotate(-2deg) scaleY(1.05); }
-          100% { transform: translateY(0) rotate(0deg) scaleY(1); }
-        }
-        @keyframes pengWaddle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-        @keyframes flapL { 0%, 100% { transform: rotate(8deg); } 50% { transform: rotate(-22deg); } }
-        @keyframes flapR { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(22deg); } }
+        /* 3D penguin (Three.js) slide-pulls the card from center-right into the center */
+        .auth-card { animation: authSlide 1.1s cubic-bezier(.45,0,.15,1) 1.3s both; }
+        @keyframes authSlide { 0% { transform: translateX(74%); } 100% { transform: translateX(0); } }
+        .auth-penguin-pos { position: absolute; left: -30px; top: -150px; z-index: 6; pointer-events: none; }
+        .phew-sweat { position: absolute; left: 92px; top: 78px; width: 9px; height: 9px; border-radius: 50% 50% 50% 0; background: #5cc3ff; transform: rotate(45deg); opacity: 0; animation: sweatFly 4s ease-in-out both; }
+        .phew-text { position: absolute; left: 116px; top: 64px; font-size: 15px; font-weight: 600; font-style: italic; color: #6b7180; opacity: 0; animation: phewShow 4s ease-in-out both; }
+        @keyframes sweatFly { 0%,72% { opacity: 0; transform: translate(0,0) rotate(45deg) scale(0.5); } 76% { opacity: 1; transform: translate(0,0) rotate(45deg) scale(1); } 88% { opacity: 1; transform: translate(10px,-16px) rotate(45deg) scale(0.9); } 96% { opacity: 0; transform: translate(18px,-28px) rotate(45deg) scale(0.6); } 100% { opacity: 0; } }
+        @keyframes phewShow { 0%,80% { opacity: 0; transform: translate(0,0); } 87% { opacity: 1; transform: translate(5px,-4px); } 100% { opacity: 0; transform: translate(15px,-12px); } }
         .tab-pill {
           flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 600;
           font-family: var(--font-body); cursor: pointer; transition: all 0.2s; border-radius: 9px;
@@ -213,23 +198,12 @@ export default function AuthPage() {
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: 420 }}>
-          {/* Penguin stays put and slide-pulls the card from center-right to the center */}
+          {/* 3D penguin stays put and (whole-body) leans as it slide-pulls the card to center */}
           <div className="auth-penguin-pos" aria-hidden="true">
-            <div className="auth-penguin">
-              <svg className="peng" viewBox="0 0 100 120" width="76" height="90" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="39" cy="113" rx="12" ry="5.5" fill="#f6a11d" />
-                <ellipse cx="61" cy="113" rx="12" ry="5.5" fill="#f6a11d" />
-                <ellipse cx="50" cy="60" rx="35" ry="52" fill="#20222e" />
-                <ellipse cx="50" cy="78" rx="24" ry="32" fill="#ffffff" />
-                <ellipse className="flip-l" cx="15" cy="64" rx="8" ry="24" fill="#20222e" />
-                <ellipse className="flip-r" cx="85" cy="64" rx="8" ry="24" fill="#20222e" />
-                <circle cx="41" cy="36" r="8" fill="#ffffff" />
-                <circle cx="59" cy="36" r="8" fill="#ffffff" />
-                <circle cx="43" cy="37" r="3.6" fill="#15161f" />
-                <circle cx="57" cy="37" r="3.6" fill="#15161f" />
-                <path d="M50 42 l8 8 -16 0 z" fill="#f6a11d" />
-              </svg>
-            </div>
+            <PenguinScene width={170} height={200} />
+            {/* 2D sweat + "phew" emote (static mesh can't wipe, so this sells the effort) */}
+            <span className="phew-sweat" />
+            <span className="phew-text">phew~</span>
           </div>
 
           <div style={{ width: '100%' }} className="auth-card">
