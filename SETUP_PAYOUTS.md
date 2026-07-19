@@ -24,12 +24,13 @@ CREATE INDEX idx_payouts_created ON payouts(created_at);
 
 ## 2. Add Environment Variables
 
-Add these to your `.env.local`:
+Add these to your `.env.local` (see `.env.example` for the full list — never commit real values here):
 
 ```
-RAZORPAY_KEY_ID=rzp_live_SydTJERNFEVhv6
-RAZORPAY_KEY_SECRET=IjzjfXi3VdatcieikU3PvFhY
-RAZORPAY_ACCOUNT_ID=your_account_id_here
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_KEY_SECRET=your_key_secret
+RAZORPAY_PAYOUT_KEY_ID=your_payout_key_id
+RAZORPAY_PAYOUT_ACCOUNT_NUMBER=your_account_number
 ```
 
 Get your Account ID from: https://dashboard.razorpay.com/app/settings/account-settings
