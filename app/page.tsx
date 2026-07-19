@@ -65,32 +65,22 @@ export default function LandingPage() {
         sessionStorage.setItem('yoters_splash_seen', '1')
 
         if (session) {
-          // Authenticated → show landing page with profile
-          if (isMounted) setIsChecking(false)
-
-          // Fetch user profile for students
+          // Authenticated → skip the marketing landing page entirely.
+          // Vendors go to their dashboard, students go straight to browse.
           try {
-            const result = await Promise.race([
+            const { data: cafeteria } = await Promise.race([
               supabase
-                .from('profiles')
-                .select('id, name, email')
-                .eq('id', session.user.id)
+                .from('cafeterias')
+                .select('id')
+                .eq('vendor_email', session.user.email)
                 .single(),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 8000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Vendor check timeout')), 8000))
             ]) as any
-
-            if (isMounted) {
-              if (result.error) {
-                console.error('Profile fetch error:', result.error)
-                setUser({ id: session.user.id, email: session.user.email })
-              } else if (result.data) {
-                setUser({ id: session.user.id, name: result.data.name, email: result.data.email })
-              }
-            }
-          } catch (error) {
-            console.error('Profile fetch error:', error)
-            if (isMounted) setUser({ id: session.user.id, email: session.user.email })
+            if (isMounted) router.replace(cafeteria ? '/vendor' : '/browse')
+          } catch {
+            if (isMounted) router.replace('/browse')
           }
+          return
         } else {
           // Unauthenticated → render landing (with Log in / Sign up)
           if (isMounted) setIsChecking(false)

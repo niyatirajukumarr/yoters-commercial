@@ -31,7 +31,7 @@ export default function AuthPage() {
     if (m === 'signup' || m === 'login') setMode(m)
   }, [])
 
-  // After auth, send students to the landing page and vendors to their dashboard
+  // After auth, send students straight to browse and vendors to their dashboard
   async function goAfterAuth(userEmail?: string | null) {
     try {
       if (userEmail) {
@@ -43,7 +43,7 @@ export default function AuthPage() {
         if (cafeteria) { router.push('/vendor'); return }
       }
     } catch { /* not a vendor — fall through */ }
-    router.push('/?splash=true')
+    router.push('/browse')
   }
 
   async function handleLogin() {
@@ -130,6 +130,11 @@ export default function AuthPage() {
   // dashboard: Authentication → Providers → Google).
   async function handleOAuth(provider: 'google') {
     setError('')
+    // Must redirect to a proxy-public path: the session is only established
+    // client-side (detectSessionInUrl) once this page's JS runs, and proxy.ts
+    // would otherwise bounce an unauthenticated-looking request straight back
+    // to /auth before that JS ever executes. '/' handles the post-OAuth bounce
+    // to /browse itself once the session is detected (see app/page.tsx).
     const redirectTo = process.env.NEXT_PUBLIC_APP_URL
       ? `${process.env.NEXT_PUBLIC_APP_URL}/`
       : `${window.location.origin}/`
