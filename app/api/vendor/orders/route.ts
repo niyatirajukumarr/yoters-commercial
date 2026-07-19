@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { getAdminClient, requireVendorForCafeteria, authErrorStatus } from '@/lib/auth-server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const adminSupabase = getAdminClient()
 
 export async function GET(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'vendor-orders', 60, 60_000)
+  if (limited) return limited
+
   const cafId = req.nextUrl.searchParams.get('cafeteriaId')
   if (!cafId) return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
 

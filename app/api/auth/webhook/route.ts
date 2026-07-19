@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getAdminClient } from '@/lib/auth-server'
 import { logger, shortId } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 // Lifecycle webhook for user creation/deletion.
 //
@@ -23,6 +24,9 @@ function validSecret(req: NextRequest): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'auth-webhook', 60, 60_000)
+  if (limited) return limited
+
   if (!validSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

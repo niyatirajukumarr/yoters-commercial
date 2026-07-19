@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyWebhookSignature } from '@/lib/razorpay'
 import { logger, shortId } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 // Webhooks run server-side with no user session; use the service-role client so
 // order updates work regardless of RLS.
@@ -13,6 +14,9 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = enforceRateLimit(req, 'razorpay-webhook', 60, 60_000)
+    if (limited) return limited
+
     const body = await req.text()
     const signature = req.headers.get('x-razorpay-signature') || ''
 
