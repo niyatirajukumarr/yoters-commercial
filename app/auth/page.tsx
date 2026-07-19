@@ -126,8 +126,8 @@ export default function AuthPage() {
   }
 
   // Social login via Supabase Auth (provider must be enabled in the Supabase
-  // dashboard: Authentication → Providers → Google / GitHub).
-  async function handleOAuth(provider: 'google' | 'github') {
+  // dashboard: Authentication → Providers → Google).
+  async function handleOAuth(provider: 'google') {
     setError('')
     const redirectTo = process.env.NEXT_PUBLIC_APP_URL
       ? `${process.env.NEXT_PUBLIC_APP_URL}/`
@@ -383,7 +383,7 @@ export default function AuthPage() {
                 }
               </button>
 
-              {/* Social login (Google / GitHub) — only on sign in / sign up */}
+              {/* Social login (Google) — only on sign in / sign up */}
               {mode !== 'forgot' && (
                 <>
                   <div className="divider-row">
@@ -391,14 +391,9 @@ export default function AuthPage() {
                     <span style={{ fontSize: 11, color: 'var(--muted)' }}>or continue with</span>
                     <div className="divider-line" />
                   </div>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <button type="button" className="guest-btn" onClick={() => handleOAuth('google')} disabled={loading} style={{ flex: 1 }}>
-                      Google
-                    </button>
-                    <button type="button" className="guest-btn" onClick={() => handleOAuth('github')} disabled={loading} style={{ flex: 1 }}>
-                      GitHub
-                    </button>
-                  </div>
+                  <button type="button" className="guest-btn" onClick={() => handleOAuth('google')} disabled={loading} style={{ width: '100%' }}>
+                    Google
+                  </button>
                 </>
               )}
             </div>
