@@ -1155,9 +1155,9 @@ export default function CafeteriaPage() {
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                         🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
-                      {order.queue_position && (
+                      {(order as any).queue_position && (
                         <div style={{ fontSize: 16, fontWeight: 900, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.color}`, borderRadius: 8, padding: '1px 10px' }}>
-                          #{order.queue_position}
+                          #{(order as any).queue_position}
                         </div>
                       )}
                     </div>
