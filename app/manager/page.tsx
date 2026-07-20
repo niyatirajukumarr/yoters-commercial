@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria, Notification } from '@/lib/types'
 import { isManager } from '@/lib/config'
 import { LogOut, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
+import { stagger, staggerItem, hoverScale, hoverLift } from '@/lib/motion'
 
 export default function ManagerDashboard() {
   const router = useRouter()
@@ -278,7 +280,6 @@ export default function ManagerDashboard() {
           padding: 12px 16px;
           margin-bottom: 8px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          animation: slideIn 0.3s ease-out;
           font-size: 13px;
         }
         .toast.success {
@@ -295,16 +296,6 @@ export default function ManagerDashboard() {
           border-color: #f59e0b;
           background: #fffbeb;
           color: #92400e;
-        }
-        @keyframes slideIn {
-          from {
-            transform: translateX(400px);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
         }
         @media (max-width: 1024px) {
           .sections-grid {
@@ -328,37 +319,37 @@ export default function ManagerDashboard() {
       {/* Navigation */}
       <div className="manager-nav">
         <div className="manager-title">📊 Manager Dashboard</div>
-        <button onClick={handleLogout} className="manager-logout">
+        <motion.button {...hoverScale} onClick={handleLogout} className="manager-logout">
           <LogOut size={16} />
           Logout
-        </button>
+        </motion.button>
       </div>
 
       {/* Content */}
       <div className="manager-content">
         {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
+        <motion.div className="stats-grid" initial="hidden" animate="visible" variants={stagger}>
+          <motion.div className="stat-card" variants={staggerItem} {...hoverLift}>
             <div style={{ opacity: 0.08, position: 'absolute', top: 16, right: 16, fontSize: 32 }}>💰</div>
             <div className="stat-label">Total Revenue</div>
             <div className="stat-value">₹{stats.totalRevenue.toLocaleString()}</div>
-          </div>
-          <div className="stat-card">
+          </motion.div>
+          <motion.div className="stat-card" variants={staggerItem} {...hoverLift}>
             <div style={{ opacity: 0.08, position: 'absolute', top: 16, right: 16, fontSize: 32 }}>📈</div>
             <div className="stat-label">Today's Revenue</div>
             <div className="stat-value">₹{stats.todayRevenue.toLocaleString()}</div>
-          </div>
-          <div className="stat-card">
+          </motion.div>
+          <motion.div className="stat-card" variants={staggerItem} {...hoverLift}>
             <div style={{ opacity: 0.08, position: 'absolute', top: 16, right: 16, fontSize: 32 }}>⏳</div>
             <div className="stat-label">Pending Approvals</div>
             <div className="stat-value">{stats.pendingApprovals}</div>
-          </div>
-          <div className="stat-card">
+          </motion.div>
+          <motion.div className="stat-card" variants={staggerItem} {...hoverLift}>
             <div style={{ opacity: 0.08, position: 'absolute', top: 16, right: 16, fontSize: 32 }}>✅</div>
             <div className="stat-label">Success Rate</div>
             <div className="stat-value">{stats.successRate}%</div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Vendor Ledger + Activity Feed */}
         <div className="sections-grid">
@@ -377,17 +368,19 @@ export default function ManagerDashboard() {
                   <div>Paid</div>
                   <div>Revenue</div>
                 </div>
-                {cafeterias.map(caf => {
-                  const vendorStats = getVendorStats(caf.vendor_email)
-                  return (
-                    <div key={caf.id} className="vendor-row">
-                      <div className="vendor-name">{caf.name}</div>
-                      <div className="vendor-stat">{vendorStats.pending}</div>
-                      <div className="vendor-stat"><strong>{vendorStats.paid}</strong></div>
-                      <div className="vendor-stat"><strong>₹{vendorStats.revenue.toLocaleString()}</strong></div>
-                    </div>
-                  )
-                })}
+                <motion.div initial="hidden" animate="visible" variants={stagger}>
+                  {cafeterias.map(caf => {
+                    const vendorStats = getVendorStats(caf.vendor_email)
+                    return (
+                      <motion.div key={caf.id} variants={staggerItem} className="vendor-row">
+                        <div className="vendor-name">{caf.name}</div>
+                        <div className="vendor-stat">{vendorStats.pending}</div>
+                        <div className="vendor-stat"><strong>{vendorStats.paid}</strong></div>
+                        <div className="vendor-stat"><strong>₹{vendorStats.revenue.toLocaleString()}</strong></div>
+                      </motion.div>
+                    )
+                  })}
+                </motion.div>
               </div>
             )}
           </div>
@@ -400,23 +393,33 @@ export default function ManagerDashboard() {
                 No activities yet
               </div>
             ) : (
-              <div>
-                {activities.map((activity, idx) => (
-                  <div key={activity.id || idx} className="activity-item">
-                    <div>
-                      {activity.notification_type === 'approved' && '🟢'}
-                      {activity.notification_type === 'denied' && '🔴'}
-                      {activity.notification_type === 'ready' && '📦'}
-                      {activity.notification_type === 'collected' && '✅'}
-                      {' '}
-                      {activity.message}
-                    </div>
-                    <div className="activity-time">
-                      {new Date(activity.created_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <motion.div layout>
+                <AnimatePresence initial={false}>
+                  {activities.map((activity, idx) => (
+                    <motion.div
+                      key={activity.id || idx}
+                      layout
+                      initial={{ opacity: 0, y: -12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="activity-item"
+                    >
+                      <div>
+                        {activity.notification_type === 'approved' && '🟢'}
+                        {activity.notification_type === 'denied' && '🔴'}
+                        {activity.notification_type === 'ready' && '📦'}
+                        {activity.notification_type === 'collected' && '✅'}
+                        {' '}
+                        {activity.message}
+                      </div>
+                      <div className="activity-time">
+                        {new Date(activity.created_at).toLocaleTimeString()}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             )}
           </div>
         </div>
@@ -440,12 +443,12 @@ export default function ManagerDashboard() {
                     <th style={{ padding: '8px 0' }}>Time</th>
                   </tr>
                 </thead>
-                <tbody>
+                <motion.tbody initial="hidden" animate="visible" variants={stagger}>
                   {orders.slice(0, 20).map(order => {
                     const caf = cafeterias.find(c => c.id === order.cafeteria_id)
                     const statusColor = order.payment_status === 'paid' ? 'var(--green)' : 'var(--yellow)'
                     return (
-                      <tr key={order.id} style={{ borderBottom: '1px solid var(--border2)', color: 'var(--text2)' }}>
+                      <motion.tr key={order.id} variants={staggerItem} style={{ borderBottom: '1px solid var(--border2)', color: 'var(--text2)' }}>
                         <td style={{ padding: '10px 0' }}>#{order.id.slice(0, 8)}</td>
                         <td style={{ padding: '10px 0' }}>{caf?.name || '-'}</td>
                         <td style={{ padding: '10px 0' }}>₹{order.total_amount}</td>
@@ -455,10 +458,10 @@ export default function ManagerDashboard() {
                         <td style={{ padding: '10px 0', color: 'var(--muted)' }}>
                           {new Date(order.created_at).toLocaleTimeString()}
                         </td>
-                      </tr>
+                      </motion.tr>
                     )
                   })}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
           )}
@@ -468,11 +471,20 @@ export default function ManagerDashboard() {
       {/* Toast Notifications */}
       {toasts.length > 0 && (
         <div className="toast-container">
-          {toasts.map(toast => (
-            <div key={toast.id} className={`toast ${toast.type}`}>
-              {toast.message}
-            </div>
-          ))}
+          <AnimatePresence>
+            {toasts.map(toast => (
+              <motion.div
+                key={toast.id}
+                className={`toast ${toast.type}`}
+                initial={{ opacity: 0, x: 400 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 400 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              >
+                {toast.message}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

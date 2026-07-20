@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, MenuItem, Order, OrderItem, formatWait } from '@/lib/types'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { useFavourites } from '@/lib/hooks/useFavourites'
+import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 type Step = 'menu' | 'details' | 'payment' | 'tracking'
@@ -345,9 +347,9 @@ function StudentPageInner() {
             </div>
 
             <div className="menu-grid">
-              <div>
+              <motion.div initial="hidden" whileInView="visible" viewport={viewportOnce} variants={stagger}>
                 {categories.map(cat => (
-                  <div key={cat} style={{ marginBottom: 24 }}>
+                  <motion.div key={cat} variants={staggerItem} style={{ marginBottom: 24 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>{cat}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {menuItems.filter(i => i.category === cat).map(item => {
@@ -395,21 +397,21 @@ function StudentPageInner() {
                                 <button disabled style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--muted)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'not-allowed', opacity: 0.5 }}>Out of Stock</button>
                               ) : inCart ? (
                                 <>
-                                  <button onClick={() => removeFromCart(item.id)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                                  <motion.button {...hoverScale} onClick={() => removeFromCart(item.id)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</motion.button>
                                   <span style={{ fontWeight: 700, minWidth: 18, textAlign: 'center' }}>{inCart.quantity}</span>
-                                  <button onClick={() => addToCart(item)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                  <motion.button {...hoverScale} onClick={() => addToCart(item)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</motion.button>
                                 </>
                               ) : (
-                                <button onClick={() => addToCart(item)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600 }}>Add</button>
+                                <motion.button {...hoverScale} onClick={() => addToCart(item)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600 }}>Add</motion.button>
                               )}
                             </div>
                           </div>
                         )
                       })}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Desktop cart */}
               {cart.length > 0 && (
@@ -424,9 +426,9 @@ function StudentPageInner() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 16 }}>
                     <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{cartTotal}</span>
                   </div>
-                  <button onClick={() => setStep('details')} style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700 }}>
+                  <motion.button {...hoverScale} onClick={() => setStep('details')} style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700 }}>
                     Continue ({cartCount} items) →
-                  </button>
+                  </motion.button>
                 </div>
               )}
             </div>
@@ -459,9 +461,9 @@ function StudentPageInner() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', fontWeight: 700, fontSize: 18 }}>
                     <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{cartTotal}</span>
                   </div>
-                  <button onClick={() => { setShowCart(false); setStep('details') }} style={{ width: '100%', padding: 16, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, fontWeight: 700 }}>
+                  <motion.button {...hoverScale} onClick={() => { setShowCart(false); setStep('details') }} style={{ width: '100%', padding: 16, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, fontWeight: 700 }}>
                     Continue to Details →
-                  </button>
+                  </motion.button>
                 </div>
                 {showCart && <div onClick={() => setShowCart(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(26,31,46,0.4)', zIndex: 299 }} />}
               </>
@@ -491,10 +493,13 @@ function StudentPageInner() {
                   <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{cartTotal}</span>
                 </div>
               </div>
-              <button onClick={placeOrder} disabled={submitting || !form.name || !form.phone}
+              <motion.button
+                {...(!submitting && form.name && form.phone ? hoverScale : {})}
+                onClick={placeOrder}
+                disabled={submitting || !form.name || !form.phone}
                 style={{ padding: 16, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, fontWeight: 700, opacity: submitting || !form.name || !form.phone ? 0.5 : 1 }}>
                 {submitting ? 'Placing Order...' : 'Place Order & Pay →'}
-              </button>
+              </motion.button>
             </div>
           </>
         )}
@@ -516,9 +521,9 @@ function StudentPageInner() {
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Total Amount</div>
                     <div style={{ fontFamily: 'var(--font-head)', fontSize: 32, fontWeight: 800, color: 'var(--accent)' }}>₹{myOrder.total_amount}</div>
                   </div>
-                  <button onClick={handlePay} style={{ width: '100%', padding: 15, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#00b09b,#96c93d)', color: 'white', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
+                  <motion.button {...hoverScale} onClick={handlePay} style={{ width: '100%', padding: 15, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#00b09b,#96c93d)', color: 'white', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
                     📱 Choose Payment Method
-                  </button>
+                  </motion.button>
                   <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>Tap to open your preferred UPI app</div>
                 </div>
               </>
@@ -541,9 +546,9 @@ function StudentPageInner() {
             {paymentState === 'failed' && (
               <div style={{ background: 'var(--red-bg)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
                 <p style={{ color: 'var(--red)', fontWeight: 700, marginBottom: 12 }}>Payment not received</p>
-                <button onClick={() => setPaymentState('idle')} className="btn-primary" style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700 }}>
+                <motion.button {...hoverScale} onClick={() => setPaymentState('idle')} className="btn-primary" style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700 }}>
                   Try Again
-                </button>
+                </motion.button>
               </div>
             )}
           </>
@@ -557,33 +562,36 @@ function StudentPageInner() {
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 700, marginBottom: 6 }}>{statusConfig[myOrder.status]?.label ?? myOrder.status}</div>
               <div style={{ fontSize: 14, color: 'var(--text2)' }}>Order #{myOrder.queue_position} · {cafeteria?.name}</div>
             </div>
-            <div className="tracking-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+            <motion.div className="tracking-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}
+              initial="hidden" animate="visible" variants={stagger}>
               {[
                 { label: 'Position', val: `#${myOrder.queue_position}`, color: 'var(--accent)' },
                 { label: 'Payment', val: myOrder.payment_status === 'paid' ? 'Paid ✅' : 'Pending', color: myOrder.payment_status === 'paid' ? 'var(--green)' : 'var(--yellow)' },
                 { label: 'Items', val: `${cart.reduce((s, i) => s + i.quantity, 0)} items`, color: 'var(--text)' },
                 { label: 'Total', val: `₹${myOrder.total_amount}`, color: 'var(--accent)' },
               ].map((s, i) => (
-                <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                <motion.div key={i} variants={staggerItem} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
                   <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>{s.label}</div>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: s.color }}>{s.val}</div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
               <div style={{ fontWeight: 600, marginBottom: 14, fontSize: 15 }}>Order Progress</div>
-              {(['pending', 'paid', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
-                const statuses = ['pending', 'paid', 'preparing', 'ready', 'collected']
-                const isDone = i <= statuses.indexOf(myOrder.status)
-                return (
-                  <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: i < 4 ? 14 : 0 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: isDone ? 'var(--accent)' : 'var(--surface2)', border: `2px solid ${isDone ? 'var(--accent)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: isDone ? 'white' : 'var(--muted)' }}>
-                      {isDone ? '✓' : i + 1}
-                    </div>
-                    <div style={{ fontSize: 14, color: isDone ? 'var(--text)' : 'var(--muted)', fontWeight: isDone ? 600 : 400 }}>{statusConfig[s]?.label}</div>
-                  </div>
-                )
-              })}
+              <motion.div initial="hidden" animate="visible" variants={stagger}>
+                {(['pending', 'paid', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
+                  const statuses = ['pending', 'paid', 'preparing', 'ready', 'collected']
+                  const isDone = i <= statuses.indexOf(myOrder.status)
+                  return (
+                    <motion.div key={s} variants={staggerItem} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: i < 4 ? 14 : 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: isDone ? 'var(--accent)' : 'var(--surface2)', border: `2px solid ${isDone ? 'var(--accent)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: isDone ? 'white' : 'var(--muted)' }}>
+                        {isDone ? '✓' : i + 1}
+                      </div>
+                      <div style={{ fontSize: 14, color: isDone ? 'var(--text)' : 'var(--muted)', fontWeight: isDone ? 600 : 400 }}>{statusConfig[s]?.label}</div>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
             </div>
             {myOrder.status === 'ready' && (
               <div style={{ marginTop: 14, background: 'var(--green-bg)', border: '1px solid rgba(46,158,107,0.2)', borderRadius: 14, padding: 18, textAlign: 'center', color: 'var(--green)', fontWeight: 700, fontSize: 16 }}>

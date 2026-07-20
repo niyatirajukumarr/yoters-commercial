@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { scaleIn } from '@/lib/motion'
 
 export default function VendorLogin() {
   const router = useRouter()
@@ -48,7 +50,7 @@ export default function VendorLogin() {
         </Link>
       </nav>
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
-        <div style={{ width:'100%', maxWidth:420 }} className="scale-in">
+        <motion.div style={{ width:'100%', maxWidth:420 }} initial="hidden" animate="visible" variants={scaleIn}>
           <div style={{ textAlign:'center', marginBottom:32 }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🐧</div>
             <h1 style={{ fontFamily:'var(--font-head)', fontSize:28, fontWeight:700, color:'var(--navy)', marginBottom:6 }}>Vendor Login</h1>
@@ -69,12 +71,19 @@ export default function VendorLogin() {
                   style={{ width:'100%', padding:'12px 16px' }} />
               </div>
               {error && <div style={{ background:'var(--red-bg)', border:'1px solid rgba(232,51,74,0.2)', borderRadius:10, padding:'10px 14px', fontSize:13, color:'var(--red)' }}>{error}</div>}
-              <button onClick={login} disabled={loading} className="btn-primary" style={{ padding:14, fontSize:16, opacity:loading?0.6:1, marginTop:4 }}>
+              <motion.button
+                onClick={login}
+                disabled={loading}
+                className="btn-primary"
+                style={{ padding:14, fontSize:16, opacity:loading?0.6:1, marginTop:4 }}
+                whileHover={!loading ? { scale: 1.015, y: -1 } : undefined}
+                whileTap={!loading ? { scale: 0.98 } : undefined}
+              >
                 {loading ? 'Signing in...' : 'Sign In →'}
-              </button>
+              </motion.button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

@@ -4,12 +4,14 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { Clock, CheckCircle, ChefHat, Loader, ChevronDown, ChevronUp } from 'lucide-react'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
 import { PrepTimeCountdown } from '@/components/PrepTimeCountdown'
 import { Order } from '@/lib/types'
+import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface CafeteriaInfo {
   id: string
@@ -111,8 +113,9 @@ export default function MobileOrders() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {(['active', 'past'] as const).map(t => (
-          <button
+          <motion.button
             key={t}
+            {...hoverScale}
             onClick={() => setTab(t)}
             className={t === tab ? 'mobile-btn-primary' : 'mobile-btn-secondary'}
             style={{
@@ -127,7 +130,7 @@ export default function MobileOrders() {
             }}
           >
             {t === 'active' ? `Active (${activeOrders.length})` : `Past (${pastOrders.length})`}
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -141,7 +144,7 @@ export default function MobileOrders() {
           No {tab} orders yet
         </div>
       ) : (
-        <div>
+        <motion.div initial="hidden" animate="visible" variants={stagger}>
           {displayOrders.map((order, idx) => {
             const cafe = cafeterias[order.cafeteria_id]
             const statusInfo = statuses[order.status as keyof typeof statuses]
@@ -149,11 +152,12 @@ export default function MobileOrders() {
             const isExpanded = expandedOrderId === order.id
 
             return (
-              <div key={order.id} style={{ marginBottom: 12 }}>
+              <motion.div key={order.id} variants={staggerItem} style={{ marginBottom: 12 }}>
                 {/* Order Card */}
-                <div
+                <motion.div
+                  {...hoverLift}
                   className="mobile-card mobile-list-item"
-                  style={{ padding: 'var(--mobile-spacing)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                  style={{ padding: 'var(--mobile-spacing)', cursor: 'pointer' }}
                   onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                 >
                   {/* Header */}
@@ -221,83 +225,95 @@ export default function MobileOrders() {
                       ₹{order.total_amount}
                     </span>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Expanded Roadmap View */}
-                {isExpanded && (
-                  <div style={{ marginTop: 8, padding: 'var(--mobile-spacing)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--mobile-radius)' }}>
-                    {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
-                      <PrepTimeCountdown order={order} />
-                    )}
-                    <OrderTrackingRoadmap order={order} cafeteriaName={cafe?.name} />
-
-                    <div style={{ marginTop: 16, display: 'flex', gap: 8, flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Link href={`/mobile/track/${order.id}`} style={{ flex: 1 }}>
-                          <button style={{ width: '100%', padding: '12px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                            View Full Details
-                          </button>
-                        </Link>
-                        {order.status === 'ready' && (
-                          <button
-                            style={{ flex: 1, padding: '12px 16px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              await supabase
-                                .from('orders')
-                                .update({ status: 'collected', collected_at: new Date().toISOString() })
-                                .eq('id', order.id)
-                              setExpandedOrderId(null)
-                            }}
-                          >
-                            I've Picked Up
-                          </button>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ marginTop: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--mobile-radius)', overflow: 'hidden' }}
+                    >
+                      <div style={{ padding: 'var(--mobile-spacing)' }}>
+                        {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
+                          <PrepTimeCountdown order={order} />
                         )}
-                      </div>
-                      {(order.status === 'cancelled' || order.status === 'collected') && (
-                        <button
-                          disabled={deleting === order.id}
-                          style={{ width: '100%', padding: '12px 16px', background: deleting === order.id ? '#999999' : '#dc2626', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: deleting === order.id ? 'not-allowed' : 'pointer', opacity: deleting === order.id ? 0.6 : 1 }}
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-                              try {
-                                setDeleting(order.id)
-                                const res = await fetch('/api/delete-order', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone }),
-                                })
-                                const data = await res.json()
+                        <OrderTrackingRoadmap order={order} cafeteriaName={cafe?.name} />
 
-                                if (!res.ok) {
-                                  console.error('Delete error:', data.error)
-                                  alert('Failed to delete order: ' + data.error)
-                                  setDeleting(null)
-                                } else {
-                                  // Server confirmed deletion — remove from local state
-                                  setOrders(orders.filter(o => o.id !== order.id))
+                        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexDirection: 'column' }}>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <Link href={`/mobile/track/${order.id}`} style={{ flex: 1 }}>
+                              <motion.button {...hoverScale} style={{ width: '100%', padding: '12px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                                View Full Details
+                              </motion.button>
+                            </Link>
+                            {order.status === 'ready' && (
+                              <motion.button
+                                {...hoverScale}
+                                style={{ flex: 1, padding: '12px 16px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  await supabase
+                                    .from('orders')
+                                    .update({ status: 'collected', collected_at: new Date().toISOString() })
+                                    .eq('id', order.id)
                                   setExpandedOrderId(null)
-                                  setDeleting(null)
+                                }}
+                              >
+                                I've Picked Up
+                              </motion.button>
+                            )}
+                          </div>
+                          {(order.status === 'cancelled' || order.status === 'collected') && (
+                            <motion.button
+                              {...(deleting !== order.id ? hoverScale : {})}
+                              disabled={deleting === order.id}
+                              style={{ width: '100%', padding: '12px 16px', background: deleting === order.id ? '#999999' : '#dc2626', color: 'white', border: 'none', borderRadius: 'var(--mobile-radius)', fontWeight: 600, fontSize: 14, cursor: deleting === order.id ? 'not-allowed' : 'pointer', opacity: deleting === order.id ? 0.6 : 1 }}
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+                                  try {
+                                    setDeleting(order.id)
+                                    const res = await fetch('/api/delete-order', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone }),
+                                    })
+                                    const data = await res.json()
+
+                                    if (!res.ok) {
+                                      console.error('Delete error:', data.error)
+                                      alert('Failed to delete order: ' + data.error)
+                                      setDeleting(null)
+                                    } else {
+                                      // Server confirmed deletion — remove from local state
+                                      setOrders(orders.filter(o => o.id !== order.id))
+                                      setExpandedOrderId(null)
+                                      setDeleting(null)
+                                    }
+                                  } catch (err: any) {
+                                    console.error('Delete exception:', err)
+                                    alert('Error deleting order: ' + err.message)
+                                    setDeleting(null)
+                                  }
                                 }
-                              } catch (err: any) {
-                                console.error('Delete exception:', err)
-                                alert('Error deleting order: ' + err.message)
-                                setDeleting(null)
-                              }
-                            }
-                          }}
-                        >
-                          {deleting === order.id ? '⏳ Deleting...' : '🗑️ Delete Order'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                              }}
+                            >
+                              {deleting === order.id ? '⏳ Deleting...' : '🗑️ Delete Order'}
+                            </motion.button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   )

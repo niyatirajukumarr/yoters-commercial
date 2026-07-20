@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
@@ -11,6 +12,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
+import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 
 interface MenuItem {
   id: string
@@ -691,7 +693,16 @@ export default function CafeteriaPage() {
     })
 
     return (
-      <div key={item.id} className="dish-card" style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}>
+      <motion.div
+        key={item.id}
+        className="dish-card"
+        style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={viewportOnce}
+        transition={{ duration: 0.35 }}
+        whileHover={{ y: -2 }}
+      >
         <div className="dish-main">
           {/* Veg / Non-veg badge */}
           <span className="veg-badge" style={{ border: `1.5px solid ${isVeg ? '#2e9e6b' : '#b8321f'}` }}>
@@ -738,16 +749,16 @@ export default function CafeteriaPage() {
           <div className="dish-add-float">
             {inCart ? (
               <div className="qty-box2">
-                <button onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</motion.button>
                 <span>{inCart.quantity}</span>
-                <button onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</motion.button>
               </div>
             ) : (
-              <button className="add-btn2" onClick={() => handleAddItem(item)}>ADD +</button>
+              <motion.button {...hoverScale} className="add-btn2" onClick={() => handleAddItem(item)}>ADD +</motion.button>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -837,7 +848,6 @@ export default function CafeteriaPage() {
             .qty-btn { width: 28px; height: 28px; background: none; border: none; color: var(--accent); font-weight: 800; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
             .qty-num { font-size: 14px; font-weight: 700; color: var(--text); min-width: 18px; text-align: center; }
             .add-btn-sw { width: 72px; height: 32px; background: white; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
-            @keyframes slideUpMobile { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
 
             /* Swiggy-style dish card */
             .dish-card { display: flex; justify-content: space-between; gap: 14px; padding: 20px 16px; border-bottom: 1px solid #eee; }
@@ -867,15 +877,16 @@ export default function CafeteriaPage() {
           {/* Sticky top: header + search + category pills */}
           <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
             <div className="menu-header">
-              <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <motion.button {...hoverScale} onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <ChevronLeft size={24} color='var(--text)' />
-              </button>
+              </motion.button>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
               </div>
               {/* Veg / Non-veg toggle */}
-              <button
+              <motion.button
+                {...hoverScale}
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
                 aria-label={vegMode === 'veg' ? 'Showing veg. Tap for non-veg' : 'Showing non-veg. Tap for veg'}
                 style={{
@@ -883,7 +894,6 @@ export default function CafeteriaPage() {
                   background: vegMode === 'veg' ? '#edfaf3' : '#fff0e8',
                   border: `1.5px solid ${vegMode === 'veg' ? '#2e9e6b' : '#e8734a'}`,
                   borderRadius: 999, padding: '5px 10px', cursor: 'pointer', flexShrink: 0,
-                  transition: 'all 0.2s',
                 }}
               >
                 <span style={{
@@ -896,12 +906,13 @@ export default function CafeteriaPage() {
                 <span style={{ fontSize: 12, fontWeight: 700, color: vegMode === 'veg' ? '#2e9e6b' : '#e8734a' }}>
                   {vegMode === 'veg' ? 'Veg' : 'Non-veg'}
                 </span>
-              </button>
+              </motion.button>
             </div>
 
             {/* Filter + Search */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
-              <button
+              <motion.button
+                {...hoverScale}
                 onClick={() => setShowFilter(true)}
                 aria-label="Filters"
                 style={{
@@ -913,7 +924,7 @@ export default function CafeteriaPage() {
               >
                 <SlidersHorizontal size={18} color={filtersActive ? '#E8334A' : 'var(--text2)'} />
                 {filtersActive && <span style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: '50%', background: '#E8334A' }} />}
-              </button>
+              </motion.button>
               <div className="menu-search-bar" style={{ flex: 1, margin: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
@@ -922,7 +933,7 @@ export default function CafeteriaPage() {
                   onChange={e => setMenuSearch(e.target.value)}
                 />
                 {menuSearch && (
-                  <button onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</button>
+                  <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</motion.button>
                 )}
               </div>
             </div>
@@ -1021,14 +1032,21 @@ export default function CafeteriaPage() {
           </div>
 
           {/* Filter Sheet */}
-          {showFilter && (
-            <>
-              <div onClick={() => setShowFilter(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 32px', maxHeight: '82vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUpMobile 0.3s ease' }}>
+          <AnimatePresence>
+            {showFilter && (
+              <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowFilter(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 32px', maxHeight: '82vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)' }}
+                >
                 <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800 }}>Filters</div>
-                  <button onClick={() => { setSortBy('relevance'); setPriceRange('all'); setCollection('all') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Clear all</button>
+                  <motion.button {...hoverScale} onClick={() => { setSortBy('relevance'); setPriceRange('all'); setCollection('all') }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Clear all</motion.button>
                 </div>
 
                 {/* Sort by */}
@@ -1039,7 +1057,7 @@ export default function CafeteriaPage() {
                     { v: 'cost_low', l: 'Cost: Low to High' },
                     { v: 'cost_high', l: 'Cost: High to Low' },
                   ] as const).map(o => (
-                    <button key={o.v} onClick={() => setSortBy(o.v)} style={pillStyle(sortBy === o.v)}>{o.l}</button>
+                    <motion.button {...hoverScale} key={o.v} onClick={() => setSortBy(o.v)} style={pillStyle(sortBy === o.v)}>{o.l}</motion.button>
                   ))}
                 </div>
 
@@ -1052,9 +1070,9 @@ export default function CafeteriaPage() {
                     { v: 'mid', l: '200 – 400', sym: '₹₹' },
                     { v: 'above400', l: '400 & above', sym: '₹₹₹' },
                   ] as const).map(o => (
-                    <button key={o.v} onClick={() => setPriceRange(o.v)} style={pillStyle(priceRange === o.v)}>
+                    <motion.button {...hoverScale} key={o.v} onClick={() => setPriceRange(o.v)} style={pillStyle(priceRange === o.v)}>
                       {o.sym && <span style={{ fontWeight: 800, marginRight: 6 }}>{o.sym}</span>}{o.l}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
@@ -1066,20 +1084,28 @@ export default function CafeteriaPage() {
                     { v: 'previous', l: 'Previously ordered' },
                     { v: 'new', l: 'New to you' },
                   ] as const).map(o => (
-                    <button key={o.v} onClick={() => setCollection(o.v)} style={pillStyle(collection === o.v)}>{o.l}</button>
+                    <motion.button {...hoverScale} key={o.v} onClick={() => setCollection(o.v)} style={pillStyle(collection === o.v)}>{o.l}</motion.button>
                   ))}
                 </div>
 
-                <button onClick={() => setShowFilter(false)} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Show results</button>
-              </div>
-            </>
-          )}
+                <motion.button {...hoverScale} onClick={() => setShowFilter(false)} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Show results</motion.button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
           {/* Cart Sheet */}
-          {showCartSheet && (
-            <>
-              <div onClick={() => setShowCartSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 36px', maxHeight: '72vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUpMobile 0.3s ease' }}>
+          <AnimatePresence>
+            {showCartSheet && (
+              <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCartSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 299 }} />
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 36px', maxHeight: '72vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)' }}
+                >
                 <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Your Cart 🛒</div>
                 {cartItem.map(item => (
@@ -1087,37 +1113,49 @@ export default function CafeteriaPage() {
                     <div style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{item.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', minWidth: 42, textAlign: 'right' }}>₹{item.price * item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</motion.button>
                       <span style={{ fontSize: 14, fontWeight: 700, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</button>
-                      <button onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</motion.button>
+                      <motion.button {...hoverScale} onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</motion.button>
                     </div>
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17 }}>
                   <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{total}</span>
                 </div>
-                <button onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
-                </button>
-              </div>
-            </>
-          )}
+                </motion.button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
           {/* Floating Cart FAB */}
-          {itemCount > 0 && (
-            <button onClick={() => setShowCartSheet(true)} style={{ position: 'fixed', bottom: 90, right: 20, zIndex: 200, background: 'linear-gradient(135deg,#E8334A,#c0202e)', color: 'white', border: 'none', borderRadius: 50, padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 24px rgba(232,51,74,0.5)', fontFamily: 'var(--font-body)' }}>
-              <div style={{ position: 'relative' }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span style={{ position: 'absolute', top: -8, right: -8, background: 'white', color: '#E8334A', borderRadius: '50%', width: 18, height: 18, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{itemCount}</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                <div style={{ fontSize: 15, fontWeight: 800 }}>₹{total}</div>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
-            </button>
-          )}
+          <AnimatePresence>
+            {itemCount > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.6, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.6, y: 20 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                onClick={() => setShowCartSheet(true)}
+                style={{ position: 'fixed', bottom: 90, right: 20, zIndex: 200, background: 'linear-gradient(135deg,#E8334A,#c0202e)', color: 'white', border: 'none', borderRadius: 50, padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 24px rgba(232,51,74,0.5)', fontFamily: 'var(--font-body)' }}
+              >
+                <div style={{ position: 'relative' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                  <span style={{ position: 'absolute', top: -8, right: -8, background: 'white', color: '#E8334A', borderRadius: '50%', width: 18, height: 18, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{itemCount}</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{total}</div>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
@@ -1131,55 +1169,58 @@ export default function CafeteriaPage() {
             {cafeOrders.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No orders yet. Start flexing! 💅</div>
             ) : (
-              cafeOrders.map(order => (
-                <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                        {order.items?.map(item => item.name).join(', ') || 'Order'}
+              <motion.div initial="hidden" animate="visible" variants={stagger}>
+                {cafeOrders.map(order => (
+                  <motion.div key={order.id} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                          {order.items?.map(item => item.name).join(', ') || 'Order'}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          🕐 {new Date(order.created_at).toLocaleString('en-IN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                        🕐 {new Date(order.created_at).toLocaleString('en-IN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div style={{ fontSize: 11, background: order.status === 'collected' ? '#edfaf3' : '#fff8ec', color: order.status === 'collected' ? '#2e9e6b' : '#d4821a', padding: '4px 8px', borderRadius: 4 }}>
+                          {order.status}
+                        </div>
+                        {(order.status === 'pending' || order.status === 'cancelled') && (
+                          <motion.button
+                            {...hoverScale}
+                            onClick={() => handleDeleteOrder(order.id)}
+                            style={{ padding: '6px 10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          >
+                            🗑️ Delete
+                          </motion.button>
+                        )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <div style={{ fontSize: 11, background: order.status === 'collected' ? '#edfaf3' : '#fff8ec', color: order.status === 'collected' ? '#2e9e6b' : '#d4821a', padding: '4px 8px', borderRadius: 4 }}>
-                        {order.status}
-                      </div>
-                      {(order.status === 'pending' || order.status === 'cancelled') && (
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          style={{ padding: '6px 10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                        >
-                          🗑️ Delete
-                        </button>
-                      )}
+
+                    {/* Items */}
+                    <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                      {order.items?.map((item, i) => (
+                        <div key={i} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{item.quantity}x {item.name}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
 
-                  {/* Items */}
-                  <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                    {order.items?.map((item, i) => (
-                      <div key={i} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{item.quantity}x {item.name}</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Total */}
-                  <div style={{ paddingTop: 10, marginTop: 6, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>₹{order.total_amount}</span>
-                  </div>
-                </div>
-              ))
+                    {/* Total */}
+                    <div style={{ paddingTop: 10, marginTop: 6, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>₹{order.total_amount}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             )}
           </div>
         </div>
@@ -1216,7 +1257,7 @@ export default function CafeteriaPage() {
                 {orderType === 'delivery' && deliveryAddress && <div style={{ fontSize: 11, color: 'var(--muted)' }}>{deliveryAddress}</div>}
               </div>
             </div>
-            <button onClick={() => setShowOrderTypeModal(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Change</button>
+            <motion.button {...hoverScale} onClick={() => setShowOrderTypeModal(true)} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Change</motion.button>
           </div>
           {/* Order Details Form */}
           <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Order Details</h3>
@@ -1251,38 +1292,42 @@ export default function CafeteriaPage() {
           {/* Cart Preview with Images and Controls */}
           <div style={{ marginBottom: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Your Order Preview</h3>
-            {cartItem.map(item => {
-              const menuItem = menuItems.find(m => m.id === item.menuId)
-              return (
-                <div key={item.menuId} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-                    🍱
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{item.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>₹{item.price}</div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <button
-                        onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
-                        style={{ width: 24, height: 24, borderRadius: 4, background: '#ccc', color: '#333', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
-                      >
-                        −
-                      </button>
-                      <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
-                        style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
-                      >
-                        +
-                      </button>
+            <motion.div initial="hidden" animate="visible" variants={stagger}>
+              {cartItem.map(item => {
+                const menuItem = menuItems.find(m => m.id === item.menuId)
+                return (
+                  <motion.div key={item.menuId} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                      🍱
                     </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>₹{item.price * item.quantity}</div>
-                  </div>
-                </div>
-              )
-            })}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{item.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>₹{item.price}</div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <motion.button
+                          {...hoverScale}
+                          onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
+                          style={{ width: 24, height: 24, borderRadius: 4, background: '#ccc', color: '#333', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
+                        >
+                          −
+                        </motion.button>
+                        <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{item.quantity}</span>
+                        <motion.button
+                          {...hoverScale}
+                          onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                          style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
+                        >
+                          +
+                        </motion.button>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>₹{item.price * item.quantity}</div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
           </div>
 
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
@@ -1292,46 +1337,63 @@ export default function CafeteriaPage() {
             </div>
           </div>
 
-          <button
+          <motion.button
+            {...(!(!formData.name || !formData.phone || isPlacingOrder) ? hoverScale : {})}
             onClick={handlePlaceOrder}
             disabled={!formData.name || !formData.phone || isPlacingOrder}
             style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
-          </button>
+          </motion.button>
         </div>
       )}
 
       {step === 'payment' && paymentState === 'idle' && (
-        <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
           <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{total}</div>
-          <button
+          <motion.button
+            {...hoverScale}
             onClick={handleOpenUPI}
             style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}
           >
             Pay Now
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
 
       {step === 'confirmation' && showTicket && tokenData && (
-        <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 20 }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 20 }}>
           <TokenTicket token={tokenData.token} items={tokenData.items} total={tokenData.total} orderId={tokenData.id} cafeteriaName={cafeteria.name} onClose={() => setShowTicket(false)} />
-          <button
+          <motion.button
+            {...hoverScale}
             onClick={() => router.push(`/mobile/track/${tokenData.id}`)}
             style={{ marginTop: 16, width: '100%', padding: 15, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
           >
             🛵 Track My Order →
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
 
       {/* ORDER TYPE MODAL */}
-      {showOrderTypeModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowOrderTypeModal(false)}>
-          <div style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '28px 20px 40px', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }} onClick={e => e.stopPropagation()}>
+      <AnimatePresence>
+        {showOrderTypeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
+            onClick={() => setShowOrderTypeModal(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+              style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '28px 20px 40px', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}
+              onClick={e => e.stopPropagation()}
+            >
             <div style={{ width: 40, height: 4, background: '#e0e0e0', borderRadius: 2, margin: '0 auto 20px' }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, color: 'var(--navy)' }}>How would you like your order?</h2>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>Choose your preferred order type</p>
@@ -1341,15 +1403,15 @@ export default function CafeteriaPage() {
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', emoji: '🥡' },
                 { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', emoji: '🛵' },
               ].map(opt => (
-                <button key={opt.key} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); setShowOrderTypeModal(false); setStep('details') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
+                <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); setShowOrderTypeModal(false); setStep('details') }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left' }}>
                   <span style={{ fontSize: 32 }}>{opt.emoji}</span>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}</div>
                   </div>
                   {orderType === opt.key && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 18 }}>✓</span>}
-                </button>
+                </motion.button>
               ))}
             </div>
             {orderType === 'delivery' && (
@@ -1359,27 +1421,29 @@ export default function CafeteriaPage() {
                     📍 {deliveryAddress}
                   </div>
                 ) : null}
-                <button
+                <motion.button
+                  {...hoverScale}
                   onClick={() => setShowMapPicker(true)}
                   style={{ width: '100%', padding: 14, background: deliveryAddress ? 'white' : 'var(--accent)', color: deliveryAddress ? 'var(--accent)' : 'white', border: `2px solid var(--accent)`, borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   {deliveryAddress ? '📍 Change Location' : '📍 Select on Map'}
-                </button>
+                </motion.button>
                 {deliveryAddress && (
-                  <button onClick={() => { setShowOrderTypeModal(false); setStep('details') }}
+                  <motion.button {...hoverScale} onClick={() => { setShowOrderTypeModal(false); setStep('details') }}
                     style={{ width: '100%', marginTop: 10, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                     Confirm & Proceed →
-                  </button>
+                  </motion.button>
                 )}
               </div>
             )}
             {orderType && orderType !== 'delivery' && (
-              <button onClick={() => { setShowOrderTypeModal(false); setStep('details') }} style={{ width: '100%', marginTop: 16, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              <motion.button {...hoverScale} onClick={() => { setShowOrderTypeModal(false); setStep('details') }} style={{ width: '100%', marginTop: 16, padding: 14, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 Confirm & Proceed →
-              </button>
+              </motion.button>
             )}
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {showMapPicker && (
         <DeliveryMapModal
@@ -1393,18 +1457,20 @@ export default function CafeteriaPage() {
 
       {/* TAB NAVIGATION */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           onClick={() => { window.location.href = '/browse' }}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           onClick={() => setActiveTab('orders')}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'orders' ? 'var(--accent)' : 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <ShoppingBag size={22} /> Orders
-        </button>
+        </motion.button>
       </div>
     </div>
   )

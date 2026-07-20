@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Order } from '@/lib/types'
 import { Clock } from 'lucide-react'
 
@@ -79,8 +80,14 @@ export function PrepTimeCountdown({ order }: PrepTimeCountdownProps) {
     statusLabel = '📦 Preparing'
   }
 
+  const almostReady = minutes === 0 && seconds <= 30
+
   return (
-    <div style={{
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{
       background: bgColor,
       border: `1px solid ${statusColor}`,
       borderRadius: 'var(--mobile-radius)',
@@ -90,7 +97,12 @@ export function PrepTimeCountdown({ order }: PrepTimeCountdownProps) {
       gap: 8,
       marginBottom: 12,
     }}>
-      <Clock size={16} color={statusColor} />
+      <motion.div
+        animate={almostReady ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+        transition={almostReady ? { duration: 1, repeat: Infinity, ease: 'easeInOut' } : undefined}
+      >
+        <Clock size={16} color={statusColor} />
+      </motion.div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: statusColor }}>
           {statusLabel}
@@ -99,6 +111,6 @@ export function PrepTimeCountdown({ order }: PrepTimeCountdownProps) {
           {isExpired ? 'Ready!' : `${formatTime(minutes, seconds)} remaining`}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

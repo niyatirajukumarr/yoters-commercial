@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
+import { hoverScale } from '@/lib/motion'
 
 interface Props {
   onConfirm: (address: string) => void
@@ -137,11 +139,16 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
       {/* Leaflet CSS */}
       <style>{`@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');`}</style>
 
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
         onClick={onClose}
       >
-        <div
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
           style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 36px', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
           onClick={e => e.stopPropagation()}
         >
@@ -150,7 +157,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy)', margin: 0 }}>📍 Select Delivery Location</h2>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</button>
+            <motion.button {...hoverScale} onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</motion.button>
           </div>
 
           {/* Search */}
@@ -205,7 +212,8 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             />
           </details>
 
-          <button
+          <motion.button
+            {...((address || manualAddress) ? hoverScale : {})}
             onClick={() => {
               const final = manualAddress.trim() || address.trim()
               if (final) onConfirm(final)
@@ -214,9 +222,9 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
           >
             Confirm Delivery Location →
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
     </>
   )
 }

@@ -4,9 +4,11 @@ export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { generateSlug } from '@/lib/utils/slug'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
+import { hoverScale, scaleIn } from '@/lib/motion'
 import Script from 'next/script'
 
 interface RazorpayWindow extends Window {
@@ -309,7 +311,7 @@ function PaymentPageContent() {
         padding: 16,
         fontFamily: 'var(--font-body, sans-serif)',
       }}>
-        <div style={{
+        <motion.div initial="hidden" animate="visible" variants={scaleIn} style={{
           background: 'white',
           borderRadius: 20,
           padding: 32,
@@ -317,69 +319,74 @@ function PaymentPageContent() {
           width: '100%',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}>
-          {paymentConfirmed ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1f2e', margin: '0 0 8px' }}>
-                Payment Confirmed!
-              </h2>
-              <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
-                Redirecting to your order...
-              </p>
-            </div>
-          ) : loading ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 12, animation: 'spin 2s linear infinite' }}>📱</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
-                UPI Payment
-              </h2>
-              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
-                Initializing secure UPI payment...
-              </p>
-              <style>{`
-                @keyframes spin {
-                  from { transform: rotate(0deg); }
-                  to { transform: rotate(360deg); }
-                }
-              `}</style>
-            </div>
-          ) : error ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>❌</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
-                Payment Error
-              </h2>
-              <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-                {error}
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          ) : processing ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🔄</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
-                Waiting for UPI Payment
-              </h2>
-              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
-                Please complete payment in your UPI app (PhonePe, Google Pay, Paytm, etc.)
-              </p>
-            </div>
-          ) : null}
-        </div>
+          <AnimatePresence mode="wait">
+            {paymentConfirmed ? (
+              <motion.div key="confirmed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ textAlign: 'center' }}>
+                <motion.div initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 15 }} style={{ fontSize: 64, marginBottom: 16 }}>✅</motion.div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1f2e', margin: '0 0 8px' }}>
+                  Payment Confirmed!
+                </h2>
+                <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
+                  Redirecting to your order...
+                </p>
+              </motion.div>
+            ) : loading ? (
+              <motion.div key="loading" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ textAlign: 'center' }}>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  style={{ fontSize: 48, marginBottom: 12 }}
+                >📱</motion.div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
+                  UPI Payment
+                </h2>
+                <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
+                  Initializing secure UPI payment...
+                </p>
+              </motion.div>
+            ) : error ? (
+              <motion.div key="error" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>❌</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
+                  Payment Error
+                </h2>
+                <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+                  {error}
+                </p>
+                <motion.button
+                  {...hoverScale}
+                  onClick={() => window.location.reload()}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 10,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Retry
+                </motion.button>
+              </motion.div>
+            ) : processing ? (
+              <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ textAlign: 'center' }}>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                  style={{ fontSize: 48, marginBottom: 12 }}
+                >🔄</motion.div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
+                  Waiting for UPI Payment
+                </h2>
+                <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
+                  Please complete payment in your UPI app (PhonePe, Google Pay, Paytm, etc.)
+                </p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </>
   )

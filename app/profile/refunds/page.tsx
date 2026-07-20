@@ -4,8 +4,10 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface RefundOrder {
   id: string
@@ -53,9 +55,9 @@ export default function Refunds() {
     <div style={{ minHeight: '100vh', background: '#f5f0eb' }}>
       {/* Header */}
       <div style={{ background: '#f5f0eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #eee' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, marginLeft: -8 }}>
+        <motion.button {...hoverScale} onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, marginLeft: -8 }}>
           <ArrowLeft size={22} color="#333" />
-        </button>
+        </motion.button>
         <span style={{ fontSize: 16, fontWeight: 700, color: '#333' }}>Refund Status</span>
         <div style={{ width: 40 }} />
       </div>
@@ -72,8 +74,9 @@ export default function Refunds() {
             </div>
           </div>
         ) : (
-          refunds.map(refund => (
-            <div key={refund.id} style={{ background: 'white', borderRadius: 14, padding: 16, marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <motion.div initial="hidden" animate="visible" variants={stagger}>
+          {refunds.map(refund => (
+            <motion.div key={refund.id} variants={staggerItem} {...hoverLift} style={{ background: 'white', borderRadius: 14, padding: 16, marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 2 }}>
@@ -110,8 +113,9 @@ export default function Refunds() {
                   </div>
                 )}
               </div>
-            </div>
-          ))
+            </motion.div>
+          ))}
+          </motion.div>
         )}
       </div>
     </div>

@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, MenuItem, Order } from '@/lib/types'
+import { stagger, staggerItem, hoverLift, hoverScale, scaleIn } from '@/lib/motion'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
@@ -299,11 +301,19 @@ export default function VendorDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* New Order Alert Banner */}
-      {newOrderAlert && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#2e9e6b', color: 'white', padding: '14px 20px', textAlign: 'center', fontWeight: 700, fontSize: 15, animation: 'slideDown 0.3s ease', boxShadow: '0 4px 16px rgba(46,158,107,0.4)' }}>
-          {newOrderAlert}
-        </div>
-      )}
+      <AnimatePresence>
+        {newOrderAlert && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#2e9e6b', color: 'white', padding: '14px 20px', textAlign: 'center', fontWeight: 700, fontSize: 15, boxShadow: '0 4px 16px rgba(46,158,107,0.4)' }}
+          >
+            {newOrderAlert}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <style>{`
         .v-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
         .v-body { display:flex; flex:1; }
@@ -356,10 +366,10 @@ export default function VendorDashboard() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="v-open-label" style={{ fontSize: 13, color: 'var(--muted)' }}>Restaurant:</span>
-          <button onClick={toggleOpen} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: isOpen ? 'rgba(46,158,107,0.1)' : 'rgba(232,51,74,0.1)', color: isOpen ? 'var(--green)' : 'var(--red)', border: `1px solid ${isOpen ? 'rgba(46,158,107,0.25)' : 'rgba(232,51,74,0.25)'}` }}>
+          <motion.button {...hoverScale} onClick={toggleOpen} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: isOpen ? 'rgba(46,158,107,0.1)' : 'rgba(232,51,74,0.1)', color: isOpen ? 'var(--green)' : 'var(--red)', border: `1px solid ${isOpen ? 'rgba(46,158,107,0.25)' : 'rgba(232,51,74,0.25)'}` }}>
             {isOpen ? '🟢 Open' : '🔴 Closed'}
-          </button>
-          <button onClick={logout} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontSize: 12, cursor: 'pointer' }}>Out</button>
+          </motion.button>
+          <motion.button {...hoverScale} onClick={logout} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--surface)', color: 'var(--text2)', fontSize: 12, cursor: 'pointer' }}>Out</motion.button>
         </div>
       </nav>
 
@@ -369,26 +379,26 @@ export default function VendorDashboard() {
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3, color: 'var(--text)' }}>{cafeteria?.image_emoji} {cafeteria?.name}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{cafeteria?.location}</div>
           {([['orders', '📋 Orders'], ['queue', '👥 Queue'], ['today', '📊 Today'], ['menu', '🍱 Menu'], ['settings', '⚙️ Settings']] as [Tab, string][]).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)} className="v-tab-btn" style={{ background: tab === t ? 'var(--accent-light)' : 'transparent', color: tab === t ? 'var(--text)' : 'var(--text2)', fontWeight: tab === t ? 600 : 400, borderLeft: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}` }}>{label}</button>
+            <motion.button key={t} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} onClick={() => setTab(t)} className="v-tab-btn" style={{ background: tab === t ? 'var(--accent-light)' : 'transparent', color: tab === t ? 'var(--text)' : 'var(--text2)', fontWeight: tab === t ? 600 : 400, borderLeft: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}` }}>{label}</motion.button>
           ))}
         </div>
 
         {/* MAIN */}
         <div className="v-main">
           {/* Stats */}
-          <div className="v-stats">
+          <motion.div className="v-stats" initial="hidden" animate="visible" variants={stagger}>
             {[
               { label: 'New Orders', val: pendingCount, color: '#d4821a' },
               { label: 'Preparing', val: preparingCount, color: '#7c5cfc' },
               { label: 'Ready', val: readyCount, color: 'var(--green)' },
               { label: "Revenue", val: `₹${todayRevenue}`, color: 'var(--accent)' },
             ].map((s, i) => (
-              <div key={i} className="stat-card-v" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 16px' }}>
+              <motion.div key={i} className="stat-card-v" variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 16px' }}>
                 <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>{s.label}</div>
                 <div className="stat-val-v" style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 800, color: s.color }}>{s.val}</div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {msg && <div style={{ background: 'var(--green-bg)', border: '1px solid rgba(46,158,107,0.2)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: 'var(--green)', marginBottom: 16 }}>{msg}</div>}
 
@@ -402,29 +412,40 @@ export default function VendorDashboard() {
                     <span style={{ fontSize: 18 }}>⚠️</span>
                     Pending Approval ({orders.filter(o => o.status === 'paid').length})
                   </div>
-                  {orders.filter(o => o.status === 'paid').map(order => (
-                    <div key={order.id} className="order-card" style={{ marginBottom: 8, borderLeft: '4px solid #d4821a' }}>
-                      <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#d4821a', background: 'rgba(212,130,26,0.15)', border: '1px solid #d4821a', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
-                            <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
+                  <AnimatePresence initial={false}>
+                    {orders.filter(o => o.status === 'paid').map(order => (
+                      <motion.div
+                        key={order.id}
+                        layout
+                        initial={{ opacity: 0, y: -16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ duration: 0.25 }}
+                        className="order-card"
+                        style={{ marginBottom: 8, borderLeft: '4px solid #d4821a' }}
+                      >
+                        <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#d4821a', background: 'rgba(212,130,26,0.15)', border: '1px solid #d4821a', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
+                              <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                              {(order.items as { name: string; quantity: number }[]).map((item, i) => (
+                                <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                            {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                              <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                            ))}
-                          </div>
+                          <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
-                      </div>
-                      <div className="order-actions">
-                        <button onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✓ APPROVE</button>
-                        <button onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✕ DENY</button>
-                      </div>
-                    </div>
-                  ))}
+                        <div className="order-actions">
+                          <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✓ APPROVE</motion.button>
+                          <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✕ DENY</motion.button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -434,30 +455,32 @@ export default function VendorDashboard() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>✓</span> Approved
                   </div>
-                  {orders.filter(o => o.status === 'approved').map(order => (
-                    <div className="order-card">
-                      <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--green)', background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
-                            <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
+                  <AnimatePresence initial={false}>
+                    {orders.filter(o => o.status === 'approved').map(order => (
+                      <motion.div key={order.id} layout initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.25 }} className="order-card">
+                        <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--green)', background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
+                              <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                              {(order.items as { name: string; quantity: number }[]).map((item, i) => (
+                                <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                            {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                              <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                            ))}
-                          </div>
+                          <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
-                      </div>
-                      <div className="order-actions">
-                        {order.status === 'approved' && <button onClick={() => updateOrderStatus(order.id, 'preparing')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c5cfc', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Start Preparing</button>}
-                        {order.status === 'preparing' && <button onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</button>}
-                        {order.status === 'ready' && <button onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Collected ✓</button>}
-                      </div>
-                    </div>
-                  ))}
+                        <div className="order-actions">
+                          {order.status === 'approved' && <motion.button {...hoverScale} onClick={() => updateOrderStatus(order.id, 'preparing')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c5cfc', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Start Preparing</motion.button>}
+                          {order.status === 'preparing' && <motion.button {...hoverScale} onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</motion.button>}
+                          {order.status === 'ready' && <motion.button {...hoverScale} onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Collected ✓</motion.button>}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -471,39 +494,43 @@ export default function VendorDashboard() {
                   {orders.filter(o => o.status === 'preparing').length > 0 && (
                     <div style={{ marginBottom: 28 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#7c5cfc', marginBottom: 12 }}>📦 Preparing</div>
-                      {orders.filter(o => o.status === 'preparing').map(order => (
-                        <div key={order.id} className="order-card">
-                          <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                                {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                                  <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                                ))}
+                      <AnimatePresence initial={false}>
+                        {orders.filter(o => o.status === 'preparing').map(order => (
+                          <motion.div key={order.id} layout initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.25 }} className="order-card">
+                            <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                                  {(order.items as { name: string; quantity: number }[]).map((item, i) => (
+                                    <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
+                                  ))}
+                                </div>
                               </div>
+                              <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>₹{order.total_amount}</div>
                             </div>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>₹{order.total_amount}</div>
-                          </div>
-                          <div className="order-actions">
-                            <button onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</button>
-                          </div>
-                        </div>
-                      ))}
+                            <div className="order-actions">
+                              <motion.button {...hoverScale} onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</motion.button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
                   )}
 
                   {orders.filter(o => o.status === 'ready').length > 0 && (
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Ready for Pickup</div>
-                      {orders.filter(o => o.status === 'ready').map(order => (
-                        <div key={order.id} className="order-card">
-                          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div className="order-actions">
-                            <button onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>Collected ✓</button>
-                          </div>
-                        </div>
-                      ))}
+                      <AnimatePresence initial={false}>
+                        {orders.filter(o => o.status === 'ready').map(order => (
+                          <motion.div key={order.id} layout initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.25 }} className="order-card">
+                            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
+                            <div className="order-actions">
+                              <motion.button {...hoverScale} onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>Collected ✓</motion.button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
                   )}
                 </>
@@ -520,18 +547,20 @@ export default function VendorDashboard() {
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 14, color: 'var(--text2)' }}>Override wait:</span>
                 <input type="number" placeholder="mins" value={waitOverride} onChange={e => setWaitOverride(e.target.value)} style={{ ...inp, width: 90, flex: 'none' }} />
-                <button onClick={updateWait} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Update</button>
+                <motion.button {...hoverScale} onClick={updateWait} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Update</motion.button>
               </div>
-              {orders.filter(o => o.payment_status === 'paid').map(order => (
-                <div key={order.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 800, color: 'var(--accent)', width: 40, textAlign: 'center', flexShrink: 0 }}>#{order.queue_position}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{order.student_name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: statusColors[order.status], background: `${statusColors[order.status]}15`, padding: '4px 10px', borderRadius: 6, textTransform: 'uppercase', flexShrink: 0 }}>{order.status}</div>
-                </div>
-              ))}
+              <motion.div initial="hidden" animate="visible" variants={stagger}>
+                {orders.filter(o => o.payment_status === 'paid').map(order => (
+                  <motion.div key={order.id} variants={staggerItem} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 800, color: 'var(--accent)', width: 40, textAlign: 'center', flexShrink: 0 }}>#{order.queue_position}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{order.student_name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: statusColors[order.status], background: `${statusColors[order.status]}15`, padding: '4px 10px', borderRadius: 6, textTransform: 'uppercase', flexShrink: 0 }}>{order.status}</div>
+                  </motion.div>
+                ))}
+              </motion.div>
             </>
           )}
 
@@ -646,15 +675,17 @@ export default function VendorDashboard() {
                   </div>
                   {msg && <div style={{ fontSize: 13, color: msg.startsWith('✅') ? 'var(--green)' : 'var(--red)' }}>{msg}</div>}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button
+                    <motion.button
+                      {...(!uploading ? hoverScale : {})}
                       onClick={editingItem ? updateMenuItem : addMenuItem}
                       disabled={uploading}
                       style={{ flex: 1, padding: 13, borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 700, cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.6 : 1 }}
                     >
                       {uploading ? 'Uploading...' : editingItem ? 'Update Item' : 'Add Item'}
-                    </button>
+                    </motion.button>
                     {editingItem && (
-                      <button
+                      <motion.button
+                        {...hoverScale}
                         onClick={() => {
                           setEditingItem(null)
                           setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
@@ -663,16 +694,16 @@ export default function VendorDashboard() {
                         style={{ padding: '13px 20px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
                       >
                         Cancel
-                      </button>
+                      </motion.button>
                     )}
                   </div>
                 </div>
               </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Menu ({menuItems.length})</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflow: 'auto' }}>
+                <motion.div initial="hidden" animate="visible" variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflow: 'auto' }}>
                   {menuItems.map(item => (
-                    <div key={item.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <motion.div key={item.id} variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                         <div style={{ minWidth: 0, flex: 1 }}>
@@ -684,7 +715,8 @@ export default function VendorDashboard() {
                         </div>
                       </div>
                       <div className="menu-item-buttons" style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                        <button
+                        <motion.button
+                          {...hoverScale}
                           onClick={() => {
                             setEditingItem(item)
                             setEditForm({
@@ -700,50 +732,62 @@ export default function VendorDashboard() {
                           style={{ padding: '5px 10px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: '#7c5cfc15', color: '#7c5cfc' }}
                         >
                           Edit
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                          {...hoverScale}
                           onClick={() => setDeletingId(item.id)}
                           style={{ padding: '5px 10px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: 'var(--red-bg)', color: 'var(--red)' }}
                         >
                           Delete
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                          {...hoverScale}
                           onClick={() => toggleMenuItem(item.id, item.is_available)}
                           style={{ padding: '5px 10px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', background: item.is_available ? 'var(--green-bg)' : 'var(--red-bg)', color: item.is_available ? 'var(--green)' : 'var(--red)' }}
                         >
                           {item.is_available ? 'On' : 'Off'}
-                        </button>
+                        </motion.button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               </div>
 
               {/* DELETE CONFIRMATION MODAL */}
-              {deletingId && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                  <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: 'var(--navy)' }}>Delete Item?</div>
-                    <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 20 }}>
-                      Are you sure you want to delete <strong>{menuItems.find(i => i.id === deletingId)?.name}</strong>? This cannot be undone.
-                    </div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button
-                        onClick={() => setDeletingId(null)}
-                        style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text2)', fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => deleteMenuItem(deletingId)}
-                        style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {deletingId && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+                  >
+                    <motion.div initial="hidden" animate="visible" exit="hidden" variants={scaleIn} style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: 'var(--navy)' }}>Delete Item?</div>
+                      <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 20 }}>
+                        Are you sure you want to delete <strong>{menuItems.find(i => i.id === deletingId)?.name}</strong>? This cannot be undone.
+                      </div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <motion.button
+                          {...hoverScale}
+                          onClick={() => setDeletingId(null)}
+                          style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text2)', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </motion.button>
+                        <motion.button
+                          {...hoverScale}
+                          onClick={() => deleteMenuItem(deletingId)}
+                          style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Delete
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -754,11 +798,11 @@ export default function VendorDashboard() {
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                   <div><div style={{ fontWeight: 600 }}>Restaurant Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Toggle open or close</div></div>
-                  <button onClick={toggleOpen} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: isOpen ? 'var(--green)' : 'var(--red)', color: 'white' }}>{isOpen ? 'Open' : 'Closed'}</button>
+                  <motion.button {...hoverScale} onClick={toggleOpen} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: isOpen ? 'var(--green)' : 'var(--red)', color: 'white' }}>{isOpen ? 'Open' : 'Closed'}</motion.button>
                 </div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Email</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.vendor_email}</div></div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Location</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.location}</div></div>
-                <button onClick={logout} style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--red-bg)', background: 'var(--red-bg)', color: 'var(--red)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Sign Out</button>
+                <motion.button {...hoverScale} onClick={logout} style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--red-bg)', background: 'var(--red-bg)', color: 'var(--red)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Sign Out</motion.button>
               </div>
             </div>
           )}
@@ -766,8 +810,14 @@ export default function VendorDashboard() {
       </div>
 
       {/* APPROVAL MODAL */}
-      {approvalModal && (
-        <div style={{
+      <AnimatePresence>
+        {approvalModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
           position: 'fixed',
           inset: 0,
           background: 'rgba(0,0,0,0.5)',
@@ -777,7 +827,7 @@ export default function VendorDashboard() {
           zIndex: 300,
           padding: 16,
         }}>
-          <div style={{
+          <motion.div initial="hidden" animate="visible" exit="hidden" variants={scaleIn} style={{
             background: 'white',
             borderRadius: 20,
             padding: 28,
@@ -872,7 +922,8 @@ export default function VendorDashboard() {
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button
+                <motion.button
+                  {...(!approveLoading ? hoverScale : {})}
                   onClick={() => {
                     setDenialReason('')
                     if (denialReason) {
@@ -893,12 +944,12 @@ export default function VendorDashboard() {
                     fontWeight: 700,
                     cursor: approveLoading ? 'default' : 'pointer',
                     opacity: approveLoading ? 0.6 : 1,
-                    transition: 'all 0.2s',
                   }}
                 >
                   {denialReason && denialReason !== 'temp' ? '✕ DENY' : '✕ DENY'}
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  {...(!approveLoading ? hoverScale : {})}
                   onClick={() => {
                     setDenialReason('')
                     approveOrder(approvalModal)
@@ -918,20 +969,21 @@ export default function VendorDashboard() {
                   }}
                 >
                   ✓ APPROVE
-                </button>
+                </motion.button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* MOBILE BOTTOM NAV */}
       <div className="v-bottom-nav">
         {([['orders', '📋', 'Orders'], ['queue', '👥', 'Queue'], ['today', '📊', 'Today'], ['menu', '🍱', 'Menu'], ['settings', '⚙️', 'Settings']] as [Tab, string, string][]).map(([t, icon, label]) => (
-          <button key={t} onClick={() => setTab(t)} className={`v-bottom-nav-item ${tab === t ? 'active' : ''}`}>
+          <motion.button key={t} whileTap={{ scale: 0.9 }} onClick={() => setTab(t)} className={`v-bottom-nav-item ${tab === t ? 'active' : ''}`}>
             <span>{icon}</span>
             <span>{label}</span>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>

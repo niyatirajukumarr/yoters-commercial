@@ -235,6 +235,12 @@ export default function LandingPage() {
     { n: '03', title: 'Less Waste, Smarter Cooking', desc: 'Restaurants prepare food based on real demand, reducing waste and serving customers better.' },
   ]
 
+  const testimonials = [
+    { quote: "I used to lose half my lunch break standing in line. Now I order between classes and it's ready when I walk in.", name: 'Ananya R.', role: 'Student, CS Dept', initials: 'AR', color: '#E8334A' },
+    { quote: "Zero queue time is not an exaggeration. Pre-ordering on Yoters actually gave me my breaks back.", name: 'Karthik M.', role: 'Student, Mechanical Dept', initials: 'KM', color: '#7c5cfc' },
+    { quote: 'We prep based on real orders now instead of guessing. Less wasted food, happier customers, simple as that.', name: 'Lethafi', role: 'Owner, Main Block Cafeteria', initials: 'L', color: '#2e9e6b' },
+  ]
+
   const foodEmojis = ['🍛', '🥟', '🍕', '🥗', '🍜', '🫕', '🥘', '🍱', '🥙', '🍔', '🧆', '🍝']
 
   const fadeUp = {
@@ -372,6 +378,11 @@ export default function LandingPage() {
 
         .why-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 32px 28px; }
         .why-card:hover { border-color: rgba(232,51,74,0.2); box-shadow: 0 16px 48px rgba(232,51,74,0.1); }
+
+        .testimonial-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 32px 28px; display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(26,31,46,0.05); }
+        .testimonial-quote-mark { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 700; color: rgba(232,51,74,0.12); line-height: 1; margin-bottom: 4px; }
+        .testimonial-stars { display: flex; gap: 2px; margin-bottom: 16px; }
+        .testimonial-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0; }
 
         .footer-3d-inner { width:72px; height:72px; border-radius:50%; background: linear-gradient(135deg, rgba(232,51,74,0.3), rgba(255,143,163,0.1)); border: 1px solid rgba(232,51,74,0.3); display:flex; align-items:center; justify-content:center; font-size:32px; animation: float3d 4s ease-in-out infinite; }
         @keyframes float3d { 0%,100%{transform:translateY(0) rotate(0deg)} 33%{transform:translateY(-8px) rotate(5deg)} 66%{transform:translateY(4px) rotate(-3deg)} }
@@ -663,6 +674,43 @@ export default function LandingPage() {
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* TESTIMONIALS */}
+        <section className="lp-section" style={{ padding: '100px 48px', background: '#faf9f7', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Loved By Our Community</motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Students & Restaurants,<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Both Winning.</span>
+              </motion.h2>
+              <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
+                Real feedback from the people ordering, cooking, and skipping the queue every day.
+              </motion.p>
+            </motion.div>
+            <motion.div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }}
+              initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={stagger}>
+              {testimonials.map((t, i) => (
+                <motion.div key={i} className="testimonial-card" variants={scaleIn}
+                  whileHover={{ y: -6, boxShadow: '0 16px 48px rgba(232,51,74,0.1)', transition: { duration: 0.3 } }}>
+                  <div className="testimonial-quote-mark">&ldquo;</div>
+                  <div className="testimonial-stars">
+                    {Array.from({ length: 5 }).map((_, s) => (
+                      <span key={s} style={{ color: '#E8334A', fontSize: 14 }}>★</span>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 15, color: '#4a5068', lineHeight: 1.8, marginBottom: 24, flex: 1 }}>{t.quote}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 20, borderTop: '1px solid rgba(26,31,46,0.06)' }}>
+                    <div className="testimonial-avatar" style={{ background: t.color }}>{t.initials}</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1f2e' }}>{t.name}</div>
+                      <div style={{ fontSize: 12, color: '#8a90a8' }}>{t.role}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
 

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { isAdmin } from '@/lib/config'
+import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface Cafeteria {
   id: string
@@ -225,12 +227,13 @@ export default function AdminDashboard() {
           <div style={{ fontSize: 48, marginBottom: 20 }}>🔒</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Access Denied</h1>
           <p style={{ color: '#666', marginBottom: 24 }}>This dashboard is for authorized admins only.</p>
-          <button
+          <motion.button
+            {...hoverScale}
             onClick={handleLogout}
             style={{ padding: '10px 20px', background: '#E8334A', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
           >
             Logout
-          </button>
+          </motion.button>
         </div>
       </div>
     )
@@ -252,12 +255,13 @@ export default function AdminDashboard() {
 
       <div className="admin-header">
         <div className="admin-title">💰 Vendor Payouts</div>
-        <button
+        <motion.button
+          {...hoverScale}
           onClick={handleLogout}
           style={{ padding: '8px 16px', background: 'white', border: '1px solid #E8334A', color: '#E8334A', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
         >
           Logout
-        </button>
+        </motion.button>
       </div>
 
       {/* Grand Total */}
@@ -269,9 +273,9 @@ export default function AdminDashboard() {
 
       {/* Cafeteria Cards */}
       {cafeterias.length > 0 ? (
-        <div className="cafe-grid">
+        <motion.div className="cafe-grid" initial="hidden" animate="visible" variants={stagger}>
           {cafeterias.map((cafe) => (
-            <div key={cafe.id} className="admin-card">
+            <motion.div key={cafe.id} className="admin-card" variants={staggerItem} {...hoverLift}>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#1a1f2e' }}>{cafe.name}</h3>
 
               <div className="admin-stat">
@@ -301,7 +305,8 @@ export default function AdminDashboard() {
                       onChange={(e) => setEditingUPI({ ...editingUPI, [cafe.id]: e.target.value })}
                       placeholder="username@bank"
                     />
-                    <button
+                    <motion.button
+                      {...hoverScale}
                       onClick={() => handleSaveUPI(cafe.id, cafe.name)}
                       disabled={savingUPI === cafe.id}
                       style={{
@@ -317,14 +322,15 @@ export default function AdminDashboard() {
                       }}
                     >
                       {savingUPI === cafe.id ? '...' : 'Save'}
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <code style={{ fontSize: 13, color: cafe.upi_id ? '#1a1f2e' : '#999', fontWeight: 600 }}>
                       {cafe.upi_id || 'Not set'}
                     </code>
-                    <button
+                    <motion.button
+                      {...hoverScale}
                       onClick={() => handleEditUPI(cafe.id, cafe.upi_id)}
                       style={{
                         padding: '4px 8px',
@@ -338,28 +344,37 @@ export default function AdminDashboard() {
                       }}
                     >
                       Edit
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </div>
 
               {/* Payout Message */}
-              {payoutMessage[cafe.id] && (
-                <div style={{
-                  marginBottom: 12,
-                  padding: 10,
-                  background: payoutMessage[cafe.id].includes('✅') ? '#e8f5e9' : '#ffebee',
-                  borderRadius: 6,
-                  color: payoutMessage[cafe.id].includes('✅') ? '#2e7d32' : '#c62828',
-                  fontSize: 12,
-                  fontWeight: 600
-                }}>
-                  {payoutMessage[cafe.id]}
-                </div>
-              )}
+              <AnimatePresence>
+                {payoutMessage[cafe.id] && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={{
+                      marginBottom: 12,
+                      padding: 10,
+                      background: payoutMessage[cafe.id].includes('✅') ? '#e8f5e9' : '#ffebee',
+                      borderRadius: 6,
+                      color: payoutMessage[cafe.id].includes('✅') ? '#2e7d32' : '#c62828',
+                      fontSize: 12,
+                      fontWeight: 600
+                    }}>
+                    {payoutMessage[cafe.id]}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Payout Button */}
-              <button
+              <motion.button
+                whileHover={processingPayout !== cafe.id && cafe.pending_payout > 0 && cafe.upi_id ? { scale: 1.02 } : undefined}
+                whileTap={processingPayout !== cafe.id && cafe.pending_payout > 0 && cafe.upi_id ? { scale: 0.98 } : undefined}
                 onClick={() => handleSendPayout(cafe)}
                 disabled={processingPayout === cafe.id || cafe.pending_payout <= 0 || !cafe.upi_id}
                 style={{
@@ -375,10 +390,10 @@ export default function AdminDashboard() {
                 }}
               >
                 {processingPayout === cafe.id ? '⏳ Sending...' : `💰 Send ₹${cafe.pending_payout.toLocaleString()}`}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <div className="admin-card" style={{ textAlign: 'center', padding: 40 }}>
           <p style={{ color: '#999', fontSize: 14 }}>No restaurants found</p>

@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 import { generateSlug } from '@/lib/utils/slug'
 import { X } from 'lucide-react'
+import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface CafeteriaWithQueue extends Cafeteria {
   queue: CafeteriaQueue
@@ -81,7 +83,8 @@ export default function MobileSearch() {
       {/* Go to Home Button */}
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <button
+          <motion.button
+            {...hoverScale}
             style={{
               padding: '8px 16px',
               background: 'var(--accent)',
@@ -91,13 +94,10 @@ export default function MobileSearch() {
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
             ← Go to Home
-          </button>
+          </motion.button>
         </Link>
       </div>
 
@@ -137,7 +137,8 @@ export default function MobileSearch() {
         <div>
           <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Sort By</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <motion.button
+              {...hoverScale}
               onClick={() => setSortBy('wait')}
               className={sortBy === 'wait' ? 'mobile-btn-primary' : 'mobile-btn-secondary'}
               style={{
@@ -150,8 +151,9 @@ export default function MobileSearch() {
               }}
             >
               Shortest Wait
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              {...hoverScale}
               onClick={() => setSortBy('name')}
               className={sortBy === 'name' ? 'mobile-btn-primary' : 'mobile-btn-secondary'}
               style={{
@@ -164,14 +166,15 @@ export default function MobileSearch() {
               }}
             >
               A-Z
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
 
       {/* Clear Filters Button */}
       {hasFilters && (
-        <button
+        <motion.button
+          {...hoverScale}
           onClick={clearFilters}
           style={{
             display: 'flex',
@@ -189,7 +192,7 @@ export default function MobileSearch() {
         >
           <X size={14} />
           Clear filters
-        </button>
+        </motion.button>
       )}
 
       {/* Results */}
@@ -203,38 +206,40 @@ export default function MobileSearch() {
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </div>
 
-          {filtered.map(c => {
-            const wait = c.queue?.avg_wait_mins ?? 0
-            const level = getWaitLevel(wait)
-            return (
-              <div key={c.id} className="mobile-card mobile-list-item" style={{ padding: 'var(--mobile-spacing)', marginBottom: 12 }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 32 }}>{c.image_emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
-                      {c.name}
+          <motion.div initial="hidden" animate="visible" variants={stagger}>
+            {filtered.map(c => {
+              const wait = c.queue?.avg_wait_mins ?? 0
+              const level = getWaitLevel(wait)
+              return (
+                <motion.div key={c.id} variants={staggerItem} {...hoverLift} className="mobile-card mobile-list-item" style={{ padding: 'var(--mobile-spacing)', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ fontSize: 32 }}>{c.image_emoji}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
+                        {c.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+                        {c.location}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span className={`mobile-badge ${waitColor(level)}`}>
+                          {formatWait(wait)}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--text2)' }}>
+                          {c.queue?.queue_count ?? 0} waiting
+                        </span>
+                      </div>
+                      <Link href={`/mobile/order/${generateSlug(c.name)}`}>
+                        <motion.button {...hoverScale} className="mobile-btn mobile-btn-primary" style={{ padding: '10px 14px', fontSize: 13 }}>
+                          Order
+                        </motion.button>
+                      </Link>
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
-                      {c.location}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span className={`mobile-badge ${waitColor(level)}`}>
-                        {formatWait(wait)}
-                      </span>
-                      <span style={{ fontSize: 12, color: 'var(--text2)' }}>
-                        {c.queue?.queue_count ?? 0} waiting
-                      </span>
-                    </div>
-                    <Link href={`/mobile/order/${generateSlug(c.name)}`}>
-                      <button className="mobile-btn mobile-btn-primary" style={{ padding: '10px 14px', fontSize: 13 }}>
-                        Order
-                      </button>
-                    </Link>
                   </div>
-                </div>
-              </div>
-            )
-          })}
+                </motion.div>
+              )
+            })}
+          </motion.div>
 
           {!loading && filtered.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>

@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria } from '@/lib/types'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
 import { PrepTimeCountdown } from '@/components/PrepTimeCountdown'
+import { stagger, staggerItem, scaleIn, hoverScale } from '@/lib/motion'
 
 export default function OrderTrackingPage() {
   const router = useRouter()
@@ -100,9 +102,9 @@ export default function OrderTrackingPage() {
         <div style={{ fontSize: 48 }}>❌</div>
         <p style={{ color: 'var(--muted)', textAlign: 'center' }}>Order not found</p>
         <Link href="/mobile/tabs/orders">
-          <button style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+          <motion.button {...hoverScale} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             Back to Orders
-          </button>
+          </motion.button>
         </Link>
       </div>
     )
@@ -215,11 +217,6 @@ export default function OrderTrackingPage() {
           transition: all 0.3s ease;
           margin-top: 16px;
         }
-        .pickup-button:hover:not(:disabled) {
-          background: #0d9488;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
-        }
         .pickup-button:disabled {
           opacity: 0.6;
           cursor: not-allowed;
@@ -253,28 +250,30 @@ export default function OrderTrackingPage() {
       </div>
 
       {/* Content */}
-      <div className="order-content">
+      <motion.div className="order-content" initial="hidden" animate="visible" variants={stagger}>
         {/* Status Banner */}
-        <div className="status-banner">
+        <motion.div className="status-banner" variants={scaleIn}>
           <div className="status-icon">{config.icon}</div>
           <div className="status-label" style={{ color: config.color }}>{config.label}</div>
           <div className="order-meta">
             {order.student_name} • {order.student_phone}
           </div>
-        </div>
+        </motion.div>
 
         {/* Prep Time Countdown */}
         {order.prep_time_minutes && ['approved', 'preparing'].includes(order.status) && (
-          <div style={{ marginBottom: 24 }}>
+          <motion.div variants={staggerItem} style={{ marginBottom: 24 }}>
             <PrepTimeCountdown order={order} />
-          </div>
+          </motion.div>
         )}
 
         {/* Tracking Roadmap */}
-        <OrderTrackingRoadmap order={order} cafeteriaName={cafeteria?.name} />
+        <motion.div variants={staggerItem}>
+          <OrderTrackingRoadmap order={order} cafeteriaName={cafeteria?.name} />
+        </motion.div>
 
         {/* Order Details */}
-        <div className="order-details">
+        <motion.div className="order-details" variants={staggerItem}>
           <div className="detail-row">
             <span className="detail-label">Total Amount</span>
             <span className="detail-value">₹{order.total_amount}</span>
@@ -301,11 +300,11 @@ export default function OrderTrackingPage() {
               <span className="detail-value">{new Date(order.ready_at).toLocaleTimeString()}</span>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Items List */}
         {order.items && order.items.length > 0 && (
-          <div className="items-list">
+          <motion.div className="items-list" variants={staggerItem}>
             <div className="items-title">Order Items</div>
             {(order.items as Array<{ name: string; quantity: number; price?: number }>).map((item, idx) => (
               <div key={idx} className="item-entry">
@@ -313,20 +312,23 @@ export default function OrderTrackingPage() {
                 <span style={{ color: 'var(--text2)' }}>x{item.quantity}</span>
               </div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {/* Ready Pickup Button */}
         {order.status === 'ready' && order.collected_at === null && (
-          <button
+          <motion.button
+            variants={staggerItem}
+            whileHover={!markingCollected ? { scale: 1.02, y: -2 } : undefined}
+            whileTap={!markingCollected ? { scale: 0.98 } : undefined}
             onClick={markAsCollected}
             disabled={markingCollected}
             className="pickup-button"
           >
             {markingCollected ? 'Marking as collected...' : '✓ I\'ve Picked Up My Order'}
-          </button>
+          </motion.button>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

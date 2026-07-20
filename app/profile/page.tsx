@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { Clock, CheckCircle, ChefHat, Loader, ChevronDown, ChevronUp, ArrowLeft, MoreVertical, CreditCard, RotateCcw, Ticket, Heart, X, Pencil } from 'lucide-react'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
 import { Order } from '@/lib/types'
+import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface CafeteriaInfo {
   id: string
@@ -144,30 +146,38 @@ export default function ProfilePage() {
 
       {/* Header */}
       <div style={{ background: '#f5f0eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={() => router.push('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, marginLeft: -8 }}>
+        <motion.button {...hoverScale} onClick={() => router.push('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, marginLeft: -8 }}>
           <ArrowLeft size={22} color="#333" />
-        </button>
+        </motion.button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button style={{ background: 'none', border: '1.5px solid #E8334A', borderRadius: 20, padding: '4px 14px', color: '#E8334A', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          <motion.button {...hoverScale} style={{ background: 'none', border: '1.5px solid #E8334A', borderRadius: 20, padding: '4px 14px', color: '#E8334A', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
             Help
-          </button>
+          </motion.button>
           <div style={{ position: 'relative' }} ref={menuRef}>
-            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+            <motion.button {...hoverScale} onClick={() => setMenuOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
               <MoreVertical size={22} color="#333" />
-            </button>
-            {menuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: 36, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden', minWidth: 160, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
-                <button onClick={openEdit} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  Edit Profile
-                </button>
-                <button onClick={() => { setMenuOpen(false); router.push('/profile/settings') }} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  Settings
-                </button>
-                <button onClick={handleLogout} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left' }}>
-                  Logout
-                </button>
-              </div>
-            )}
+            </motion.button>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                  style={{ position: 'absolute', right: 0, top: 36, background: '#1a1a2e', borderRadius: 10, overflow: 'hidden', minWidth: 160, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
+                >
+                  <button onClick={openEdit} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    Edit Profile
+                  </button>
+                  <button onClick={() => { setMenuOpen(false); router.push('/profile/settings') }} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    Settings
+                  </button>
+                  <button onClick={handleLogout} style={{ width: '100%', padding: '14px 18px', background: 'none', border: 'none', color: 'white', fontSize: 15, cursor: 'pointer', textAlign: 'left' }}>
+                    Logout
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -180,7 +190,8 @@ export default function ProfilePage() {
             <div style={{ fontSize: 15, color: '#666', marginTop: 6 }}>{user?.phone ? `+91 - ${user.phone}` : user?.email || ''}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <motion.button
+              {...hoverScale}
               onClick={openEdit}
               style={{
                 padding: '8px 16px',
@@ -198,8 +209,9 @@ export default function ProfilePage() {
             >
               <Pencil size={14} />
               Edit
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              {...hoverScale}
               onClick={handleLogout}
               style={{
                 padding: '8px 16px',
@@ -213,7 +225,7 @@ export default function ProfilePage() {
               }}
             >
               Logout
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -236,23 +248,25 @@ export default function ProfilePage() {
       </div>
 
       {/* Quick tiles */}
-      <div style={{ margin: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <motion.div initial="hidden" animate="visible" variants={stagger} style={{ margin: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {[
           { icon: CreditCard, label: 'Payment Modes', href: '/profile/payment-modes' },
           { icon: RotateCcw, label: 'My Refunds', href: '/profile/refunds' },
           { icon: Ticket, label: 'My Vouchers', href: '/profile/vouchers' },
           { icon: Heart, label: 'Favourites', href: '/profile/favourites' },
         ].map(({ icon: Icon, label, href }) => (
-          <button
+          <motion.button
             key={label}
+            variants={staggerItem}
+            {...hoverLift}
             onClick={() => router.push(href)}
             style={{ background: 'white', borderRadius: 14, padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: 'none' }}
           >
             <Icon size={24} color="#444" strokeWidth={1.5} />
             <span style={{ fontSize: 13, fontWeight: 500, color: '#222' }}>{label}</span>
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Past Orders */}
       <div style={{ margin: '8px 16px 40px' }}>
@@ -263,15 +277,17 @@ export default function ProfilePage() {
         ) : pastOrders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa' }}>No past orders yet</div>
         ) : (
-          pastOrders.map(order => {
+          <motion.div initial="hidden" animate="visible" variants={stagger}>
+          {pastOrders.map(order => {
             const cafe = cafeterias[order.cafeteria_id]
             const statusInfo = statuses[order.status as keyof typeof statuses]
             const StatusIcon = statusInfo?.icon
             const isExpanded = expandedOrderId === order.id
 
             return (
-              <div key={order.id} style={{ marginBottom: 12 }}>
-                <div
+              <motion.div key={order.id} variants={staggerItem} style={{ marginBottom: 12 }}>
+                <motion.div
+                  {...hoverLift}
                   onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                   style={{ background: 'white', borderRadius: 14, padding: 16, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
                 >
@@ -299,42 +315,67 @@ export default function ProfilePage() {
                     <span style={{ fontSize: 13, color: '#aaa' }}>Total</span>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>₹{order.total_amount}</span>
                   </div>
-                </div>
+                </motion.div>
 
-                {isExpanded && (
-                  <div style={{ marginTop: 8, background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                    <OrderTrackingRoadmap order={order} cafeteriaName={cafe?.name} />
-                    {(order.status === 'cancelled' || order.status === 'collected') && (
-                      <button
-                        disabled={deleting === order.id}
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          if (!confirm('Delete this order?')) return
-                          setDeleting(order.id)
-                          const { error } = await supabase.from('orders').delete().eq('id', order.id)
-                          if (!error) setOrders(orders.filter(o => o.id !== order.id))
-                          setDeleting(null)
-                        }}
-                        style={{ marginTop: 12, width: '100%', padding: '12px', background: deleting === order.id ? '#999' : '#dc2626', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-                      >
-                        {deleting === order.id ? '⏳ Deleting...' : '🗑️ Delete Order'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ marginTop: 8, background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+                    >
+                      <div style={{ padding: 16 }}>
+                        <OrderTrackingRoadmap order={order} cafeteriaName={cafe?.name} />
+                        {(order.status === 'cancelled' || order.status === 'collected') && (
+                          <motion.button
+                            {...hoverScale}
+                            disabled={deleting === order.id}
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              if (!confirm('Delete this order?')) return
+                              setDeleting(order.id)
+                              const { error } = await supabase.from('orders').delete().eq('id', order.id)
+                              if (!error) setOrders(orders.filter(o => o.id !== order.id))
+                              setDeleting(null)
+                            }}
+                            style={{ marginTop: 12, width: '100%', padding: '12px', background: deleting === order.id ? '#999' : '#dc2626', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+                          >
+                            {deleting === order.id ? '⏳ Deleting...' : '🗑️ Delete Order'}
+                          </motion.button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             )
-          })
+          })}
+          </motion.div>
         )}
       </div>
 
       {/* Edit Profile Modal */}
-      {editOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: 28, width: '100%', maxWidth: 480, margin: '0 auto' }}>
+      <AnimatePresence>
+        {editOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: 28, width: '100%', maxWidth: 480, margin: '0 auto' }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
               <span style={{ fontSize: 18, fontWeight: 700 }}>Edit Profile</span>
-              <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <motion.button {...hoverScale} onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></motion.button>
             </div>
             {[
               { label: 'Name', value: editName, set: setEditName, type: 'text' },
@@ -351,16 +392,18 @@ export default function ProfilePage() {
                 />
               </div>
             ))}
-            <button
+            <motion.button
+              {...(!saving ? hoverScale : {})}
               onClick={saveEdit}
               disabled={saving}
               style={{ width: '100%', padding: '14px', background: '#E8334A', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: saving ? 'not-allowed' : 'pointer', marginTop: 8, opacity: saving ? 0.7 : 1 }}
             >
               {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      )}
+            </motion.button>
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

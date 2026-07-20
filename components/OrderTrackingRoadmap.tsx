@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Order } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
+import { stagger, staggerItem } from '@/lib/motion'
 
 interface OrderTrackingRoadmapProps {
   order: Order
@@ -87,7 +89,7 @@ export function OrderTrackingRoadmap({ order: initialOrder, cafeteriaName }: Ord
           font-size: 22px;
           border: 2px solid;
           flex-shrink: 0;
-          transition: all 0.3s ease;
+          transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
         .roadmap-circle.completed {
           background: var(--accent);
@@ -143,21 +145,25 @@ export function OrderTrackingRoadmap({ order: initialOrder, cafeteriaName }: Ord
 
       <div className="roadmap-container">
         <div className="roadmap-title">Order Progress</div>
-        <div className="roadmap-stages">
+        <motion.div className="roadmap-stages" initial="hidden" animate="visible" variants={stagger}>
           {stages.map((stage, index) => {
             const isComplete = isStageComplete(stage)
             return (
-              <div key={stage.id} className="roadmap-stage">
-                <div className={`roadmap-circle ${isComplete ? 'completed' : 'pending'}`}>
+              <motion.div key={stage.id} className="roadmap-stage" variants={staggerItem}>
+                <motion.div
+                  className={`roadmap-circle ${isComplete ? 'completed' : 'pending'}`}
+                  animate={{ scale: isComplete ? [1, 1.15, 1] : 1 }}
+                  transition={{ duration: 0.4 }}
+                >
                   {isComplete ? '✓' : index + 1}
-                </div>
+                </motion.div>
                 <div className={`roadmap-label ${!isComplete ? 'pending' : ''}`}>
                   {stage.label}
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       </div>
     </div>
   )

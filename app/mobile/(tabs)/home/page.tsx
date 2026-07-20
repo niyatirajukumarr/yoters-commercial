@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, CafeteriaQueue } from '@/lib/types'
 import { generateSlug } from '@/lib/utils/slug'
 import { Clock, Users } from 'lucide-react'
+import { stagger, staggerItem } from '@/lib/motion'
 
 interface CafeteriaWithQueue extends Cafeteria {
   queue: CafeteriaQueue
@@ -71,8 +73,7 @@ export default function MobileHome() {
   return (
     <div style={{ paddingBottom: 100 }} className="mobile-page-enter">
       <style>{`
-        .cafe-item { border-radius: 14px; overflow: hidden; border: 1px solid rgba(26,31,46,0.08); margin-bottom: 12px; text-decoration: none; color: inherit; display: block; transition: all 0.2s; }
-        .cafe-item:active { transform: scale(0.98); }
+        .cafe-item { border-radius: 14px; overflow: hidden; border: 1px solid rgba(26,31,46,0.08); margin-bottom: 12px; text-decoration: none; color: inherit; display: block; }
         .cafe-image { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 64px; background: #f5f0eb; }
         .cafe-info { padding: 16px; background: white; }
         .cafe-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
@@ -126,29 +127,31 @@ export default function MobileHome() {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#8a90a8' }}>No restaurants found</div>
         ) : (
-          filtered.map(cafe => {
-            const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)
-            const slug = generateSlug(cafe.name)
-            return (
-              <Link key={cafe.id} href={`/mobile/order/${slug}`} style={{ textDecoration: 'none' }}>
-                <div className="cafe-item">
-                  <div className="cafe-image">{cafe.image_emoji}</div>
-                  <div className="cafe-info">
-                    <div className="cafe-name">{cafe.name}</div>
-                    <div className="cafe-location">{cafe.location}</div>
-                    <div className="cafe-queue">
-                      <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
-                        <Clock size={12} /> {cafe.queue?.avg_wait_mins ?? 0} min
-                      </div>
-                      <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
-                        <Users size={12} /> {cafe.queue?.queue_count ?? 0} waiting
+          <motion.div initial="hidden" animate="visible" variants={stagger}>
+            {filtered.map(cafe => {
+              const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)
+              const slug = generateSlug(cafe.name)
+              return (
+                <Link key={cafe.id} href={`/mobile/order/${slug}`} style={{ textDecoration: 'none' }}>
+                  <motion.div className="cafe-item" variants={staggerItem} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}>
+                    <div className="cafe-image">{cafe.image_emoji}</div>
+                    <div className="cafe-info">
+                      <div className="cafe-name">{cafe.name}</div>
+                      <div className="cafe-location">{cafe.location}</div>
+                      <div className="cafe-queue">
+                        <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
+                          <Clock size={12} /> {cafe.queue?.avg_wait_mins ?? 0} min
+                        </div>
+                        <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
+                          <Users size={12} /> {cafe.queue?.queue_count ?? 0} waiting
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </Link>
-            )
-          })
+                  </motion.div>
+                </Link>
+              )
+            })}
+          </motion.div>
         )}
       </div>
     </div>

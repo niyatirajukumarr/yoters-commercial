@@ -1,5 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import { hoverScale } from '@/lib/motion'
+
 interface TokenTicketProps {
   token: number
   cafeteriaName: string
@@ -11,22 +14,24 @@ interface TokenTicketProps {
 
 export function TokenTicket({ token, cafeteriaName, items, total, orderId, onClose }: TokenTicketProps) {
   return (
-    <div style={{
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 9999, padding: 20,
       backdropFilter: 'blur(2px)',
     }}>
-      <div style={{
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        style={{
         background: 'white', borderRadius: 24, width: '100%', maxWidth: 340,
         overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
-        animation: 'ticketPop 0.4s cubic-bezier(.22,1,.36,1) both',
       }}>
         <style>{`
-          @keyframes ticketPop {
-            from { opacity:0; transform: scale(0.8) translateY(20px); }
-            to   { opacity:1; transform: scale(1) translateY(0); }
-          }
           .ticket-tear {
             background: repeating-linear-gradient(
               90deg, transparent, transparent 10px,
@@ -84,15 +89,15 @@ export function TokenTicket({ token, cafeteriaName, items, total, orderId, onClo
             We&apos;ll notify you when your order is ready!<br />
             Show this token at the counter.
           </div>
-          <button onClick={onClose} style={{
+          <motion.button {...hoverScale} onClick={onClose} style={{
             width: '100%', padding: '12px', borderRadius: 12, border: 'none',
             background: 'var(--accent, #E8334A)', color: 'white', fontWeight: 700,
             fontSize: 15, cursor: 'pointer',
           }}>
             Track My Order →
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword } from '@/lib/validation'
 
@@ -97,11 +98,6 @@ function ResetPasswordContent() {
         .auth-bg-blob {
           position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: 0.18;
         }
-        .auth-card { animation: authFadeUp 0.45s cubic-bezier(.22,1,.36,1) both; }
-        @keyframes authFadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
         .auth-input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(var(--accent-rgb,220,100,50),0.12); }
         .submit-btn {
           width: 100%; padding: 13px; border-radius: 11px; border: none;
@@ -139,7 +135,12 @@ function ResetPasswordContent() {
 
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', position: 'relative', zIndex: 1 }}>
-        <div style={{ width: '100%', maxWidth: 420 }} className="auth-card">
+        <motion.div
+          style={{ width: '100%', maxWidth: 420 }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
 
           {/* Hero */}
           <div className="auth-hero" style={{ textAlign: 'center', marginBottom: 32, padding: '0 8px' }}>
@@ -196,9 +197,16 @@ function ResetPasswordContent() {
                   </div>
                 )}
 
-                <button className="submit-btn" onClick={handleResetPassword} disabled={loading} style={{ marginTop: 2 }}>
+                <motion.button
+                  className="submit-btn"
+                  onClick={handleResetPassword}
+                  disabled={loading}
+                  style={{ marginTop: 2 }}
+                  whileHover={!loading ? { scale: 1.015, y: -1 } : undefined}
+                  whileTap={!loading ? { scale: 0.98 } : undefined}
+                >
                   {loading ? 'Resetting password...' : 'Reset Password →'}
-                </button>
+                </motion.button>
 
                 <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--muted)' }}>
                   <Link href="/auth" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
@@ -220,7 +228,7 @@ function ResetPasswordContent() {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

@@ -5,10 +5,12 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
+import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -123,8 +125,7 @@ export default function StudentHome() {
         .cafe-name { font-family:'Allura', cursive; font-size:64px; font-weight:400; color:var(--accent); margin-bottom:12px; line-height:1; }
         .cafe-location { font-size:14px; color:var(--muted); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
         .cafe-description { font-size:15px; color:var(--text2); line-height:1.7; margin-bottom:24px; }
-        .cafe-see-menu-btn { display:inline-block; padding:12px 28px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.3s; text-decoration:none; }
-        .cafe-see-menu-btn:hover { transform:scale(1.05); box-shadow:0 8px 20px rgba(232,51,74,0.3); }
+        .cafe-see-menu-btn { display:inline-block; padding:12px 28px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; text-decoration:none; }
 
         @media (max-width: 900px) {
           .cafe-newspaper-card { grid-template-columns:1fr; gap:20px; }
@@ -151,32 +152,26 @@ export default function StudentHome() {
           </div>
         </Link>
         <Link href="/mobile/profile">
-          <button style={{
-            width: 42,
-            height: 42,
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            color: 'white',
-            border: 'none',
-            fontSize: 18,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(232,51,74,0.3)'
+          <motion.button
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: '50%',
+              background: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
+            whileHover={{ scale: 1.1, boxShadow: '0 4px 12px rgba(232,51,74,0.3)' }}
+            whileTap={{ scale: 0.95 }}
           >
             {user?.name ? user.name.charAt(0).toUpperCase() : '👤'}
-          </button>
+          </motion.button>
         </Link>
       </nav>
 
@@ -213,7 +208,14 @@ export default function StudentHome() {
             ) : (
               <div className="newspaper-grid">
                 {filtered.map((c, idx) => (
-                  <div key={c.id} className={`cafe-newspaper-card ${idx % 2 === 1 ? 'reversed' : ''}`}>
+                  <motion.div
+                    key={c.id}
+                    className={`cafe-newspaper-card ${idx % 2 === 1 ? 'reversed' : ''}`}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={viewportOnce}
+                    variants={idx % 2 === 1 ? slideRight : slideLeft}
+                  >
                     {/* Menu Image with Tilt Effect */}
                     <div className="cafe-menu-image">
                       <img
@@ -233,12 +235,16 @@ export default function StudentHome() {
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
                       <Link href={`/mobile/order/${generateSlug(c.name)}`}>
-                        <button className="cafe-see-menu-btn">
+                        <motion.button
+                          className="cafe-see-menu-btn"
+                          whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(232,51,74,0.3)' }}
+                          whileTap={{ scale: 0.97 }}
+                        >
                           See Full Menu →
-                        </button>
+                        </motion.button>
                       </Link>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

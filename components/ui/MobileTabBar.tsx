@@ -1,5 +1,6 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 export function MobileTabBar() {
   const router = useRouter()
@@ -12,11 +13,13 @@ export function MobileTabBar() {
   return (
     <nav className="mobile-tab-bar">
       {tabs.map(t => (
-        <div key={t.href} className={`tab-item ${path === t.href ? 'active' : ''}`}
+        <motion.div key={t.href} className={`tab-item ${path === t.href ? 'active' : ''}`}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => router.push(t.href)}>
           <span className="tab-icon">{t.icon}</span>
           <span>{t.label}</span>
-        </div>
+        </motion.div>
       ))}
     </nav>
   )

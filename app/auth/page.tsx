@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 
@@ -175,9 +176,6 @@ export default function AuthPage() {
         .auth-bg-blob {
           position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: 0.18;
         }
-        /* 3D penguin (Three.js) slide-pulls the card from center-right into the center */
-        .auth-card { animation: authSlide 1.1s cubic-bezier(.45,0,.15,1) 1.3s both; }
-        @keyframes authSlide { 0% { transform: translateX(74%); } 100% { transform: translateX(0); } }
         /* Sits in the empty margin left of the card, reaching toward it — was
            left:-30/top:-150, which pushed most of the model off the top of the
            viewport, leaving only its back/feet visible under the nav bar. */
@@ -258,7 +256,21 @@ export default function AuthPage() {
             <span className="phew-text">phew~</span>
           </div>
 
-          <div style={{ width: '100%' }} className="auth-card">
+          {/*
+            Keyframes are hand-timed against PenguinScene's own animation clock
+            (drop 0-1s, reach 1.0-1.35s, lean-back/pull 1.35-2.45s, return upright
+            2.45-2.95s). The card sits still while the penguin reaches for it,
+            gets a tiny "grab" jerk right as the pull starts, gets dragged across
+            with a swinging rotation, then overshoots slightly and settles as the
+            penguin straightens back up — so the two animations read as one
+            connected pull instead of two things happening to coincide.
+          */}
+          <motion.div
+            style={{ width: '100%' }}
+            initial={{ x: '74%', rotate: 6, scale: 1 }}
+            animate={{ x: ['74%', '69%', '2%', '-1%', '0%'], rotate: [6, 7, -1.5, 0.5, 0], scale: [1, 0.985, 1, 1, 1] }}
+            transition={{ duration: 1.6, delay: 1.35, times: [0, 0.03, 0.69, 0.84, 1], ease: [0.34, 1.56, 0.64, 1] }}
+          >
 
           {/* Hero */}
           <div className="auth-hero" style={{ textAlign: 'center', marginBottom: 32, padding: '0 8px' }}>
@@ -284,12 +296,12 @@ export default function AuthPage() {
             {/* Tab toggle */}
             {mode !== 'forgot' && (
               <div style={{ display: 'flex', gap: 4, background: 'var(--surface2)', borderRadius: 11, padding: 4, marginBottom: 24 }}>
-                <button className={`tab-pill ${mode === 'login' ? 'active' : 'inactive'}`} onClick={() => { setMode('login'); setError(''); setSuccess('') }}>
+                <motion.button whileTap={{ scale: 0.96 }} className={`tab-pill ${mode === 'login' ? 'active' : 'inactive'}`} onClick={() => { setMode('login'); setError(''); setSuccess('') }}>
                   Sign In
-                </button>
-                <button className={`tab-pill ${mode === 'signup' ? 'active' : 'inactive'}`} onClick={() => { setMode('signup'); setError(''); setSuccess('') }}>
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.96 }} className={`tab-pill ${mode === 'signup' ? 'active' : 'inactive'}`} onClick={() => { setMode('signup'); setError(''); setSuccess('') }}>
                   Create Account
-                </button>
+                </motion.button>
               </div>
             )}
 
@@ -412,12 +424,19 @@ export default function AuthPage() {
                 </div>
               )}
 
-              <button className="submit-btn" onClick={handleSubmit} disabled={loading} style={{ marginTop: 2 }}>
+              <motion.button
+                className="submit-btn"
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{ marginTop: 2 }}
+                whileHover={!loading ? { scale: 1.015, y: -1 } : undefined}
+                whileTap={!loading ? { scale: 0.98 } : undefined}
+              >
                 {loading
                   ? (mode === 'login' ? 'Signing in...' : mode === 'signup' ? 'Creating account...' : 'Sending reset link...')
                   : (mode === 'login' ? 'Sign In →' : mode === 'signup' ? 'Create Account →' : 'Send Reset Link →')
                 }
-              </button>
+              </motion.button>
 
               {/* Social login (Google) — only on sign in / sign up */}
               {mode !== 'forgot' && (
@@ -427,9 +446,17 @@ export default function AuthPage() {
                     <span style={{ fontSize: 11, color: 'var(--muted)' }}>or continue with</span>
                     <div className="divider-line" />
                   </div>
-                  <button type="button" className="guest-btn" onClick={() => handleOAuth('google')} disabled={loading} style={{ width: '100%' }}>
+                  <motion.button
+                    type="button"
+                    className="guest-btn"
+                    onClick={() => handleOAuth('google')}
+                    disabled={loading}
+                    style={{ width: '100%' }}
+                    whileHover={!loading ? { scale: 1.01 } : undefined}
+                    whileTap={!loading ? { scale: 0.98 } : undefined}
+                  >
                     Google
-                  </button>
+                  </motion.button>
                 </>
               )}
             </div>
@@ -471,7 +498,7 @@ export default function AuthPage() {
               </>
             )}
           </div>
-        </div>
+        </motion.div>
         </div>
       </div>
     </div>
