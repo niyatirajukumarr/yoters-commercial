@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <nav style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 28px', borderBottom: '1px solid var(--border)', background: 'rgba(253,248,245,0.85)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <img src="/logo.png" alt="Yoters" style={{ width: 32, height: 32, objectFit: 'contain' }} onError={e => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+        <img src="/logo.png" alt="Yoters" style={{ width: 32, height: 32, objectFit: 'contain' }} />
         <span style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>Yoters</span>
       </nav>
 
