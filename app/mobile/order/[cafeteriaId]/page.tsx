@@ -337,14 +337,6 @@ export default function CafeteriaPage() {
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
 
   // Payment & UI
-  // If still loading after 3s, reload once (? r=1 prevents loop)
-  useEffect(() => {
-    if (window.location.search.includes('r=1')) return
-    const t = setTimeout(() => {
-      if (!cafeteria) window.location.href = window.location.pathname + '?r=1'
-    }, 3000)
-    return () => clearTimeout(t)
-  }, [cafeteria])
 
   const { cart, addItem, updateQuantity, removeItem, clear: clearCart, total, itemCount } = useCart()
   const { isFavourite, toggleFavourite } = useFavourites()
@@ -361,35 +353,36 @@ export default function CafeteriaPage() {
   const [showTicket, setShowTicket] = useState(false)
   const [tokenData, setTokenData] = useState<{ token: number; items: Array<{ name: string; quantity: number }>; total: number; id: string } | null>(null)
 
-  // Fetch cafeteria & menu
+  // Fetch cafeteria & menu — retries every 3s until data loads (handles Supabase cold start)
   useEffect(() => {
     if (!cafeteriaId) return
-    const fetch = async () => {
+    let cancelled = false
+    const attempt = async () => {
       setLoading(true)
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Fetch timeout')), 10000)
-        )
-        const [cafRes, menuRes] = await Promise.race([
-          Promise.all([
-            supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
-            supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
-          ]),
-          timeoutPromise
-        ]) as any
-        if (cafRes.data) setCafeteria(cafRes.data as Cafeteria)
-        if (menuRes.data) {
-          setMenuItems(menuRes.data as MenuItem[])
-          const cats = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
-          if (cats.length > 0) setSelectedCategory(cats[0])
+        const [cafRes, menuRes] = await Promise.all([
+          supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
+          supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
+        ])
+        if (cancelled) return
+        if (cafRes.data) {
+          setCafeteria(cafRes.data as Cafeteria)
+          if (menuRes.data) {
+            setMenuItems(menuRes.data as MenuItem[])
+            const cats = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
+            if (cats.length > 0) setSelectedCategory(cats[0])
+          }
+          setLoading(false)
+        } else {
+          // No data yet — retry after 3s
+          setTimeout(() => { if (!cancelled) attempt() }, 3000)
         }
-      } catch (error) {
-        console.error('Cafeteria/menu fetch error:', error)
-      } finally {
-        setLoading(false)
+      } catch {
+        setTimeout(() => { if (!cancelled) attempt() }, 3000)
       }
     }
-    fetch()
+    attempt()
+    return () => { cancelled = true }
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
