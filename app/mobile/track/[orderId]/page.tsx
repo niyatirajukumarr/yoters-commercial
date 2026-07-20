@@ -12,7 +12,6 @@ export default function OrderTrackingPage() {
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
-  const [markingCollected, setMarkingCollected] = useState(false)
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
@@ -62,13 +61,6 @@ export default function OrderTrackingPage() {
     return () => clearInterval(id)
   }, [order?.prep_time_minutes, order?.approved_at])
 
-  const markAsCollected = async () => {
-    if (!order) return
-    setMarkingCollected(true)
-    await supabase.from('orders').update({ status: 'collected', collected_at: new Date().toISOString() }).eq('id', order.id)
-    setMarkingCollected(false)
-  }
-
   const steps = [
     { id: 'paid',      icon: '💳', label: 'Payment Done',      sub: 'Your payment was received',        done: (o: Order) => o.payment_status === 'paid' },
     { id: 'approved',  icon: '✅', label: 'Vendor Accepted',    sub: 'Restaurant confirmed your order',  done: (o: Order) => !!o.approved_at },
@@ -101,7 +93,6 @@ export default function OrderTrackingPage() {
   const completedCount = steps.filter(s => s.done(order)).length
   const progressPct = (completedCount / steps.length) * 100
   const isCancelled = order.status === 'cancelled'
-  const isReady = order.status === 'ready' && !order.collected_at
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5', paddingBottom: 40 }}>
@@ -221,17 +212,6 @@ export default function OrderTrackingPage() {
           })}
         </div>
 
-        {/* Collect button */}
-        {isReady && (
-          <button
-            onClick={markAsCollected}
-            disabled={markingCollected}
-            className="ready-btn"
-            style={{ width: '100%', marginTop: 24, padding: 18, background: '#2e9e6b', border: 'none', borderRadius: 14, color: 'white', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-          >
-            {markingCollected ? '⏳ Marking...' : '✅  I\'ve Collected My Order'}
-          </button>
-        )}
 
         {/* Order summary */}
         <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #f0f0f0' }}>
