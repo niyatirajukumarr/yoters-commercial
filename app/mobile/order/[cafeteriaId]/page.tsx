@@ -342,12 +342,6 @@ export default function CafeteriaPage() {
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
-  // Reload after 3s if menu not loaded
-  useEffect(() => {
-    const t = setTimeout(() => { if (!cafeteria) window.location.reload() }, 3000)
-    if (cafeteria) clearTimeout(t)
-    return () => clearTimeout(t)
-  }, [cafeteria])
 
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
@@ -864,7 +858,7 @@ export default function CafeteriaPage() {
           {/* Sticky top: header + search + category pills */}
           <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
             <div className="menu-header">
-              <button onClick={() => router.push('/browse')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <button onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <ChevronLeft size={24} color='var(--text)' />
               </button>
               <div style={{ flex: 1 }}>
@@ -1391,7 +1385,7 @@ export default function CafeteriaPage() {
       {/* TAB NAVIGATION */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
         <button
-          onClick={() => router.push('/browse')}
+          onClick={() => { window.location.href = '/browse' }}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
         >
           <Home size={22} /> Home
