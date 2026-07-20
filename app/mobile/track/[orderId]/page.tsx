@@ -15,7 +15,6 @@ export default function OrderTrackingPage() {
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
-
     const fetchOrder = async () => {
       try {
         const cached = sessionStorage.getItem(`track-${orderId}`)
@@ -24,20 +23,15 @@ export default function OrderTrackingPage() {
           setOrder(o); setCafeteria(c); setLoading(false)
         }
       } catch {}
-
-      const { data: orderData, error } = await supabase
-        .from('orders').select('*').eq('id', orderId).single()
+      const { data: orderData, error } = await supabase.from('orders').select('*').eq('id', orderId).single()
       if (error || !orderData) { setLoading(false); return }
       setOrder(orderData as Order)
-
-      const { data: cafData } = await supabase
-        .from('cafeterias').select('*').eq('id', orderData.cafeteria_id).single()
+      const { data: cafData } = await supabase.from('cafeterias').select('*').eq('id', orderData.cafeteria_id).single()
       if (cafData) {
         setCafeteria(cafData)
         sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: orderData, cafeteria: cafData }))
       }
       setLoading(false)
-
       channel = supabase.channel('order-track-' + orderId)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
           (payload) => {
@@ -46,12 +40,10 @@ export default function OrderTrackingPage() {
           })
         .subscribe()
     }
-
     fetchOrder()
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [orderId])
 
-  // Countdown timer
   useEffect(() => {
     if (!order?.prep_time_minutes || !order?.approved_at) { setTimeRemaining(null); return }
     const end = new Date(order.approved_at).getTime() + order.prep_time_minutes * 60 * 1000
@@ -62,169 +54,216 @@ export default function OrderTrackingPage() {
   }, [order?.prep_time_minutes, order?.approved_at])
 
   const steps = [
-    { id: 'paid',      icon: '💳', label: 'Payment Done',      sub: 'Your payment was received',        done: (o: Order) => o.payment_status === 'paid' },
-    { id: 'approved',  icon: '✅', label: 'Vendor Accepted',    sub: order?.prep_time_minutes ? `Your order will be ready in ~${order.prep_time_minutes} min` : 'Restaurant confirmed your order',  done: (o: Order) => !!o.approved_at },
-    { id: 'preparing', icon: '👨‍🍳', label: 'Being Prepared',    sub: 'Your food is being cooked',        done: (o: Order) => ['preparing','ready','collected'].includes(o.status) },
-    { id: 'ready',     icon: '🔔', label: 'Order Ready',        sub: 'Pick up at the counter',           done: (o: Order) => !!o.ready_at || ['ready','collected'].includes(o.status) },
-    { id: 'collected', icon: '🎉', label: 'Order Collected',    sub: 'Enjoy your meal!',                 done: (o: Order) => !!o.collected_at || o.status === 'collected' },
+    { id: 'paid',      emoji: '💳', label: 'Payment Done',     sub: '₹' + (order?.total_amount ?? '') + ' received',                                              done: (o: Order) => o.payment_status === 'paid' },
+    { id: 'approved',  emoji: '✅', label: 'Order Accepted',   sub: order?.prep_time_minutes ? `Ready in ~${order.prep_time_minutes} min` : 'Vendor confirmed',   done: (o: Order) => !!o.approved_at },
+    { id: 'preparing', emoji: '🍳', label: 'Being Cooked',     sub: 'Kitchen is on it!',                                                                          done: (o: Order) => ['preparing','ready','collected'].includes(o.status) },
+    { id: 'ready',     emoji: '🔔', label: 'Ready!',           sub: 'Pick up at the counter',                                                                     done: (o: Order) => !!o.ready_at || ['ready','collected'].includes(o.status) },
+    { id: 'collected', emoji: '🎉', label: 'Collected',        sub: 'Enjoy your meal!',                                                                           done: (o: Order) => !!o.collected_at || o.status === 'collected' },
   ]
 
   const mins = timeRemaining !== null ? Math.floor(timeRemaining / 60000) : null
   const secs = timeRemaining !== null ? Math.floor((timeRemaining % 60000) / 1000) : null
+  const completedCount = order ? steps.filter(s => s.done(order)).length : 0
+  const activeIdx = order ? steps.findIndex(s => !s.done(order)) : 0
+  const isCancelled = order?.status === 'cancelled'
+  const isReady = order?.status === 'ready'
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #E8334A', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-      <div style={{ color: '#8a90a8', fontSize: 14 }}>Loading your order...</div>
+    <div style={{ minHeight: '100vh', background: '#0f0f13', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid #E8334A', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ color: '#666', fontSize: 14 }}>Loading your order...</div>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
   if (!order) return (
-    <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f13', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
       <div style={{ fontSize: 48 }}>❌</div>
-      <p style={{ color: '#8a90a8', textAlign: 'center' }}>Order not found</p>
-      <button onClick={() => window.location.href = '/mobile/tabs/orders'} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: '#E8334A', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
-        Back to Orders
-      </button>
+      <p style={{ color: '#666', textAlign: 'center' }}>Order not found</p>
+      <button onClick={() => window.location.href = '/mobile/tabs/orders'} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: '#E8334A', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Back to Orders</button>
     </div>
   )
 
-  const completedCount = steps.filter(s => s.done(order)).length
-  const progressPct = (completedCount / steps.length) * 100
-  const isCancelled = order.status === 'cancelled'
-
   return (
-    <div style={{ minHeight: '100vh', background: '#fff8f5', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f13', color: 'white', paddingBottom: 48 }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(232,51,74,0.4)} 50%{box-shadow:0 0 0 12px rgba(232,51,74,0)} }
-        .step-done { animation: slideUp 0.4s ease forwards; }
-        .ready-btn { animation: pulse 2s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes ping { 0%{transform:scale(1);opacity:1} 100%{transform:scale(2.2);opacity:0} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        .token-float { animation: float 3s ease-in-out infinite; }
+        .ping-ring { animation: ping 1.5s ease-out infinite; }
+        .fade-up { animation: fadeUp 0.5s ease forwards; }
       `}</style>
 
-      {/* Header */}
-      <div style={{ background: '#E8334A', padding: '20px 20px 0', color: 'white' }}>
-        <button onClick={() => window.location.href = '/mobile/tabs/orders'} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, color: 'white', padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
-          ← Orders
+      {/* Top bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 0' }}>
+        <button onClick={() => window.location.href = '/mobile/tabs/orders'}
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'white', padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          ← Back
         </button>
-        <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>{cafeteria?.name}</div>
-        <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Order Tracking</div>
+        <div style={{ fontSize: 12, color: '#666', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>{cafeteria?.name}</div>
+        <div style={{ width: 60 }} />
+      </div>
 
-        {/* Token card */}
-        <div style={{ background: 'white', borderRadius: '16px 16px 0 0', padding: '20px 20px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#8a90a8', textTransform: 'uppercase', marginBottom: 6 }}>Your Token Number</div>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 72, fontWeight: 900, color: '#E8334A', lineHeight: 1, marginBottom: 4 }}>
-            {order.queue_position ?? '—'}
+      {/* TOKEN HERO */}
+      <div style={{ textAlign: 'center', padding: '32px 24px 24px' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, color: '#666', textTransform: 'uppercase', marginBottom: 16 }}>Your Token</div>
+
+        {/* Glowing token circle */}
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: 20 }}>
+          {isReady && (
+            <div className="ping-ring" style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '3px solid #2e9e6b', opacity: 0.6 }} />
+          )}
+          <div className="token-float" style={{
+            width: 140, height: 140, borderRadius: '50%',
+            background: isCancelled ? 'rgba(232,51,74,0.1)' : isReady ? 'rgba(46,158,107,0.15)' : 'rgba(232,51,74,0.12)',
+            border: `3px solid ${isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : 'rgba(232,51,74,0.4)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: isReady ? '0 0 40px rgba(46,158,107,0.3)' : '0 0 40px rgba(232,51,74,0.15)',
+          }}>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 64, fontWeight: 900, lineHeight: 1,
+              color: isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : 'white',
+            }}>
+              {order.queue_position ?? '—'}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: '#8a90a8' }}>Show this at the counter</div>
+        </div>
+
+        {/* Status pill */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 99,
+          background: isCancelled ? 'rgba(232,51,74,0.15)' : isReady ? 'rgba(46,158,107,0.15)' : 'rgba(255,255,255,0.07)',
+          border: `1px solid ${isCancelled ? 'rgba(232,51,74,0.3)' : isReady ? 'rgba(46,158,107,0.3)' : 'rgba(255,255,255,0.1)'}`,
+          marginBottom: 8,
+        }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%',
+            background: isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : '#E8334A',
+            boxShadow: `0 0 6px ${isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : '#E8334A'}`,
+          }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : 'white' }}>
+            {isCancelled ? 'Order Cancelled' : isReady ? 'Ready for Pickup!' : order.status === 'collected' ? 'Order Collected ✓' : 'Order in Progress'}
+          </span>
+        </div>
+
+        <div style={{ fontSize: 12, color: '#555' }}>
+          {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ background: 'white', padding: '0 20px 24px' }}>
-
-        {/* Progress bar */}
-        {!isCancelled && (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#8a90a8', marginBottom: 6 }}>
-              <span>{completedCount} of {steps.length} steps done</span>
-              <span>{Math.round(progressPct)}%</span>
-            </div>
-            <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${progressPct}%`, background: 'linear-gradient(90deg, #E8334A, #ff6b6b)', borderRadius: 99, transition: 'width 0.6s ease' }} />
-            </div>
-          </div>
-        )}
-
-        {/* Countdown timer */}
-        {timeRemaining !== null && order.status !== 'collected' && (
-          <div style={{ background: timeRemaining === 0 ? '#edfaf3' : '#fff8ec', border: `1px solid ${timeRemaining === 0 ? '#2e9e6b' : '#d4821a'}`, borderRadius: 12, padding: '14px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontSize: 28 }}>{timeRemaining === 0 ? '🔔' : '⏱️'}</div>
+      {/* COUNTDOWN — only when vendor set prep time */}
+      {timeRemaining !== null && !['collected', 'cancelled'].includes(order.status) && (
+        <div style={{ margin: '0 20px 24px', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ background: timeRemaining === 0 ? 'rgba(46,158,107,0.15)' : 'rgba(212,130,26,0.12)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: timeRemaining === 0 ? '#2e9e6b' : '#d4821a' }}>
-                {timeRemaining === 0 ? 'Almost ready!' : 'Estimated time remaining'}
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: timeRemaining === 0 ? '#2e9e6b' : '#d4821a', textTransform: 'uppercase', marginBottom: 4 }}>
+                {timeRemaining === 0 ? 'Almost Ready!' : 'Time Remaining'}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: timeRemaining === 0 ? '#2e9e6b' : '#d4821a', fontFamily: 'monospace' }}>
-                {timeRemaining === 0 ? 'Any moment now...' : `${mins}:${String(secs).padStart(2, '0')}`}
+              <div style={{ fontFamily: 'monospace', fontSize: 36, fontWeight: 900, color: timeRemaining === 0 ? '#2e9e6b' : 'white', lineHeight: 1 }}>
+                {timeRemaining === 0 ? 'Any moment...' : `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`}
               </div>
             </div>
+            <div style={{ fontSize: 44 }}>{timeRemaining === 0 ? '🔔' : '⏱️'}</div>
           </div>
-        )}
-
-        {/* Cancelled */}
-        {isCancelled && (
-          <div style={{ background: '#fff0f2', border: '1px solid #ffccd1', borderRadius: 12, padding: 16, marginBottom: 24, textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 6 }}>❌</div>
-            <div style={{ fontWeight: 700, color: '#E8334A', fontSize: 16 }}>Order Cancelled</div>
-            <div style={{ color: '#8a90a8', fontSize: 13, marginTop: 4 }}>This order was cancelled. Contact the restaurant for a refund.</div>
-          </div>
-        )}
-
-        {/* Steps */}
-        <div style={{ position: 'relative' }}>
-          {steps.map((step, i) => {
-            const done = step.done(order)
-            const isActive = !done && (i === 0 || steps[i - 1].done(order))
-            return (
-              <div key={step.id} style={{ display: 'flex', gap: 16, marginBottom: i < steps.length - 1 ? 0 : 0 }}>
-                {/* Line + circle */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 44, flexShrink: 0 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-                    background: done ? '#E8334A' : isActive ? '#fff0f2' : '#f5f5f5',
-                    border: done ? '2px solid #E8334A' : isActive ? '2px solid #E8334A' : '2px solid #e0e0e0',
-                    transition: 'all 0.4s ease',
-                    boxShadow: isActive ? '0 0 0 4px rgba(232,51,74,0.15)' : 'none',
-                    flexShrink: 0,
-                  }}>
-                    {done ? <span style={{ fontSize: 18 }}>✓</span> : <span style={{ fontSize: 20, filter: isActive ? 'none' : 'grayscale(1) opacity(0.4)' }}>{step.icon}</span>}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div style={{ width: 2, flex: 1, minHeight: 28, background: done ? '#E8334A' : '#e0e0e0', margin: '4px 0', transition: 'background 0.4s ease' }} />
-                  )}
-                </div>
-
-                {/* Text */}
-                <div style={{ paddingBottom: i < steps.length - 1 ? 24 : 0, paddingTop: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: done ? '#1a1f2e' : isActive ? '#E8334A' : '#b0b0b0', transition: 'color 0.4s ease' }}>
-                    {step.label}
-                    {isActive && <span style={{ fontSize: 11, fontWeight: 600, color: '#E8334A', background: '#fff0f2', padding: '2px 8px', borderRadius: 20, marginLeft: 8 }}>Now</span>}
-                  </div>
-                  <div style={{ fontSize: 13, color: done ? '#8a90a8' : '#c0c0c0', marginTop: 2 }}>{step.sub}</div>
-                  {step.id === 'paid' && done && (
-                    <div style={{ fontSize: 12, color: '#2e9e6b', marginTop: 4, fontWeight: 600 }}>₹{order.total_amount} paid</div>
-                  )}
-                  {step.id === 'approved' && order.approved_at && (
-                    <div style={{ fontSize: 12, color: '#8a90a8', marginTop: 4 }}>{new Date(order.approved_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
-                  )}
-                  {step.id === 'preparing' && order.prep_time_minutes && (
-                    <div style={{ fontSize: 12, color: '#d4821a', marginTop: 4, fontWeight: 600 }}>~{order.prep_time_minutes} min prep time</div>
-                  )}
-                  {step.id === 'ready' && order.ready_at && (
-                    <div style={{ fontSize: 12, color: '#8a90a8', marginTop: 4 }}>{new Date(order.ready_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          {order.prep_time_minutes && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 20px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 12, color: '#555' }}>
+              Vendor estimated {order.prep_time_minutes} min total prep time
+            </div>
+          )}
         </div>
+      )}
 
+      {/* STEPS — horizontal scroll on mobile */}
+      {!isCancelled && (
+        <div style={{ margin: '0 20px 28px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#444', textTransform: 'uppercase', marginBottom: 16 }}>Order Progress</div>
 
-        {/* Order summary */}
-        <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #f0f0f0' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: '#1a1f2e' }}>Order Summary</div>
-          {(order.items as Array<{ name: string; quantity: number; price: number }>).map((item, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#444', marginBottom: 8 }}>
-              <span>{item.quantity}× {item.name}</span>
-              <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
+          {/* Horizontal step track */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+            {steps.map((step, i) => {
+              const done = step.done(order)
+              const isActive = !done && i === activeIdx
+              const pct = done ? 100 : isActive ? 50 : 0
+              return (
+                <div key={step.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                  {/* Connector line before */}
+                  {i > 0 && (
+                    <div style={{ position: 'absolute', top: 20, right: '50%', width: '100%', height: 2, background: 'rgba(255,255,255,0.07)', zIndex: 0 }}>
+                      <div style={{ height: '100%', width: steps[i-1].done(order) ? '100%' : '0%', background: '#E8334A', transition: 'width 0.6s ease' }} />
+                    </div>
+                  )}
+
+                  {/* Circle */}
+                  <div style={{
+                    width: 42, height: 42, borderRadius: '50%', zIndex: 1, position: 'relative',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                    background: done ? '#E8334A' : isActive ? 'rgba(232,51,74,0.15)' : 'rgba(255,255,255,0.05)',
+                    border: done ? '2px solid #E8334A' : isActive ? '2px solid rgba(232,51,74,0.6)' : '2px solid rgba(255,255,255,0.08)',
+                    boxShadow: done ? '0 0 16px rgba(232,51,74,0.4)' : isActive ? '0 0 12px rgba(232,51,74,0.2)' : 'none',
+                    transition: 'all 0.4s ease',
+                  }}>
+                    {done
+                      ? <span style={{ fontSize: 16, color: 'white', fontWeight: 800 }}>✓</span>
+                      : <span style={{ filter: isActive ? 'none' : 'grayscale(1) opacity(0.25)' }}>{step.emoji}</span>
+                    }
+                  </div>
+
+                  {/* Label */}
+                  <div style={{ marginTop: 8, textAlign: 'center', padding: '0 2px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: done ? 'white' : isActive ? '#E8334A' : '#444', lineHeight: 1.3, transition: 'color 0.3s' }}>
+                      {step.label}
+                    </div>
+                    {isActive && (
+                      <div style={{ fontSize: 9, color: '#E8334A', marginTop: 2, fontWeight: 600 }}>Now</div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* DETAIL CARDS */}
+      <div style={{ margin: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* Active step detail */}
+        {!isCancelled && activeIdx >= 0 && activeIdx < steps.length && (
+          <div style={{ background: 'rgba(232,51,74,0.08)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ fontSize: 36 }}>{steps[activeIdx]?.emoji}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A', marginBottom: 2 }}>Currently: {steps[activeIdx]?.label}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>{steps[activeIdx]?.sub}</div>
             </div>
-          ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#1a1f2e', marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
-            <span>Total</span>
-            <span>₹{order.total_amount}</span>
+          </div>
+        )}
+
+        {/* Cancelled card */}
+        {isCancelled && (
+          <div style={{ background: 'rgba(232,51,74,0.08)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 16, padding: 20, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>❌</div>
+            <div style={{ fontWeight: 700, color: '#E8334A', fontSize: 16, marginBottom: 4 }}>Order Cancelled</div>
+            <div style={{ color: '#555', fontSize: 13 }}>Contact the restaurant for a refund.</div>
+          </div>
+        )}
+
+        {/* Order summary — receipt style */}
+        <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: '#444', textTransform: 'uppercase' }}>Order Summary</span>
+            <span style={{ fontSize: 11, color: '#444' }}>#{order.queue_position} · {cafeteria?.name}</span>
+          </div>
+          <div style={{ padding: '12px 20px' }}>
+            {(order.items as Array<{ name: string; quantity: number; price: number }>).map((item, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#aaa', marginBottom: 10 }}>
+                <span>{item.quantity}× {item.name}</span>
+                <span style={{ color: 'white', fontWeight: 600 }}>₹{item.price * item.quantity}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: 'white', paddingTop: 12, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <span>Total Paid</span>
+              <span style={{ color: '#2e9e6b' }}>₹{order.total_amount}</span>
+            </div>
           </div>
         </div>
       </div>
