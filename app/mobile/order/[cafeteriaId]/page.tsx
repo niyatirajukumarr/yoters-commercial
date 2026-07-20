@@ -538,10 +538,20 @@ export default function CafeteriaPage() {
     }
     setIsPlacingOrder(true)
     try {
+      // Get next token number: count today's orders for this cafeteria + 1
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      const { count } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('cafeteria_id', cafeteriaId)
+        .gte('created_at', todayStart.toISOString())
+      const tokenNumber = (count ?? 0) + 1
+
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
         .from('orders')
-        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: 0, status: 'pending', payment_status: 'unpaid', notes: formData.notes, order_type: orderType ?? 'takeaway', delivery_address: orderType === 'delivery' ? deliveryAddress : null }])
+        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes, order_type: orderType ?? 'takeaway', delivery_address: orderType === 'delivery' ? deliveryAddress : null }])
         .select()
         .single()
 

@@ -63,7 +63,7 @@ export default function OrderTrackingPage() {
 
   const steps = [
     { id: 'paid',      icon: '💳', label: 'Payment Done',      sub: 'Your payment was received',        done: (o: Order) => o.payment_status === 'paid' },
-    { id: 'approved',  icon: '✅', label: 'Vendor Accepted',    sub: 'Restaurant confirmed your order',  done: (o: Order) => !!o.approved_at },
+    { id: 'approved',  icon: '✅', label: 'Vendor Accepted',    sub: order?.prep_time_minutes ? `Your order will be ready in ~${order.prep_time_minutes} min` : 'Restaurant confirmed your order',  done: (o: Order) => !!o.approved_at },
     { id: 'preparing', icon: '👨‍🍳', label: 'Being Prepared',    sub: 'Your food is being cooked',        done: (o: Order) => ['preparing','ready','collected'].includes(o.status) },
     { id: 'ready',     icon: '🔔', label: 'Order Ready',        sub: 'Pick up at the counter',           done: (o: Order) => !!o.ready_at || ['ready','collected'].includes(o.status) },
     { id: 'collected', icon: '🎉', label: 'Order Collected',    sub: 'Enjoy your meal!',                 done: (o: Order) => !!o.collected_at || o.status === 'collected' },
