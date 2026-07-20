@@ -305,11 +305,16 @@ export default function CafeteriaPage() {
           return
         }
 
+        // Check sessionStorage cache first — instant, no network call
+        const cached = sessionStorage.getItem(`slug-id:${slugOrId}`)
+        if (cached) { setCafeteriaId(cached); return }
+
         const { data, error } = await supabase.from('cafeterias').select('id, name')
         if (error || !data) throw new Error('fetch failed')
 
         const matching = data.find(c => generateSlug(c.name) === slugOrId)
         if (matching) {
+          sessionStorage.setItem(`slug-id:${slugOrId}`, matching.id)
           setCafeteriaId(matching.id)
         } else {
           router.push('/browse')
@@ -337,17 +342,10 @@ export default function CafeteriaPage() {
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
-  // Reload after 3s if menu not loaded — timestamp prevents rapid loop (10s cooldown)
+  // Reload after 3s if menu not loaded
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (!cafeteria) {
-        const lastReload = Number(sessionStorage.getItem('last-reload') || 0)
-        if (Date.now() - lastReload > 10000) {
-          sessionStorage.setItem('last-reload', String(Date.now()))
-          window.location.reload()
-        }
-      }
-    }, 3000)
+    const t = setTimeout(() => { if (!cafeteria) window.location.reload() }, 3000)
+    if (cafeteria) clearTimeout(t)
     return () => clearTimeout(t)
   }, [cafeteria])
 
