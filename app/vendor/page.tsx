@@ -393,123 +393,90 @@ export default function VendorDashboard() {
           {msg && <div style={{ background: 'var(--green-bg)', border: '1px solid rgba(46,158,107,0.2)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: 'var(--green)', marginBottom: 16 }}>{msg}</div>}
 
           {/* ORDERS */}
-          {tab === 'orders' && (
-            <>
-              {/* PENDING APPROVAL SECTION */}
-              {orders.filter(o => o.status === 'paid').length > 0 && (
-                <div style={{ marginBottom: 28, padding: 18, background: 'rgba(212,130,26,0.08)', border: '2px solid #d4821a', borderRadius: 14 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#d4821a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 18 }}>⚠️</span>
-                    Pending Approval ({orders.filter(o => o.status === 'paid').length})
-                  </div>
-                  {orders.filter(o => o.status === 'paid').map(order => (
-                    <div key={order.id} className="order-card" style={{ marginBottom: 8, borderLeft: '4px solid #d4821a' }}>
-                      <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: '#d4821a', background: 'rgba(212,130,26,0.15)', border: '1px solid #d4821a', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
-                            <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
+          {tab === 'orders' && (() => {
+            const activeOrders = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
+
+            const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+              paid:      { label: '⏳ Awaiting Approval', color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
+              approved:  { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
+              preparing: { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
+              ready:     { label: '🔔 Ready for Pickup',  color: 'var(--green)', bg: 'var(--green-bg)',   border: 'var(--green)' },
+            }
+
+            if (activeOrders.length === 0) return (
+              <div style={{ textAlign: 'center', padding: 60, background: 'var(--surface)', borderRadius: 16, color: 'var(--muted)', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>🎉</div>
+                <div style={{ fontWeight: 600 }}>No active orders right now</div>
+              </div>
+            )
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {activeOrders.map(order => {
+                  const cfg = statusConfig[order.status]
+                  return (
+                    <div key={order.id} className="order-card" style={{ borderLeft: `4px solid ${cfg?.border ?? 'var(--border)'}` }}>
+                      {/* Top row: token + name + amount */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap' }}>
+                          <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 900, color: cfg?.color, background: cfg?.bg, border: `1px solid ${cfg?.border}`, borderRadius: 8, padding: '2px 12px', flexShrink: 0 }}>
+                            #{order.queue_position}
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                            {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                              <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                            ))}
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 15 }}>{order.student_name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--muted)' }}>📱 {order.student_phone}</div>
                           </div>
                         </div>
                         <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
                       </div>
+
+                      {/* Status badge */}
+                      <div style={{ fontSize: 12, fontWeight: 700, color: cfg?.color, marginBottom: 8 }}>{cfg?.label}</div>
+
+                      {/* Items */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {(order.items as { name: string; quantity: number }[]).map((item, i) => (
+                          <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>
+                            {item.name} ×{item.quantity}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Prep time if set */}
+                      {order.prep_time_minutes && order.status !== 'paid' && (
+                        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
+                      )}
+
+                      {/* Action buttons */}
                       <div className="order-actions">
-                        <button onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✓ APPROVE</button>
-                        <button onClick={() => setApprovalModal(order)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>✕ DENY</button>
+                        {order.status === 'paid' && (
+                          <>
+                            <button onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</button>
+                            <button onClick={() => { setApprovalModal(order); setDenialReason('temp') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</button>
+                          </>
+                        )}
+                        {order.status === 'approved' && (
+                          <button onClick={() => updateOrderStatus(order.id, 'preparing')} disabled={actionLoading === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#7c5cfc', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                            {actionLoading === order.id ? '...' : '👨‍🍳 Start Preparing'}
+                          </button>
+                        )}
+                        {order.status === 'preparing' && (
+                          <button onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                            {actionLoading === order.id ? '...' : '🔔 Order is Ready'}
+                          </button>
+                        )}
+                        {order.status === 'ready' && (
+                          <button onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: '2px solid var(--green)', background: 'white', color: 'var(--green)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                            {actionLoading === order.id ? '...' : '✅ Mark as Collected'}
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* APPROVED ORDERS */}
-              {orders.filter(o => o.status === 'approved').length > 0 && (
-                <div style={{ marginBottom: 28 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>✓</span> Approved
-                  </div>
-                  {orders.filter(o => o.status === 'approved').map(order => (
-                    <div className="order-card">
-                      <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div className="order-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--green)', background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: 8, padding: '2px 10px' }}>#{order.queue_position}</div>
-                            <div style={{ fontWeight: 600, fontSize: 15 }}>{order.student_name}</div>
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                            {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                              <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
-                      </div>
-                      <div className="order-actions">
-                        {order.status === 'approved' && <button onClick={() => updateOrderStatus(order.id, 'preparing')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c5cfc', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Start Preparing</button>}
-                        {order.status === 'preparing' && <button onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</button>}
-                        {order.status === 'ready' && <button onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Collected ✓</button>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {orders.filter(o => ['preparing', 'ready'].includes(o.status)).length === 0 && orders.filter(o => o.status === 'paid').length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 60, background: 'var(--surface)', borderRadius: 16, color: 'var(--muted)', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>🎉</div>
-                  <div style={{ fontWeight: 600 }}>No active orders right now</div>
-                </div>
-              ) : (
-                <>
-                  {orders.filter(o => o.status === 'preparing').length > 0 && (
-                    <div style={{ marginBottom: 28 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#7c5cfc', marginBottom: 12 }}>📦 Preparing</div>
-                      {orders.filter(o => o.status === 'preparing').map(order => (
-                        <div key={order.id} className="order-card">
-                          <div className="order-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                                {(order.items as { name: string; quantity: number }[]).map((item, i) => (
-                                  <span key={i} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'var(--text2)' }}>{item.name} ×{item.quantity}</span>
-                                ))}
-                              </div>
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>₹{order.total_amount}</div>
-                          </div>
-                          <div className="order-actions">
-                            <button onClick={() => updateOrderStatus(order.id, 'ready')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Mark Ready 🔔</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {orders.filter(o => o.status === 'ready').length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Ready for Pickup</div>
-                      {orders.filter(o => o.status === 'ready').map(order => (
-                        <div key={order.id} className="order-card">
-                          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{order.student_name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>📱 {order.student_phone}</div>
-                          <div className="order-actions">
-                            <button onClick={() => updateOrderStatus(order.id, 'collected')} disabled={actionLoading === order.id} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--surface2)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', flex: 1 }}>Collected ✓</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {/* QUEUE */}
           {tab === 'queue' && (
