@@ -178,7 +178,10 @@ export default function AuthPage() {
         /* 3D penguin (Three.js) slide-pulls the card from center-right into the center */
         .auth-card { animation: authSlide 1.1s cubic-bezier(.45,0,.15,1) 1.3s both; }
         @keyframes authSlide { 0% { transform: translateX(74%); } 100% { transform: translateX(0); } }
-        .auth-penguin-pos { position: absolute; left: -30px; top: -150px; z-index: 6; pointer-events: none; }
+        /* Sits in the empty margin left of the card, reaching toward it — was
+           left:-30/top:-150, which pushed most of the model off the top of the
+           viewport, leaving only its back/feet visible under the nav bar. */
+        .auth-penguin-pos { position: absolute; left: -150px; top: 10px; z-index: 6; pointer-events: none; }
         .phew-sweat { position: absolute; left: 92px; top: 78px; width: 9px; height: 9px; border-radius: 50% 50% 50% 0; background: #5cc3ff; transform: rotate(45deg); opacity: 0; animation: sweatFly 4s ease-in-out both; }
         .phew-text { position: absolute; left: 116px; top: 64px; font-size: 15px; font-weight: 600; font-style: italic; color: #6b7180; opacity: 0; animation: phewShow 4s ease-in-out both; }
         @keyframes sweatFly { 0%,72% { opacity: 0; transform: translate(0,0) rotate(45deg) scale(0.5); } 76% { opacity: 1; transform: translate(0,0) rotate(45deg) scale(1); } 88% { opacity: 1; transform: translate(10px,-16px) rotate(45deg) scale(0.9); } 96% { opacity: 0; transform: translate(18px,-28px) rotate(45deg) scale(0.6); } 100% { opacity: 0; } }
@@ -219,6 +222,9 @@ export default function AuthPage() {
         @media (max-width: 480px) {
           .auth-inner { padding: 24px 20px !important; }
           .auth-hero { padding: 0 !important; margin-bottom: 28px !important; }
+          /* No side margin to sit in on mobile — scale down and tuck it above
+             the heading instead of beside the card. */
+          .auth-penguin-pos { left: 55px; top: -28px; transform: scale(0.45); transform-origin: top left; }
         }
       `}</style>
 
