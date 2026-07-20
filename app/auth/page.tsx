@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
+import { CONSENT_VERSION } from '@/lib/config'
 
 // 3D penguin (Three.js) — client only, lazy-loaded so it never blocks the form
 const PenguinScene = dynamic(() => import('@/components/PenguinScene'), { ssr: false })
@@ -25,6 +26,7 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
+  const [consent, setConsent] = useState(false)
 
   // Open the correct tab when arriving from the landing page (?mode=signup)
   useEffect(() => {
@@ -79,12 +81,14 @@ export default function AuthPage() {
     if (!isValidPhone(phone)) { setError('Please check your details and try again.'); return }
     const pw = validatePassword(password)
     if (!pw.ok) { setError(pw.message!); return }
+    // DPDP: no account without explicit, recorded consent to the privacy notice.
+    if (!consent) { setError('Please agree to the Privacy Policy and Terms to continue.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, phone }),
+        body: JSON.stringify({ email, password, name, phone, consent: true, consentVersion: CONSENT_VERSION }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -412,6 +416,28 @@ export default function AuthPage() {
                 </div>
               )}
 
+              {mode === 'signup' && (
+                <motion.label
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={e => setConsent(e.target.checked)}
+                    style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+                  />
+                  <span>
+                    I am 18 or older and I consent to Yoters processing my personal data as described in the{' '}
+                    <Link href="/privacy" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>Privacy Policy</Link>
+                    {' '}and I agree to the{' '}
+                    <Link href="/terms" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>Terms</Link>.
+                  </span>
+                </motion.label>
+              )}
+
               {error && (
                 <div style={{ background: 'var(--red-bg)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--red)' }}>
                   {error}
@@ -491,9 +517,9 @@ export default function AuthPage() {
                 <br />
                 <span style={{ fontSize: 11 }}>
                   By continuing you agree to our{' '}
-                  <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Terms</span>
+                  <Link href="/terms" style={{ color: 'var(--accent)' }}>Terms</Link>
                   {' & '}
-                  <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>Privacy Policy</span>
+                  <Link href="/privacy" style={{ color: 'var(--accent)' }}>Privacy Policy</Link>
                 </span>
               </>
             )}
