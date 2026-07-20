@@ -337,6 +337,15 @@ export default function CafeteriaPage() {
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
 
   // Payment & UI
+  // If still loading after 3s, reload once (? r=1 prevents loop)
+  useEffect(() => {
+    if (window.location.search.includes('r=1')) return
+    const t = setTimeout(() => {
+      if (!cafeteria) window.location.href = window.location.pathname + '?r=1'
+    }, 3000)
+    return () => clearTimeout(t)
+  }, [cafeteria])
+
   const { cart, addItem, updateQuantity, removeItem, clear: clearCart, total, itemCount } = useCart()
   const { isFavourite, toggleFavourite } = useFavourites()
   const { user, updateUser } = useUserInfo()
