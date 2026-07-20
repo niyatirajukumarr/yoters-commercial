@@ -52,3 +52,20 @@ export function isManager(email: string | null | undefined): boolean {
 // Logical recipient id used for manager-targeted notifications. Kept as a stable
 // role token so notification rows are not tied to one person's address.
 export const MANAGER_RECIPIENT_ID = 'manager'
+
+// ---------- DPDP (Digital Personal Data Protection Act, 2023) config ----------
+//
+// The consent version is bumped whenever the privacy notice materially changes,
+// so we can detect users who consented to an older version and re-prompt.
+export const CONSENT_VERSION = '2026-07-21'
+
+// Grievance Officer / Data Protection contact published in the privacy notice
+// (DPDP s.13 requires a reachable grievance-redressal contact). Set the real
+// details via env in production; the fallbacks are placeholders, NOT valid.
+export const GRIEVANCE_OFFICER = {
+  name: process.env.NEXT_PUBLIC_GRIEVANCE_OFFICER_NAME || 'Grievance Officer',
+  email: process.env.NEXT_PUBLIC_GRIEVANCE_OFFICER_EMAIL || 'privacy@yoters.example',
+  // Data-retention window for order/PII after which records are eligible for
+  // erasure (purpose limitation / storage limitation).
+  retentionDays: 365,
+}

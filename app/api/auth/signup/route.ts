@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const email = sanitizeEmail(parsed.data.email)
   const name = sanitizeText(parsed.data.name)
   const phone = sanitizePhone(parsed.data.phone)
-  const { password } = parsed.data
+  const { password, consentVersion } = parsed.data
 
   const supabase = authClient()
   const { data, error } = await supabase.auth.signUp({ email, password })
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: AUTH_MESSAGES.signupFailed }, { status: 400 })
   }
 
-  // Store only non-sensitive profile metadata (never the password).
+  // Store only non-sensitive profile metadata (never the password), plus the
+  // DPDP consent record (when + which notice version the user agreed to).
   if (data.user) {
     try {
       await getAdminClient().from('profiles').upsert({
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
         name,
         phone: phone || null,
         email,
+        consent_at: new Date().toISOString(),
+        consent_version: consentVersion,
       })
     } catch (e) {
       logger.error('[auth/signup] profile upsert failed:', e)

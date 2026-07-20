@@ -36,6 +36,11 @@ export const signupSchema = z.object({
   // Display name / username: printable, bounded length.
   name: z.string().trim().min(1).max(80),
   phone: z.string().trim().regex(PHONE_RE),
+  // DPDP s.6: consent must be free, specific, informed and unambiguous. The
+  // client must send an explicit `true` — a missing/false value is rejected so
+  // an account can never be created without recorded consent.
+  consent: z.literal(true),
+  consentVersion: z.string().trim().min(1).max(40),
 })
 
 export type LoginInput = z.infer<typeof loginSchema>

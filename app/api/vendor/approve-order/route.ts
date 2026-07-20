@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const limited = enforceRateLimit(req, 'approve-order', 30, 60_000)
     if (limited) return limited
 
-    const { orderId, prepTimeMinutes } = await req.json()
+    const { orderId } = await req.json()
     if (!orderId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
     // Identity comes from the verified session token, not the request body (R7).
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase
       .from('orders')
-      .update({ status: 'approved', approved_at: new Date().toISOString(), prep_time_minutes: prepTimeMinutes ?? null })
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', orderId)
       .eq('cafeteria_id', order.cafeteria_id)
 

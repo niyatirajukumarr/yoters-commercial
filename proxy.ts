@@ -45,8 +45,9 @@ export async function proxy(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Public pages that never require a session.
-  const PUBLIC = ['/', '/auth', '/vendor', '/splash']
+  // Public pages that never require a session. Privacy/terms must be reachable
+  // without login (DPDP notice must be accessible to prospective users).
+  const PUBLIC = ['/', '/auth', '/vendor', '/splash', '/privacy', '/terms']
   const isPublic = PUBLIC.some(
     p => req.nextUrl.pathname === p || req.nextUrl.pathname.startsWith(p + '/')
   )
