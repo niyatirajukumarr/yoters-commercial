@@ -38,28 +38,32 @@ export default function StudentHome() {
   }, [router])
 
   const fetchData = useCallback(async () => {
+    // Show cached data instantly
     try {
-      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
-      const result = await Promise.race([
-        supabase
-          .from('cafeterias')
-          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-          .eq('is_open', true)
-          .order('name'),
-        timeout
-      ]) as any
+      const cached = sessionStorage.getItem('browse-cache')
+      if (cached) {
+        setCafeterias(JSON.parse(cached))
+        setLoading(false)
+      }
+    } catch {}
 
-      if (result.error) {
-        console.error('Error fetching data:', result.error)
-      } else if (result.data) {
+    // Fetch fresh in background
+    try {
+      const result = await supabase
+        .from('cafeterias')
+        .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
+        .eq('is_open', true)
+        .order('name') as any
+
+      if (result.data) {
         const combined = result.data.map((cafe: any) => ({
           ...cafe,
           queue: cafe.queue && cafe.queue.length > 0 ? cafe.queue[0] : { avg_wait_mins: 0, queue_count: 0 }
         }))
         setCafeterias(combined as CafeteriaWithQueue[])
+        sessionStorage.setItem('browse-cache', JSON.stringify(combined))
       }
     } catch (error) {
-      // Keep any previously loaded restaurants instead of wiping the list on a transient timeout
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
