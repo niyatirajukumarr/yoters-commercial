@@ -21,6 +21,15 @@ export default function OrderTrackingPage() {
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     const fetchOrder = async () => {
+      // Show cache instantly
+      try {
+        const cached = sessionStorage.getItem(`track-${orderId}`)
+        if (cached) {
+          const { order: o, cafeteria: c } = JSON.parse(cached)
+          setOrder(o); setCafeteria(c); setLoading(false)
+        }
+      } catch {}
+
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('*')
@@ -34,7 +43,6 @@ export default function OrderTrackingPage() {
 
       setOrder(orderData as Order)
 
-      // Fetch cafeteria details
       const { data: cafData } = await supabase
         .from('cafeterias')
         .select('*')
@@ -43,6 +51,7 @@ export default function OrderTrackingPage() {
 
       if (cafData) {
         setCafeteria(cafData)
+        sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: orderData, cafeteria: cafData }))
       }
 
       setLoading(false)

@@ -17,28 +17,26 @@ export default function MobileHome() {
   const [search, setSearch] = useState('')
 
   const fetchData = useCallback(async () => {
+    // Show cache instantly
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Fetch timeout')), 10000)
-      )
+      const cached = sessionStorage.getItem('home-cache')
+      if (cached) { setCafeterias(JSON.parse(cached)); setLoading(false) }
+    } catch {}
 
-      const result = await Promise.race([
-        supabase
-          .from('cafeterias')
-          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-          .eq('is_open', true)
-          .order('name'),
-        timeoutPromise
-      ]) as any
+    try {
+      const result = await supabase
+        .from('cafeterias')
+        .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
+        .eq('is_open', true)
+        .order('name') as any
 
-      if (result.error) {
-        console.error('Supabase error:', result.error)
-      } else if (result.data) {
+      if (result.data) {
         const dataWithQueues = result.data.map((cafe: any) => ({
           ...cafe,
           queue: cafe.queue && cafe.queue.length > 0 ? cafe.queue[0] : { cafeteria_id: cafe.id, avg_wait_mins: 0, queue_count: 0 }
         }))
         setCafeterias(dataWithQueues as CafeteriaWithQueue[])
+        sessionStorage.setItem('home-cache', JSON.stringify(dataWithQueues))
       }
     } catch (error) {
       console.error('Fetch error:', error)

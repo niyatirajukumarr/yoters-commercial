@@ -29,10 +29,15 @@ export default function MobileOrders() {
   // Fetch cafeterias for mapping
   useEffect(() => {
     const fetch = async () => {
+      try {
+        const cached = sessionStorage.getItem('cafeterias-map')
+        if (cached) setCafeterias(JSON.parse(cached))
+      } catch {}
       const { data } = await supabase.from('cafeterias').select('id, name, image_emoji')
       if (data) {
         const map = Object.fromEntries(data.map(c => [c.id, c]))
         setCafeterias(map)
+        sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
       }
     }
     fetch()
@@ -46,13 +51,22 @@ export default function MobileOrders() {
         return
       }
 
+      // Show cached orders instantly
+      try {
+        const cached = sessionStorage.getItem(`orders-${user.phone}`)
+        if (cached) { setOrders(JSON.parse(cached)); setLoading(false) }
+      } catch {}
+
       const { data } = await supabase
         .from('orders')
         .select('*')
         .eq('student_phone', user.phone)
         .order('created_at', { ascending: false })
 
-      if (data) setOrders(data as Order[])
+      if (data) {
+        setOrders(data as Order[])
+        sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
+      }
       setLoading(false)
     }
 
