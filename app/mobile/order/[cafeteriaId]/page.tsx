@@ -1129,57 +1129,65 @@ export default function CafeteriaPage() {
           </div>
           <div style={{ padding: '16px' }}>
             {cafeOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No orders yet. Start flexing! 💅</div>
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No orders yet. Start ordering! 🍱</div>
             ) : (
-              cafeOrders.map(order => (
-                <div key={order.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                        {order.items?.map(item => item.name).join(', ') || 'Order'}
+              cafeOrders.map(order => {
+                const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+                  pending:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
+                  paid:      { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
+                  approved:  { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
+                  preparing: { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
+                  ready:     { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3' },
+                  collected: { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
+                  cancelled: { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
+                }
+                const cfg = statusConfig[order.status] ?? statusConfig.pending
+                const isPast = ['collected', 'cancelled'].includes(order.status)
+
+                return (
+                  <div
+                    key={order.id}
+                    onClick={() => window.location.href = `/mobile/track/${order.id}`}
+                    style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12, cursor: 'pointer', borderLeft: `4px solid ${cfg.color}` }}
+                  >
+                    {/* Top row: token + time */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                        🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                        🕐 {new Date(order.created_at).toLocaleString('en-IN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <div style={{ fontSize: 11, background: order.status === 'collected' ? '#edfaf3' : '#fff8ec', color: order.status === 'collected' ? '#2e9e6b' : '#d4821a', padding: '4px 8px', borderRadius: 4 }}>
-                        {order.status}
-                      </div>
-                      {(order.status === 'pending' || order.status === 'cancelled') && (
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          style={{ padding: '6px 10px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                        >
-                          🗑️ Delete
-                        </button>
+                      {order.queue_position && (
+                        <div style={{ fontSize: 16, fontWeight: 900, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.color}`, borderRadius: 8, padding: '1px 10px' }}>
+                          #{order.queue_position}
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Items */}
-                  <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                    {order.items?.map((item, i) => (
-                      <div key={i} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{item.quantity}x {item.name}</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
+                    {/* Status badge */}
+                    <div style={{ fontSize: 12, fontWeight: 700, color: cfg.color, background: cfg.bg, display: 'inline-block', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>
+                      {cfg.label}
+                    </div>
 
-                  {/* Total */}
-                  <div style={{ paddingTop: 10, marginTop: 6, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>₹{order.total_amount}</span>
+                    {/* Items */}
+                    <div style={{ paddingTop: 10, borderTop: '1px solid var(--border)', marginBottom: 8 }}>
+                      {order.items?.map((item, i) => (
+                        <div key={i} style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{item.quantity}× {item.name}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--text)' }}>₹{item.price * item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Total + action */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>₹{order.total_amount}</span>
+                      {!isPast
+                        ? <span style={{ fontSize: 12, color: '#E8334A', fontWeight: 700 }}>Track order →</span>
+                        : <button onClick={e => { e.stopPropagation(); handleDeleteOrder(order.id) }} style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>🗑️ Delete</button>
+                      }
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
