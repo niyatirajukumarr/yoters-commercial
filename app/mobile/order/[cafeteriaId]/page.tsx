@@ -337,6 +337,12 @@ export default function CafeteriaPage() {
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
+  // Auto-reload after 3s if menu hasn't loaded
+  useEffect(() => {
+    const t = setTimeout(() => { if (!cafeteria) window.location.reload() }, 3000)
+    return () => clearTimeout(t)
+  }, [cafeteria])
+
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
