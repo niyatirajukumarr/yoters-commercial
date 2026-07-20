@@ -337,17 +337,19 @@ export default function CafeteriaPage() {
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
-  // One-time reload after 5s if menu still not loaded (uses flag to prevent infinite loop)
+  // Reload after 3s if menu not loaded — timestamp prevents rapid loop (10s cooldown)
   useEffect(() => {
-    const reloadKey = `reloaded:${slugOrId}`
     const t = setTimeout(() => {
-      if (!cafeteria && !sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, '1')
-        window.location.reload()
+      if (!cafeteria) {
+        const lastReload = Number(sessionStorage.getItem('last-reload') || 0)
+        if (Date.now() - lastReload > 10000) {
+          sessionStorage.setItem('last-reload', String(Date.now()))
+          window.location.reload()
+        }
       }
-    }, 5000)
+    }, 3000)
     return () => clearTimeout(t)
-  }, [cafeteria, slugOrId])
+  }, [cafeteria])
 
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
