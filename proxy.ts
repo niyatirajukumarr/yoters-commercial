@@ -73,5 +73,10 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   // Exclude API routes (they self-protect), Next internals, and static assets.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|logo.png).*)'],
+  // Naming individual files (favicon.ico, logo.png, ...) missed everything else
+  // in /public — hero-video.mp4, the 3D penguin's .obj/.mtl/texture, etc. — so
+  // an unauthenticated request for any of them got redirected to /auth and
+  // served that page's HTML instead of the actual file. Exclude by extension
+  // instead: any path segment containing a dot is a static asset, not a page.
+  matcher: ['/((?!api|_next/static|_next/image|.*\\..*).*)'],
 }
