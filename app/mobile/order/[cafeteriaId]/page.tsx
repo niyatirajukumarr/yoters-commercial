@@ -337,11 +337,17 @@ export default function CafeteriaPage() {
   const { user, updateUser } = useUserInfo()
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
-  // Auto-reload after 3s if menu hasn't loaded
+  // One-time reload after 5s if menu still not loaded (uses flag to prevent infinite loop)
   useEffect(() => {
-    const t = setTimeout(() => { if (!cafeteria) window.location.reload() }, 3000)
+    const reloadKey = `reloaded:${slugOrId}`
+    const t = setTimeout(() => {
+      if (!cafeteria && !sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1')
+        window.location.reload()
+      }
+    }, 5000)
     return () => clearTimeout(t)
-  }, [cafeteria])
+  }, [cafeteria, slugOrId])
 
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
@@ -779,7 +785,13 @@ export default function CafeteriaPage() {
     )
   }
 
-  if (resolving || loading) return null
+  if (resolving || loading) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ fontSize: 13, color: 'var(--muted)' }}>Loading menu...</div>
+    </div>
+  )
 
   if (!cafeteria) {
     return <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: '40px' }}>Restaurant not found</div>
