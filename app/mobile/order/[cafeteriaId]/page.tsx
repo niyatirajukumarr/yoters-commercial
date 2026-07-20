@@ -626,6 +626,8 @@ export default function CafeteriaPage() {
     if (data) {
       setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
       setShowTicket(true)
+      // Navigate to tracking page after 2 seconds
+      setTimeout(() => router.push(`/mobile/track/${orderId}`), 2000)
     }
   }
 
@@ -1296,6 +1298,12 @@ export default function CafeteriaPage() {
       {step === 'confirmation' && showTicket && tokenData && (
         <div style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 20 }}>
           <TokenTicket token={tokenData.token} items={tokenData.items} total={tokenData.total} orderId={tokenData.id} cafeteriaName={cafeteria.name} onClose={() => setShowTicket(false)} />
+          <button
+            onClick={() => router.push(`/mobile/track/${tokenData.id}`)}
+            style={{ marginTop: 16, width: '100%', padding: 15, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          >
+            🛵 Track My Order →
+          </button>
         </div>
       )}
 
