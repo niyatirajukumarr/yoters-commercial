@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { CookieConsent } from '@/components/CookieConsent'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -24,7 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://qbvwcpjjattwebdzexni.supabase.co" />
         <link rel="dns-prefetch" href="https://qbvwcpjjattwebdzexni.supabase.co" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   )
 }
