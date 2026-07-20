@@ -353,36 +353,43 @@ export default function CafeteriaPage() {
   const [showTicket, setShowTicket] = useState(false)
   const [tokenData, setTokenData] = useState<{ token: number; items: Array<{ name: string; quantity: number }>; total: number; id: string } | null>(null)
 
-  // Fetch cafeteria & menu — retries every 3s until data loads (handles Supabase cold start)
+  // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
     if (!cafeteriaId) return
-    let cancelled = false
-    const attempt = async () => {
-      setLoading(true)
+
+    // Show cached data immediately if available
+    const cacheKey = `menu-cache:${cafeteriaId}`
+    try {
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        const { cafeteria: cachedCaf, menuItems: cachedMenu } = JSON.parse(cached)
+        setCafeteria(cachedCaf)
+        setMenuItems(cachedMenu)
+        const cats = [...new Set((cachedMenu as MenuItem[]).map((m: MenuItem) => m.category))]
+        if (cats.length > 0) setSelectedCategory(cats[0])
+        setLoading(false)
+      }
+    } catch {}
+
+    // Always fetch fresh data in background
+    const doFetch = async () => {
       try {
         const [cafRes, menuRes] = await Promise.all([
           supabase.from('cafeterias').select('*').eq('id', cafeteriaId).single(),
           supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteriaId).eq('is_available', true),
         ])
-        if (cancelled) return
         if (cafRes.data) {
           setCafeteria(cafRes.data as Cafeteria)
-          if (menuRes.data) {
-            setMenuItems(menuRes.data as MenuItem[])
-            const cats = [...new Set((menuRes.data as MenuItem[]).map(m => m.category))]
-            if (cats.length > 0) setSelectedCategory(cats[0])
-          }
-          setLoading(false)
-        } else {
-          // No data yet — retry after 3s
-          setTimeout(() => { if (!cancelled) attempt() }, 3000)
+          const menu = (menuRes.data ?? []) as MenuItem[]
+          setMenuItems(menu)
+          const cats = [...new Set(menu.map(m => m.category))]
+          if (cats.length > 0) setSelectedCategory(cats[0])
+          sessionStorage.setItem(cacheKey, JSON.stringify({ cafeteria: cafRes.data, menuItems: menu }))
         }
-      } catch {
-        setTimeout(() => { if (!cancelled) attempt() }, 3000)
-      }
+      } catch {}
+      setLoading(false)
     }
-    attempt()
-    return () => { cancelled = true }
+    doFetch()
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
