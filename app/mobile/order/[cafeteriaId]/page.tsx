@@ -648,13 +648,26 @@ export default function CafeteriaPage() {
     }, 2000)
   }
 
-  const fetchTokenData = async () => {
+  // token_number is only assigned once the vendor approves the order (DB
+  // trigger, supabase/migrations/20260722_token_on_vendor_approval.sql) — it
+  // doubles as the vendor's confirmation, not just proof of payment. Poll
+  // until it appears instead of showing a fake `?? 0` token immediately.
+  const fetchTokenData = async (attempt = 0) => {
+    if (!orderId) return
     const { data } = await supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
-    if (data) {
-      setTokenData({ token: data.token_number ?? 0, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
+    if (data?.token_number != null) {
+      setTokenData({ token: data.token_number, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
       setShowTicket(true)
-      // Navigate to tracking page after 2 seconds
+      // Navigate to tracking page a couple seconds after showing the ticket.
       setTimeout(() => router.push(`/mobile/track/${orderId}`), 2000)
+      return
+    }
+    // Not yet approved — keep checking for up to 2 minutes, then move on to
+    // tracking anyway rather than stranding the customer on this screen.
+    if (attempt < 60) {
+      setTimeout(() => fetchTokenData(attempt + 1), 2000)
+    } else {
+      router.push(`/mobile/track/${orderId}`)
     }
   }
 
@@ -1383,7 +1396,17 @@ export default function CafeteriaPage() {
         </motion.div>
       )}
 
-      {step === 'confirmation' && showTicket && tokenData && (
+      {step === 'payment' && paymentState === 'confirmed' && !showTicket && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
+          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Payment confirmed!</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Waiting for {cafeteria.name} to confirm your order…</div>
+        </motion.div>
+      )}
+
+      {/* Not gated on step === 'confirmation': step is never actually set to
+          that value, so the ticket renders purely off showTicket/tokenData. */}
+      {showTicket && tokenData && (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 20 }}>
           <TokenTicket token={tokenData.token} items={tokenData.items} total={tokenData.total} orderId={tokenData.id} cafeteriaName={cafeteria.name} onClose={() => setShowTicket(false)} />
           <motion.button
