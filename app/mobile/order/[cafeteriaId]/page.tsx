@@ -12,6 +12,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
+import { MenuItemCard } from '@/components/ui/menu-item-card'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 
 interface MenuItem {
@@ -479,6 +480,21 @@ export default function CafeteriaPage() {
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   const visibleItems = menuItems.filter(m => (vegMode === 'veg' ? itemIsVeg(m) : !itemIsVeg(m)))
   const categories = [...new Set(visibleItems.map(m => m.category))]
+
+  // "Popular Picks" — real order-count data from /api/menu-popularity, not a
+  // fabricated ranking. Restricted to items with a real photo: MenuItemCard's
+  // whole design is a hero photo, and showing a stand-in image for a specific
+  // dish would misrepresent what the customer is ordering.
+  const popularItems = visibleItems
+    .filter(m => m.is_available && m.image_url)
+    .map(m => ({
+      item: m,
+      count: popularity.byId[m.id] ?? popularity.byName[m.name.toLowerCase()] ?? 0,
+    }))
+    .filter(({ count }) => count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map(({ item }) => item)
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
 
@@ -1001,6 +1017,32 @@ export default function CafeteriaPage() {
               </div>
             )}
           </div>
+
+          {/* Popular Picks — real order-count data, only items with a real photo */}
+          {!menuSearch && popularItems.length > 0 && (
+            <div style={{ padding: '16px 0 4px' }}>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, padding: '0 16px', marginBottom: 10 }}>
+                🔥 Popular Picks
+              </div>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '2px 16px 8px', scrollSnapType: 'x mandatory' }}>
+                {popularItems.map(item => (
+                  <div key={item.id} style={{ flex: '0 0 200px', scrollSnapAlign: 'start' }}>
+                    <MenuItemCard
+                      imageUrl={item.image_url!}
+                      isVegetarian={itemIsVeg(item)}
+                      name={item.name}
+                      price={item.price}
+                      originalPrice={item.price}
+                      quantity={item.category}
+                      prepTimeInMinutes={10}
+                      onAdd={() => handleAddItem(item)}
+                      className="max-w-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Items list */}
           <div style={{ paddingBottom: 180 }}>

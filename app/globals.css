@@ -21,6 +21,8 @@
   --color-destructive-foreground: #ffffff;
   --color-background: #fdf8f5;
   --color-foreground: #1a1f2e;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1f2e;
   --color-border: rgba(26,31,46,0.08);
   --color-input: rgba(26,31,46,0.15);
   --color-ring: #E8334A;
