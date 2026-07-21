@@ -16,7 +16,16 @@ export function useUserInfo() {
   useEffect(() => {
     // Load from current Supabase session
     async function loadUser() {
-      const { data: { session } } = await supabase.auth.getSession()
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        // getSession() can trigger an internal token-refresh check; on a flaky
+        // mobile connection a single transient failure there resolves with
+        // session: null even though the underlying session is still valid.
+        // One short retry avoids treating that blip as a real logout — this
+        // hook mounts fresh (no fallback to prior state) on every page.
+        await new Promise(r => setTimeout(r, 700))
+        session = (await supabase.auth.getSession()).data.session
+      }
       if (session?.user) {
         const u = session.user
         // Try to get extra profile info (name, phone) from profiles table
