@@ -9,6 +9,7 @@ import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
+import { withTimeout } from '@/lib/utils/withTimeout'
 import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
@@ -338,6 +339,7 @@ export default function CafeteriaPage() {
 
   // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
+  const [loadingCafeOrders, setLoadingCafeOrders] = useState(true)
 
   // Payment & UI
 
@@ -398,17 +400,29 @@ export default function CafeteriaPage() {
   // Fetch user's orders from this cafe with real-time subscription
   useEffect(() => {
     const fetch = async () => {
-      if (!user?.phone) return
+      if (!user?.phone) {
+        // user isn't loaded yet (this effect re-runs once it is, via the
+        // user?.phone dependency below) — don't flash "No orders yet" for a
+        // still-loading user.
+        return
+      }
+      setLoadingCafeOrders(true)
       try {
-        const { data } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('cafeteria_id', cafeteriaId)
-          .eq('student_phone', user.phone)
-          .order('created_at', { ascending: false })
+        const { data } = await withTimeout(
+          supabase
+            .from('orders')
+            .select('*')
+            .eq('cafeteria_id', cafeteriaId)
+            .eq('student_phone', user.phone)
+            .order('created_at', { ascending: false }),
+          8000,
+          'Cafe orders fetch timed out'
+        ) as any
         if (data) setCafeOrders(data as Order[])
       } catch (error) {
         console.error('Cafe orders fetch error:', error)
+      } finally {
+        setLoadingCafeOrders(false)
       }
     }
     fetch()
@@ -1231,7 +1245,9 @@ export default function CafeteriaPage() {
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>Your Orders from {cafeteria.name}</div>
           </div>
           <div style={{ padding: '16px' }}>
-            {cafeOrders.length === 0 ? (
+            {loadingCafeOrders ? (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading your orders…</div>
+            ) : cafeOrders.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No orders yet. Start ordering! 🍱</div>
             ) : (
               <motion.div initial="hidden" animate="visible" variants={stagger}>
