@@ -14,18 +14,23 @@ import { validateCoordinates } from './geoValidation'
 /**
  * Lethafi restaurant coordinates in decimal degrees (WGS84).
  *
- * Extracted ONCE at implementation time from the Google Maps short link
- * `https://maps.app.goo.gl/C4owi6St2yNtXTgn9`. The link was resolved via an
- * HTTP redirect (`curl -sIL`) to the canonical URL of the form
- * `.../@<lat>,<lng>,<zoom>z` (confirmed by the matching `!3d<lat>!4d<lng>`
- * pair in the resolved URL), yielding lat `13.084268`, lng `77.487346`.
+ * Updated from the Google Maps business-listing short link
+ * `https://maps.app.goo.gl/42F7sqeJh4A1Qqmz8`. Unlike a dropped-pin share
+ * link, a business listing's `cid`/`ftid` only resolves to coordinates via
+ * Maps' client-side JS (a plain `curl -sIL` redirect stays in `cid=` form),
+ * so this was resolved by loading the link in a real browser and reading
+ * `window.location.href` once it settled on the canonical
+ * `.../@<lat>,<lng>,<zoom>z` form (confirmed by the matching
+ * `!3d<lat>!4d<lng>` pair), yielding lat `13.0841374`, lng `77.4872613` —
+ * ~15m from the prior pin-drop-derived value (`13.084268, 77.487346`), same
+ * building.
  *
  * The app MUST NOT resolve, fetch, or expand the shortened URL at runtime
  * (Req 5.2); this constant is the persisted source of truth.
  */
 export const LETHAFI_COORDINATES: Coordinates = {
-  latitude: 13.084268,
-  longitude: 77.487346,
+  latitude: 13.0841374,
+  longitude: 77.4872613,
 }
 
 /**
