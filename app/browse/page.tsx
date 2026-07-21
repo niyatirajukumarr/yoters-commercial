@@ -11,6 +11,7 @@ import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
+import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -234,6 +235,16 @@ export default function StudentHome() {
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
+                      {c.name === 'Main Block Cafeteria' && (
+                        <div style={{ marginBottom: 24 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+                            How far is this from you?
+                          </div>
+                          <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
+                            <RestaurantMapLoader showRoute />
+                          </div>
+                        </div>
+                      )}
                       <Link href={`/mobile/order/${generateSlug(c.name)}`}>
                         <motion.button
                           className="cafe-see-menu-btn"

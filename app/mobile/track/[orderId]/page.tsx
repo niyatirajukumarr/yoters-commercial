@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria } from '@/lib/types'
 import { stagger, staggerItem, hoverScale } from '@/lib/motion'
+import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 
 export default function OrderTrackingPage() {
   const params = useParams()
@@ -281,6 +282,18 @@ export default function OrderTrackingPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Distance to restaurant — live map, only where we have real coordinates */}
+          {cafeteria?.name === 'Main Block Cafeteria' && !isCancelled && order.status !== 'collected' && (
+            <motion.div variants={staggerItem} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: '#444', textTransform: 'uppercase' }}>How Far To Go</span>
+              </div>
+              <div style={{ height: 280 }}>
+                <RestaurantMapLoader showRoute />
+              </div>
+            </motion.div>
+          )}
         </div>
       </motion.div>
     </div>
