@@ -235,7 +235,7 @@ export default function StudentHome() {
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      {c.name === 'Main Block Cafeteria' && (
+                      {c.name === 'LETHAFI' && (
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
                             How far is this from you?
