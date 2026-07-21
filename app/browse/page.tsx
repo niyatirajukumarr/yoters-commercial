@@ -20,7 +20,17 @@ export default function StudentHome() {
   const [cafeterias, setCafeterias] = useState<CafeteriaWithQueue[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
   const router = useRouter()
+
+  const toggleMap = (id: string) => {
+    setExpandedMaps(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   // Check if user is vendor and redirect
   useEffect(() => {
@@ -229,17 +239,28 @@ export default function StudentHome() {
                     {/* Restaurant Info */}
                     <div className="cafe-info">
                       <h2 className="cafe-name">{c.name}</h2>
-                      <div className="cafe-location">
-                        📍 {c.location}
-                      </div>
+                      {c.name === 'LETHAFI' ? (
+                        <button
+                          type="button"
+                          className="cafe-location"
+                          onClick={() => toggleMap(c.id)}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
+                        >
+                          📍 {c.location}
+                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                            · 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="cafe-location">
+                          📍 {c.location}
+                        </div>
+                      )}
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      {c.name === 'LETHAFI' && (
+                      {c.name === 'LETHAFI' && expandedMaps.has(c.id) && (
                         <div style={{ marginBottom: 24 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
-                            How far is this from you?
-                          </div>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
                             <RestaurantMapLoader showRoute />
                           </div>
