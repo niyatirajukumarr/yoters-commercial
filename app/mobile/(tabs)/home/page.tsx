@@ -8,6 +8,7 @@ import { Cafeteria, CafeteriaQueue } from '@/lib/types'
 import { generateSlug } from '@/lib/utils/slug'
 import { Clock, Users } from 'lucide-react'
 import { stagger, staggerItem } from '@/lib/motion'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 interface CafeteriaWithQueue extends Cafeteria {
   queue: CafeteriaQueue
@@ -26,11 +27,15 @@ export default function MobileHome() {
     } catch {}
 
     try {
-      const result = await supabase
-        .from('cafeterias')
-        .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-        .eq('is_open', true)
-        .order('name') as any
+      const result = await withTimeout(
+        supabase
+          .from('cafeterias')
+          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
+          .eq('is_open', true)
+          .order('name'),
+        8000,
+        'Cafeterias fetch timed out'
+      ) as any
 
       if (result.data) {
         const dataWithQueues = result.data.map((cafe: any) => ({

@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { Order } from '@/lib/types'
 import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 interface CafeteriaInfo {
   id: string
@@ -32,11 +33,19 @@ export default function MobileOrders() {
         const cached = sessionStorage.getItem('cafeterias-map')
         if (cached) setCafeterias(JSON.parse(cached))
       } catch {}
-      const { data } = await supabase.from('cafeterias').select('id, name, image_emoji')
-      if (data) {
-        const map = Object.fromEntries(data.map(c => [c.id, c]))
-        setCafeterias(map)
-        sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
+      try {
+        const { data } = await withTimeout(
+          supabase.from('cafeterias').select('id, name, image_emoji'),
+          8000,
+          'Cafeterias fetch timed out'
+        ) as any
+        if (data) {
+          const map = Object.fromEntries(data.map((c: any) => [c.id, c]))
+          setCafeterias(map)
+          sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
+        }
+      } catch (error) {
+        console.error('Cafeterias fetch error:', error)
       }
     }
     fetch()
@@ -56,17 +65,25 @@ export default function MobileOrders() {
         if (cached) { setOrders(JSON.parse(cached)); setLoading(false) }
       } catch {}
 
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('student_phone', user.phone)
-        .order('created_at', { ascending: false })
-
-      if (data) {
-        setOrders(data as Order[])
-        sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
+      try {
+        const { data } = await withTimeout(
+          supabase
+            .from('orders')
+            .select('*')
+            .eq('student_phone', user.phone)
+            .order('created_at', { ascending: false }),
+          8000,
+          'Orders fetch timed out'
+        ) as any
+        if (data) {
+          setOrders(data as Order[])
+          sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
+        }
+      } catch (error) {
+        console.error('Orders fetch error:', error)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetch()
