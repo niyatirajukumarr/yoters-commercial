@@ -15,6 +15,12 @@
   --color-primary-foreground: #ffffff;
   --color-secondary: #fdf0ec;
   --color-secondary-foreground: #1a1f2e;
+  /* Subtle hover/interactive tint — reuses the app's existing --accent-light
+     (already used for hover backgrounds like .btn-ghost:hover), not the raw
+     brand red, since shadcn's "accent" is a light background, not the
+     primary action color (that's already --color-primary above). */
+  --color-accent: #fff0f2;
+  --color-accent-foreground: #1a1f2e;
   --color-muted: #f5ede6;
   --color-muted-foreground: #8a90a8;
   --color-destructive: #E8334A;
