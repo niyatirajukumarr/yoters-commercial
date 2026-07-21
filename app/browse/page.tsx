@@ -12,6 +12,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -62,11 +63,15 @@ export default function StudentHome() {
 
     // Fetch fresh in background
     try {
-      const result = await supabase
-        .from('cafeterias')
-        .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-        .eq('is_open', true)
-        .order('name') as any
+      const result = await withTimeout(
+        supabase
+          .from('cafeterias')
+          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
+          .eq('is_open', true)
+          .order('name'),
+        8000,
+        'Cafeterias fetch timed out'
+      ) as any
 
       if (result.data) {
         const combined = result.data.map((cafe: any) => ({

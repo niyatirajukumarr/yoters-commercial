@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria } from '@/lib/types'
 import { stagger, staggerItem, hoverScale } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 export default function OrderTrackingPage() {
   const params = useParams()
@@ -26,22 +27,35 @@ export default function OrderTrackingPage() {
           setOrder(o); setCafeteria(c); setLoading(false)
         }
       } catch {}
-      const { data: orderData, error } = await supabase.from('orders').select('*').eq('id', orderId).single()
-      if (error || !orderData) { setLoading(false); return }
-      setOrder(orderData as Order)
-      const { data: cafData } = await supabase.from('cafeterias').select('*').eq('id', orderData.cafeteria_id).single()
-      if (cafData) {
-        setCafeteria(cafData)
-        sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: orderData, cafeteria: cafData }))
+      try {
+        const { data: orderData, error } = await withTimeout(
+          supabase.from('orders').select('*').eq('id', orderId).single(),
+          8000,
+          'Order fetch timed out'
+        ) as any
+        if (error || !orderData) { setLoading(false); return }
+        setOrder(orderData as Order)
+        const { data: cafData } = await withTimeout(
+          supabase.from('cafeterias').select('*').eq('id', orderData.cafeteria_id).single(),
+          8000,
+          'Cafeteria fetch timed out'
+        ) as any
+        if (cafData) {
+          setCafeteria(cafData)
+          sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: orderData, cafeteria: cafData }))
+        }
+        channel = supabase.channel('order-track-' + orderId)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+            (payload) => {
+              setOrder(payload.new as Order)
+              sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: payload.new, cafeteria: cafData }))
+            })
+          .subscribe()
+      } catch (error) {
+        console.error('Order tracking fetch error:', error)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-      channel = supabase.channel('order-track-' + orderId)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
-          (payload) => {
-            setOrder(payload.new as Order)
-            sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: payload.new, cafeteria: cafData }))
-          })
-        .subscribe()
     }
     fetchOrder()
     return () => { if (channel) supabase.removeChannel(channel) }

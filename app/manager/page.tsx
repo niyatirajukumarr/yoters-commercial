@@ -9,6 +9,7 @@ import { Order, Cafeteria, Notification } from '@/lib/types'
 import { isManager } from '@/lib/config'
 import { LogOut, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { stagger, staggerItem, hoverScale, hoverLift } from '@/lib/motion'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 export default function ManagerDashboard() {
   const router = useRouter()
@@ -28,30 +29,46 @@ export default function ManagerDashboard() {
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session || !isManager(session.user.email)) {
-        router.push('/')
-        return
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+        if (!session || !isManager(session.user.email)) {
+          router.push('/')
+          return
+        }
+
+        // Fetch all orders
+        const { data: ordersData } = await withTimeout(
+          supabase.from('orders').select('*').order('created_at', { ascending: false }),
+          8000,
+          'Orders fetch timed out'
+        ) as any
+        if (ordersData) setOrders(ordersData as Order[])
+
+        // Fetch all cafeterias
+        const { data: cafsData } = await withTimeout(
+          supabase.from('cafeterias').select('*').order('name'),
+          8000,
+          'Cafeterias fetch timed out'
+        ) as any
+        if (cafsData) setCafeterias(cafsData as Cafeteria[])
+
+        // Fetch manager notifications
+        const { data: notifData } = await withTimeout(
+          supabase
+            .from('notifications')
+            .select('*')
+            .eq('recipient_type', 'manager')
+            .order('created_at', { ascending: false })
+            .limit(20),
+          8000,
+          'Notifications fetch timed out'
+        ) as any
+        if (notifData) setActivities(notifData as Notification[])
+      } catch (error) {
+        console.error('Manager dashboard fetch error:', error)
+      } finally {
+        setLoading(false)
       }
-
-      // Fetch all orders
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
-      if (ordersData) setOrders(ordersData as Order[])
-
-      // Fetch all cafeterias
-      const { data: cafsData } = await supabase.from('cafeterias').select('*').order('name')
-      if (cafsData) setCafeterias(cafsData as Cafeteria[])
-
-      // Fetch manager notifications
-      const { data: notifData } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('recipient_type', 'manager')
-        .order('created_at', { ascending: false })
-        .limit(20)
-      if (notifData) setActivities(notifData as Notification[])
-
-      setLoading(false)
     }
 
     fetchData()

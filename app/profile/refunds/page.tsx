@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 interface RefundOrder {
   id: string
@@ -28,25 +29,34 @@ export default function Refunds() {
 
   useEffect(() => {
     const fetchRefunds = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const email = session?.user?.email
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+        const email = session?.user?.email
 
-      // Fetch cancelled paid orders by this user's email
-      const { data } = await supabase
-        .from('orders')
-        .select('*, cafeterias(name)')
-        .eq('status', 'cancelled')
-        .in('payment_status', ['paid', 'refund_initiated', 'refund_successful'])
-        .eq('student_email', email ?? '')
-        .order('denied_at', { ascending: false })
+        // Fetch cancelled paid orders by this user's email
+        const { data } = await withTimeout(
+          supabase
+            .from('orders')
+            .select('*, cafeterias(name)')
+            .eq('status', 'cancelled')
+            .in('payment_status', ['paid', 'refund_initiated', 'refund_successful'])
+            .eq('student_email', email ?? '')
+            .order('denied_at', { ascending: false }),
+          8000,
+          'Refunds fetch timed out'
+        ) as any
 
-      if (data) {
-        setRefunds(data.map((o: any) => ({
-          ...o,
-          cafeteria_name: o.cafeterias?.name ?? 'Restaurant',
-        })))
+        if (data) {
+          setRefunds(data.map((o: any) => ({
+            ...o,
+            cafeteria_name: o.cafeterias?.name ?? 'Restaurant',
+          })))
+        }
+      } catch (error) {
+        console.error('Refunds fetch error:', error)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchRefunds()
   }, [])

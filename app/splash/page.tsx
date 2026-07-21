@@ -3,33 +3,35 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 export default function SplashPage() {
   const router = useRouter()
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      // Check authentication status and redirect accordingly
-      const { data: { session } } = await supabase.auth.getSession()
+      // Every visitor hits this screen first — a hung/failed check here must
+      // not strand them on the animation forever with no redirect.
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
 
-      if (!session) {
-        // Unauthenticated → show the landing page (with Log in / Sign up)
-        router.push('/?splash=true')
-      } else {
-        // Authenticated → check if vendor or student
-        const { data: cafeteria } = await supabase
-          .from('cafeterias')
-          .select('id')
-          .eq('vendor_email', session.user.email)
-          .single()
-
-        if (cafeteria) {
-          // Vendor → go to vendor dashboard
-          router.push('/vendor')
-        } else {
-          // Student → go to landing page (with splash=true to skip redirect loop)
+        if (!session) {
+          // Unauthenticated → show the landing page (with Log in / Sign up)
           router.push('/?splash=true')
+          return
         }
+
+        // Authenticated → check if vendor or student
+        const { data: cafeteria } = await withTimeout(
+          supabase.from('cafeterias').select('id').eq('vendor_email', session.user.email).single(),
+          8000,
+          'Cafeteria check timed out'
+        ) as any
+
+        router.push(cafeteria ? '/vendor' : '/?splash=true')
+      } catch (error) {
+        console.error('Splash redirect error:', error)
+        router.push('/?splash=true')
       }
     }, 3500)
 

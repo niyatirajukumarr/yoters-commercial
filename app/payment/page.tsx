@@ -10,6 +10,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { hoverScale, scaleIn } from '@/lib/motion'
 import Script from 'next/script'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 interface RazorpayWindow extends Window {
   Razorpay?: any
@@ -77,14 +78,14 @@ function PaymentPageContent() {
         // Pull the real contact details captured when the order was placed.
         // These are validated below — no placeholder phone/email is ever sent to
         // Razorpay, so refunds, receipts and SMS reach the actual customer.
-        const { data: order } = await supabase
-          .from('orders')
-          .select('student_name, student_email, student_phone')
-          .eq('id', orderId)
-          .single()
+        const { data: order } = await withTimeout(
+          supabase.from('orders').select('student_name, student_email, student_phone').eq('id', orderId).single(),
+          8000,
+          'Order fetch timed out'
+        ) as any
 
         // Fall back to the authenticated session email if the order has none.
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
         const email = order?.student_email || session?.user?.email || ''
         const phone = order?.student_phone || ''
         const contactName = order?.student_name || name || ''
@@ -98,17 +99,21 @@ function PaymentPageContent() {
         contactRef.current = { name: contactName, email, phone }
 
         // Create Razorpay order
-        const response = await fetch('/api/razorpay/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId,
-            amount: parseInt(amount),
-            studentEmail: email,
-            studentPhone: phone,
-            studentName: contactName,
+        const response = await withTimeout(
+          fetch('/api/razorpay/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              amount: parseInt(amount),
+              studentEmail: email,
+              studentPhone: phone,
+              studentName: contactName,
+            }),
           }),
-        })
+          15000,
+          'Payment order creation timed out'
+        )
 
         if (!response.ok) {
           const errorData = await response.json()

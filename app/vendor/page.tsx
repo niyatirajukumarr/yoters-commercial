@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, MenuItem, Order } from '@/lib/types'
 import { stagger, staggerItem, hoverLift, hoverScale, scaleIn } from '@/lib/motion'
+import { withTimeout } from '@/lib/utils/withTimeout'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
@@ -36,61 +37,83 @@ export default function VendorDashboard() {
   const prevOrderCount = useState({ count: 0 })
 
   const fetchOrders = useCallback(async (cafId: string, notify = false) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) return
-    const res = await fetch(`/api/vendor/orders?cafeteriaId=${cafId}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-    if (!res.ok) return
-    const json = await res.json()
-    const data = json.orders
-    if (data) {
-      if (notify && data.length > prevOrderCount[0].count) {
-        const newest = data[data.length - 1]
-        setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
-        // Play a beep sound
-        try {
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const osc = ctx.createOscillator()
-          osc.connect(ctx.destination)
-          osc.frequency.value = 880
-          osc.start()
-          osc.stop(ctx.currentTime + 0.3)
-        } catch {}
-        setTimeout(() => setNewOrderAlert(null), 5000)
+    try {
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+      if (!session?.access_token) return
+      const res = await withTimeout(
+        fetch(`/api/vendor/orders?cafeteriaId=${cafId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        8000,
+        'Orders fetch timed out'
+      )
+      if (!res.ok) return
+      const json = await res.json()
+      const data = json.orders
+      if (data) {
+        if (notify && data.length > prevOrderCount[0].count) {
+          const newest = data[data.length - 1]
+          setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
+          // Play a beep sound
+          try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+            const osc = ctx.createOscillator()
+            osc.connect(ctx.destination)
+            osc.frequency.value = 880
+            osc.start()
+            osc.stop(ctx.currentTime + 0.3)
+          } catch {}
+          setTimeout(() => setNewOrderAlert(null), 5000)
+        }
+        prevOrderCount[0].count = data.length
+        setOrders(data as Order[])
       }
-      prevOrderCount[0].count = data.length
-      setOrders(data as Order[])
+    } catch (error) {
+      console.error('Vendor orders fetch error:', error)
     }
   }, [])
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let poll: ReturnType<typeof setInterval> | null = null
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/vendor/login'); return }
-      const user = session.user
-      const { data: caf } = await supabase.from('cafeterias').select('*').eq('vendor_email', user.email).single()
-      if (!caf) { router.push('/vendor/login'); return }
-      setCafeteria(caf); setIsOpen(caf.is_open); fetchOrders(caf.id)
-      const { data: menu } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', caf.id).order('category')
-      if (menu) setMenuItems(menu)
-      setLoading(false)
-      const fetchMenuItems = async (cafId: string) => {
-        const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
-        if (data) setMenuItems(data)
-      }
-      channel = supabase.channel('vendor-realtime-' + caf.id)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchOrders(caf.id, true))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
-        .subscribe()
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+        if (!session) { router.push('/vendor/login'); return }
+        const user = session.user
+        const { data: caf } = await withTimeout(
+          supabase.from('cafeterias').select('*').eq('vendor_email', user.email).single(),
+          8000,
+          'Cafeteria fetch timed out'
+        ) as any
+        if (!caf) { router.push('/vendor/login'); return }
+        setCafeteria(caf); setIsOpen(caf.is_open); fetchOrders(caf.id)
+        const { data: menu } = await withTimeout(
+          supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', caf.id).order('category'),
+          8000,
+          'Menu fetch timed out'
+        ) as any
+        if (menu) setMenuItems(menu)
 
-      // Fallback poll every 5s
-      const poll = setInterval(() => fetchOrders(caf.id), 5_000)
-      return () => { channel?.unsubscribe(); clearInterval(poll) }
+        const fetchMenuItems = async (cafId: string) => {
+          const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
+          if (data) setMenuItems(data)
+        }
+        channel = supabase.channel('vendor-realtime-' + caf.id)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchOrders(caf.id, true))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
+          .subscribe()
+
+        // Fallback poll every 5s
+        poll = setInterval(() => fetchOrders(caf.id), 5_000)
+      } catch (error) {
+        console.error('Vendor dashboard init error:', error)
+      } finally {
+        setLoading(false)
+      }
     }
     init()
-    return () => { channel?.unsubscribe() }
+    return () => { channel?.unsubscribe(); if (poll) clearInterval(poll) }
   }, [router, fetchOrders])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
