@@ -85,7 +85,7 @@ export default function OrderTrackingPage() {
     <div style={{ minHeight: '100vh', background: '#0f0f13', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
       <div style={{ fontSize: 48 }}>❌</div>
       <p style={{ color: '#666', textAlign: 'center' }}>Order not found</p>
-      <motion.button {...hoverScale} onClick={() => window.location.href = '/mobile/tabs/orders'} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: '#E8334A', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Back to Orders</motion.button>
+      <motion.button {...hoverScale} onClick={() => window.location.href = '/mobile/orders'} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: '#E8334A', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Back to Orders</motion.button>
     </div>
   )
 
@@ -93,7 +93,7 @@ export default function OrderTrackingPage() {
     <div style={{ minHeight: '100vh', background: '#0f0f13', color: 'white', paddingBottom: 48 }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 0' }}>
-        <motion.button {...hoverScale} onClick={() => window.location.href = '/mobile/tabs/orders'}
+        <motion.button {...hoverScale} onClick={() => window.location.href = '/mobile/orders'}
           style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'white', padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           ← Back
         </motion.button>
