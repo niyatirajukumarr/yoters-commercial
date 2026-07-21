@@ -458,6 +458,20 @@ export default function RestaurantMap({ restaurant, showRoute, className }: Rest
           outline-offset: 2px;
           box-shadow: 0 0 0 2px #ffffff, 0 1px 4px rgba(0,0,0,0.18);
         }
+        .rm-directions-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          text-decoration: none;
+          font-weight: 600;
+          color: #1a73e8;
+        }
+        .rm-directions-link:hover { background: rgba(26,115,232,0.08); }
+        .rm-directions-link:focus-visible {
+          outline: 3px solid #1a73e8;
+          outline-offset: 2px;
+        }
         .rm-spinner {
           width: 22px;
           height: 22px;
@@ -608,8 +622,15 @@ export default function RestaurantMap({ restaurant, showRoute, className }: Rest
           {isApproximate && (
             <div role="status" className="rm-panel">📍 Approximate location</div>
           )}
-          {routeUnavailable && (
-            <div role="status" className="rm-panel">⚠️ Route unavailable</div>
+          {routeUnavailable && resolvedRestaurant && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${resolvedRestaurant.latitude},${resolvedRestaurant.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rm-panel rm-directions-link"
+            >
+              🧭 Get directions on Google Maps ↗
+            </a>
           )}
         </div>
       )}
