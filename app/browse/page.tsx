@@ -261,6 +261,9 @@ export default function StudentHome() {
                       </p>
                       {c.name === 'LETHAFI' && expandedMaps.has(c.id) && (
                         <div style={{ marginBottom: 24 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+                            How far is this from you?
+                          </div>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
                             <RestaurantMapLoader showRoute />
                           </div>
