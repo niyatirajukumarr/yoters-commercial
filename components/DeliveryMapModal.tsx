@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { hoverScale } from '@/lib/motion'
 
@@ -11,18 +11,17 @@ interface Props {
 
 export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
-
   const [address, setAddress] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
-  const [locating, setLocating] = useState(false)
-  const [enlarged, setEnlarged] = useState(false)
+  const [manualAddress, setManualAddress] = useState('')
+  const markerRef = useRef<any>(null)
+  const mapInstanceRef = useRef<any>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+  // Reverse geocode using Nominatim (free, no key)
+  const reverseGeocode = async (lat: number, lng: number) => {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -33,8 +32,9 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     }
-  }, [])
+  }
 
+  // Search using Nominatim
   const searchAddress = async (q: string) => {
     if (!q.trim()) { setSuggestions([]); return }
     setLoadingSearch(true)
@@ -43,18 +43,24 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
         { headers: { 'Accept-Language': 'en' } }
       )
-      setSuggestions(await res.json())
-    } catch { setSuggestions([]) }
+      const data = await res.json()
+      setSuggestions(data)
+    } catch {
+      setSuggestions([])
+    }
     setLoadingSearch(false)
   }
 
   useEffect(() => {
     if (!mapRef.current) return
+    let L: any
     let map: any
+    let marker: any
 
     const init = async () => {
-      const L = (await import('leaflet')).default
+      L = (await import('leaflet')).default
 
+      // Fix default marker icons (Next.js asset path issue)
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -63,17 +69,20 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
       })
 
       const defaultCenter: [number, number] = [17.385, 78.4867] // Hyderabad
+
       map = L.map(mapRef.current!, { zoomControl: true, attributionControl: false })
       mapInstanceRef.current = map
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(map)
 
-      const marker = L.marker(defaultCenter, { draggable: true }).addTo(map)
+      marker = L.marker(defaultCenter, { draggable: true }).addTo(map)
       markerRef.current = marker
       map.setView(defaultCenter, 15)
 
+      // Try to get user's location
       if (navigator.geolocation) {
-        setLocating(true)
         navigator.geolocation.getCurrentPosition(async pos => {
           const lat = pos.coords.latitude
           const lng = pos.coords.longitude
@@ -81,18 +90,20 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           map.setView([lat, lng], 16)
           const addr = await reverseGeocode(lat, lng)
           setAddress(addr)
-          setLocating(false)
-        }, () => setLocating(false), { timeout: 8000 })
+        }, () => {
+          // silently fail, use default
+        })
       }
 
+      // Click on map to move marker
       map.on('click', async (e: any) => {
         const { lat, lng } = e.latlng
         marker.setLatLng([lat, lng])
         const addr = await reverseGeocode(lat, lng)
         setAddress(addr)
-        setSuggestions([])
       })
 
+      // Drag marker
       marker.on('dragend', async () => {
         const { lat, lng } = marker.getLatLng()
         const addr = await reverseGeocode(lat, lng)
@@ -101,16 +112,11 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     }
 
     init()
-    return () => { if (map) map.remove() }
-  }, [reverseGeocode])
 
-  // Fix tile seams after enlarge
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
-    }, 50)
-    return () => clearTimeout(t)
-  }, [enlarged])
+    return () => {
+      if (map) map.remove()
+    }
+  }, [])
 
   const flyTo = (lat: number, lng: number, displayName: string) => {
     setSuggestions([])
@@ -128,26 +134,9 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     debounceRef.current = setTimeout(() => searchAddress(val), 500)
   }
 
-  const useMyLocation = () => {
-    if (!navigator.geolocation) return
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const lat = pos.coords.latitude
-      const lng = pos.coords.longitude
-      if (markerRef.current && mapInstanceRef.current) {
-        markerRef.current.setLatLng([lat, lng])
-        mapInstanceRef.current.setView([lat, lng], 17)
-      }
-      const addr = await reverseGeocode(lat, lng)
-      setAddress(addr)
-      setLocating(false)
-    }, () => setLocating(false), { timeout: 8000 })
-  }
-
-  const mapHeight = enlarged ? 480 : 280
-
   return (
     <>
+      {/* Leaflet CSS */}
       <style>{`@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');`}</style>
 
       <motion.div
@@ -166,7 +155,6 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           {/* Handle */}
           <div style={{ width: 40, height: 4, background: '#e0e0e0', borderRadius: 2, margin: '0 auto' }} />
 
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy)', margin: 0 }}>📍 Select Delivery Location</h2>
             <motion.button {...hoverScale} onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</motion.button>
@@ -178,7 +166,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
               type="text"
               value={searchQuery}
               onChange={e => handleSearchChange(e.target.value)}
-              placeholder="🔍 Type address — pin moves to it..."
+              placeholder="🔍 Search for your address..."
               style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
             />
             {loadingSearch && (
@@ -187,8 +175,11 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             {suggestions.length > 0 && (
               <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 10, zIndex: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto' }}>
                 {suggestions.map((s, i) => (
-                  <button key={i} onClick={() => flyTo(parseFloat(s.lat), parseFloat(s.lon), s.display_name)}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', fontSize: 13, cursor: 'pointer', color: 'var(--navy)', lineHeight: 1.4 }}>
+                  <button
+                    key={i}
+                    onClick={() => flyTo(parseFloat(s.lat), parseFloat(s.lon), s.display_name)}
+                    style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', fontSize: 13, cursor: 'pointer', color: 'var(--navy)', lineHeight: 1.4 }}
+                  >
                     📍 {s.display_name}
                   </button>
                 ))}
@@ -197,31 +188,10 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           </div>
 
           {/* Map */}
-          <div style={{ position: 'relative' }}>
-            <div
-              ref={mapRef}
-              style={{ width: '100%', height: mapHeight, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}
-            />
-
-            {/* Enlarge button */}
-            <button
-              onClick={() => setEnlarged(v => !v)}
-              style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000, background: 'white', border: 'none', borderRadius: 8, width: 34, height: 34, fontSize: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' }}
-            >
-              {enlarged ? '⊡' : '⤢'}
-            </button>
-
-            {/* My Location button */}
-            <button
-              onClick={useMyLocation}
-              style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 1000, background: 'white', border: 'none', borderRadius: 10, padding: '7px 13px', fontSize: 13, fontWeight: 600, color: '#2e9e6b', boxShadow: '0 2px 8px rgba(0,0,0,0.18)', cursor: 'pointer' }}
-            >
-              🎯 {locating ? 'Locating...' : 'My Location'}
-            </button>
-          </div>
+          <div ref={mapRef} style={{ width: '100%', height: 280, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }} />
 
           <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', margin: 0 }}>
-            Tap on map or drag the pin to adjust your location
+            Tap on map or drag the pin to set your location
           </p>
 
           {/* Detected address */}
@@ -231,13 +201,27 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             </div>
           )}
 
+          {/* Manual fallback */}
+          <details style={{ fontSize: 13 }}>
+            <summary style={{ cursor: 'pointer', color: 'var(--muted)', padding: '4px 0' }}>Type address manually instead</summary>
+            <textarea
+              placeholder="Enter your full delivery address..."
+              value={manualAddress}
+              onChange={e => setManualAddress(e.target.value)}
+              style={{ width: '100%', marginTop: 8, padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 70, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
+            />
+          </details>
+
           <motion.button
-            {...(address ? hoverScale : {})}
-            onClick={() => { if (address) onConfirm(address) }}
-            disabled={!address}
-            style={{ width: '100%', padding: 15, background: address ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: address ? 'pointer' : 'not-allowed' }}
+            {...((address || manualAddress) ? hoverScale : {})}
+            onClick={() => {
+              const final = manualAddress.trim() || address.trim()
+              if (final) onConfirm(final)
+            }}
+            disabled={!address.trim() && !manualAddress.trim()}
+            style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
           >
-            {address ? 'Confirm Delivery Location →' : 'Pin a location on the map'}
+            Confirm Delivery Location →
           </motion.button>
         </motion.div>
       </motion.div>
