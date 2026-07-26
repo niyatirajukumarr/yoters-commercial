@@ -23,12 +23,15 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  // Fetch ALL of today's orders (active + completed + cancelled/denied)
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
   const { data, error } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('cafeteria_id', cafId)
-    .eq('payment_status', 'paid')
-    .in('status', ['paid', 'approved', 'preparing', 'ready'])
+    .gte('created_at', todayStart.toISOString())
     .order('created_at', { ascending: false })
 
   if (error) {

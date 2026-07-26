@@ -310,10 +310,10 @@ export default function VendorDashboard() {
   const inp = { width: '100%', padding: '10px 14px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 14, color: 'var(--text)' }
   const lbl = { fontSize: 11, color: 'var(--text2)', marginBottom: 5, display: 'block' as const, fontWeight: 600 as const, textTransform: 'uppercase' as const, letterSpacing: 1 }
 
-  const pendingCount = orders.filter(o => o.status === 'pending').length
+  const pendingCount = orders.filter(o => o.status === 'paid').length
   const preparingCount = orders.filter(o => o.status === 'preparing').length
   const readyCount = orders.filter(o => o.status === 'ready').length
-  const todayRevenue = orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0)
+  const todayRevenue = orders.filter(o => o.status === 'collected').reduce((s, o) => s + o.total_amount, 0)
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
@@ -549,37 +549,79 @@ export default function VendorDashboard() {
           )}
 
           {/* TODAY'S SALES */}
-          {tab === 'today' && (
-            <div style={{ maxWidth: 600 }}>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Today's Sales</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-                <div style={{ background: 'var(--green-bg)', border: '2px solid var(--green)', borderRadius: 16, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--green)', marginBottom: 4 }}>{orders.filter(o => o.status === 'collected').length}</div>
-                  <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600, textTransform: 'uppercase' }}>Orders Completed</div>
+          {tab === 'today' && (() => {
+            const collected = orders.filter(o => o.status === 'collected')
+            const cancelled = orders.filter(o => o.status === 'cancelled')
+            const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
+            const revenue = collected.reduce((s, o) => s + o.total_amount, 0)
+            const lostRevenue = cancelled.reduce((s, o) => s + o.total_amount, 0)
+
+            const OrderRow = ({ order, borderColor }: { order: Order; borderColor: string }) => (
+              <div style={{ background: 'var(--surface2)', padding: '10px 14px', borderRadius: 10, borderLeft: `3px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>#{order.queue_position} · {order.student_name}</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 12 }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                 </div>
-                <div style={{ background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 16, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 4 }}>₹{orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0)}</div>
-                  <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase' }}>Revenue (Paid)</div>
-                </div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: borderColor }}>₹{order.total_amount}</div>
               </div>
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>Today's Completed Orders:</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflow: 'auto' }}>
-                  {orders.filter(o => o.status === 'collected').length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No completed orders yet</div>
-                  ) : (
-                    orders.filter(o => o.status === 'collected').map(order => (
-                      <div key={order.id} style={{ background: 'var(--surface2)', padding: 10, borderRadius: 8, fontSize: 12 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 2 }}>{order.student_name}</div>
-                        <div style={{ color: 'var(--muted)', marginBottom: 2 }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
-                        <div style={{ fontWeight: 700, color: 'var(--green)' }}>₹{order.total_amount}</div>
-                      </div>
-                    ))
-                  )}
+            )
+
+            return (
+              <div style={{ maxWidth: 600 }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Today's Summary</div>
+
+                {/* Stats row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
+                  <div style={{ background: 'var(--green-bg)', border: '2px solid var(--green)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--green)' }}>{collected.length}</div>
+                    <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Completed</div>
+                  </div>
+                  <div style={{ background: 'rgba(212,130,26,0.08)', border: '2px solid #d4821a', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#d4821a' }}>{active.length}</div>
+                    <div style={{ fontSize: 11, color: '#d4821a', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Active</div>
+                  </div>
+                  <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--red)' }}>{cancelled.length}</div>
+                    <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Cancelled</div>
+                  </div>
                 </div>
+
+                {/* Revenue */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+                  <div style={{ background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>₹{revenue}</div>
+                    <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Revenue Earned</div>
+                  </div>
+                  <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--red)' }}>₹{lostRevenue}</div>
+                    <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Lost (Cancelled)</div>
+                  </div>
+                </div>
+
+                {/* Completed orders */}
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders ({collected.length})</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
+                    {collected.length === 0
+                      ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
+                      : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
+                    }
+                  </div>
+                </div>
+
+                {/* Cancelled/denied orders */}
+                {cancelled.length > 0 && (
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders ({cancelled.length})</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
+                      {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* MENU */}
           {tab === 'menu' && (
