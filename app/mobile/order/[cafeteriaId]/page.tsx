@@ -10,7 +10,11 @@ import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
-import { ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal } from 'lucide-react'
+import {
+  ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal,
+  Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
+  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
+} from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
@@ -980,35 +984,34 @@ export default function CafeteriaPage() {
             {!menuSearch && (
               <div className="cat-pills">
                 {categories.map(cat => {
-                  const emoji = (() => {
+                  // Black-and-white line icons instead of colored emoji, to match
+                  // a sketched/outline look rather than a full-color glyph set.
+                  const CategoryIcon = (() => {
                     const c = cat.toLowerCase()
-                    if (c.includes('juice') || c.includes('fresh')) return '🍹'
-                    if (c.includes('mojito')) return '🍃'
-                    if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return '☕'
-                    if (c.includes('milkshake') || c.includes('thick shake') || c.includes('ice cream shake')) return '🥛'
-                    if (c.includes('shake') || c.includes('special shake')) return '🧋'
-                    if (c.includes('soda')) return '🥤'
-                    if (c.includes('lassi')) return '🪣'
-                    if (c.includes('burger')) return '🍔'
-                    if (c.includes('roll') || c.includes('wrap')) return '🌯'
-                    if (c.includes('sandwich') || c.includes('club')) return '🥪'
-                    if (c.includes('fries') || c.includes('loaded')) return '🍟'
-                    if (c.includes('egg')) return '🍳'
-                    if (c.includes('strip')) return '🍗'
-                    if (c.includes('bun')) return '🍞'
-                    if (c.includes('maggi')) return '🍜'
-                    if (c.includes('delight')) return '✨'
-                    if (c.includes('quick') || c.includes('snack') || c.includes('bite')) return '⚡'
-                    if (c.includes('biryani')) return '🍚'
-                    if (c.includes('combo')) return '🎁'
-                    if (c.includes('momos')) return '🥟'
-                    if (c.includes('drink')) return '🧃'
-                    return '🍽️'
+                    if (c.includes('juice') || c.includes('fresh')) return Citrus
+                    if (c.includes('mojito')) return Martini
+                    if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return Coffee
+                    if (c.includes('milkshake') || c.includes('thick shake') || c.includes('ice cream shake') || c.includes('lassi')) return Milk
+                    if (c.includes('shake')) return IceCreamCone
+                    if (c.includes('soda') || c.includes('drink')) return CupSoda
+                    if (c.includes('burger')) return Hamburger
+                    if (c.includes('roll') || c.includes('wrap') || c.includes('sandwich') || c.includes('club')) return Sandwich
+                    if (c.includes('egg')) return Egg
+                    if (c.includes('strip')) return Drumstick
+                    if (c.includes('bun')) return Croissant
+                    if (c.includes('maggi')) return Soup
+                    if (c.includes('delight')) return Sparkles
+                    if (c.includes('quick') || c.includes('snack') || c.includes('bite')) return Zap
+                    if (c.includes('biryani') || c.includes('momos')) return UtensilsCrossed
+                    if (c.includes('combo')) return Gift
+                    return Utensils
                   })()
                   const isActive = selectedCategory === cat
                   return (
                     <button key={cat} className="cat-pill" onClick={() => setSelectedCategory(cat)} style={{ background: 'none', border: 'none', padding: 0 }}>
-                      <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>{emoji}</div>
+                      <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
+                        <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
+                      </div>
                       <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
                     </button>
                   )
