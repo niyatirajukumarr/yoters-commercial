@@ -19,8 +19,6 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
-  const [loadingManual, setLoadingManual] = useState(false)
-  const [manualAddress, setManualAddress] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const reverseGeocode = async (lat: number, lng: number) => {
@@ -190,45 +188,12 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           </div>
         )}
 
-        <details style={{ fontSize: 13 }}>
-          <summary style={{ cursor: 'pointer', color: 'var(--muted)', padding: '4px 0' }}>Type address manually instead</summary>
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <textarea
-              placeholder="Enter your full delivery address..."
-              value={manualAddress}
-              onChange={e => setManualAddress(e.target.value)}
-              style={{ width: '100%', padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 70, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
-            />
-            <button
-              onClick={async () => {
-                if (!manualAddress.trim()) return
-                setLoadingManual(true)
-                try {
-                  const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=1`,
-                    { headers: { 'Accept-Language': 'en' } }
-                  )
-                  const data = await res.json()
-                  if (data.length > 0) {
-                    const { lat, lon, display_name } = data[0]
-                    flyTo(parseFloat(lat), parseFloat(lon), display_name, false)
-                    setManualAddress(display_name)
-                  }
-                } catch {}
-                setLoadingManual(false)
-              }}
-              style={{ padding: '11px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-            >
-              {loadingManual ? 'Searching...' : '🔍 Search & move pin to this address'}
-            </button>
-          </div>
-        </details>
 
         <motion.button
-          {...((address || manualAddress) ? hoverScale : {})}
-          onClick={() => { const final = manualAddress.trim() || address.trim(); if (final) onConfirm(final) }}
-          disabled={!address.trim() && !manualAddress.trim()}
-          style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
+          {...(address ? hoverScale : {})}
+          onClick={() => { if (address.trim()) onConfirm(address.trim()) }}
+          disabled={!address.trim()}
+          style={{ width: '100%', padding: 15, background: address ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: address ? 'pointer' : 'not-allowed' }}
         >
           Confirm Delivery Location →
         </motion.button>
