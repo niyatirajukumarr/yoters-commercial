@@ -22,24 +22,31 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [manualAddress, setManualAddress] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const reverseGeocode = async (lat: number, lng: number) => {
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    // Try Nominatim first
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&accept-language=en`
+      )
+      const d = await res.json()
+      if (d?.display_name) return d.display_name as string
+    } catch {}
+
+    // Fallback: bigdatacloud
     try {
       const res = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       )
       const d = await res.json()
-      // Build address from most specific to least specific
       const parts = [
-        d.locality || d.localityInfo?.administrative?.[4]?.name || d.localityInfo?.administrative?.[3]?.name,
-        d.city || d.localityInfo?.administrative?.[2]?.name,
+        d.locality || d.city,
         d.principalSubdivision,
         d.countryName,
       ].filter(Boolean)
       if (parts.length > 0) return parts.join(', ')
-      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
-    } catch {
-      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
-    }
+    } catch {}
+
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   }
 
   const searchAddress = async (q: string) => {

@@ -485,6 +485,13 @@ export default function VendorDashboard() {
                           ))}
                         </div>
 
+                        {/* Delivery address */}
+                        {order.order_type === 'delivery' && order.delivery_address && (
+                          <div style={{ fontSize: 12, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', marginBottom: 10 }}>
+                            🛵 Deliver to: {order.delivery_address}
+                          </div>
+                        )}
+
                         {/* Prep time if set */}
                         {order.prep_time_minutes && order.status !== 'paid' && (
                           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
