@@ -365,8 +365,16 @@ export default function ProfilePage() {
                               e.stopPropagation()
                               if (!confirm('Delete this order?')) return
                               setDeleting(order.id)
-                              const { error } = await supabase.from('orders').delete().eq('id', order.id)
-                              if (!error) setOrders(orders.filter(o => o.id !== order.id))
+                              // .select() so we get back the deleted row(s) — an RLS policy
+                              // gap silently deletes 0 rows with no error, so trusting
+                              // `!error` alone would show a false "deleted" state that
+                              // reappears on next fetch.
+                              const { data, error } = await supabase.from('orders').delete().eq('id', order.id).select()
+                              if (!error && data && data.length > 0) {
+                                setOrders(orders.filter(o => o.id !== order.id))
+                              } else {
+                                alert('Could not delete this order. Please try again.')
+                              }
                               setDeleting(null)
                             }}
                             style={{ marginTop: 12, width: '100%', padding: '12px', background: deleting === order.id ? '#999' : '#dc2626', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
