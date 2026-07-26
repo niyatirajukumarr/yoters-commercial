@@ -179,7 +179,7 @@ export default function ProfilePage() {
           <ArrowLeft size={22} color="#333" />
         </motion.button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <motion.button {...hoverScale} style={{ background: 'none', border: '1.5px solid #E8334A', borderRadius: 20, padding: '4px 14px', color: '#E8334A', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          <motion.button {...hoverScale} onClick={() => router.push('/profile/help')} style={{ background: 'none', border: '1.5px solid #E8334A', borderRadius: 20, padding: '4px 14px', color: '#E8334A', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
             Help
           </motion.button>
           <div style={{ position: 'relative' }} ref={menuRef}>
