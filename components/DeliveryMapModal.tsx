@@ -26,10 +26,13 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'YotersApp/1.0' } }
       )
       const data = await res.json()
-      return (data.display_name as string) ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+      if (data && typeof data.display_name === 'string' && data.display_name) {
+        return data.display_name
+      }
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     }
