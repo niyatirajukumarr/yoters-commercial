@@ -485,10 +485,29 @@ export default function VendorDashboard() {
                           ))}
                         </div>
 
-                        {/* Delivery address */}
+                        {/* Delivery address + contact */}
                         {order.order_type === 'delivery' && order.delivery_address && (
-                          <div style={{ fontSize: 12, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', marginBottom: 10 }}>
-                            🛵 Deliver to: {order.delivery_address}
+                          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>🛵 DELIVERY ORDER</div>
+                            <div style={{ fontSize: 13, color: '#78350f', marginBottom: 8, lineHeight: 1.5 }}>📍 {order.delivery_address}</div>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#1a73e8', background: '#e8f0fe', padding: '5px 10px', borderRadius: 6, textDecoration: 'none', marginBottom: 8 }}
+                            >
+                              🗺️ Open in Google Maps ↗
+                            </a>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <a href={`tel:${order.student_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#059669', background: '#d1fae5', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                📞 Call {order.student_name}
+                              </a>
+                              {order.student_email && (
+                                <a href={`mailto:${order.student_email}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#6d28d9', background: '#ede9fe', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                  ✉️ Email
+                                </a>
+                              )}
+                            </div>
                           </div>
                         )}
 
