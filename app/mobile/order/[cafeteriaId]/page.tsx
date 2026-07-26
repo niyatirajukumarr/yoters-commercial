@@ -296,6 +296,7 @@ export default function CafeteriaPage() {
   const [popularity, setPopularity] = useState<{ byName: Record<string, number>; byId: Record<string, number>; max: number }>({ byName: {}, byId: {}, max: 0 })
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [showOrderTypeModal, setShowOrderTypeModal] = useState(false)
   const [showMapPicker, setShowMapPicker] = useState(false)
   const [step, setStep] = useState<Step>((searchParams.get('step') as Step) || 'menu')
@@ -572,7 +573,14 @@ export default function CafeteriaPage() {
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
         .from('orders')
-        .insert([{ cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email, items: cartItem, total_amount: total, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes, order_type: orderType ?? 'takeaway', delivery_address: orderType === 'delivery' ? deliveryAddress : null }])
+        .insert([{
+          cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email,
+          items: cartItem, total_amount: total, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes,
+          order_type: orderType ?? 'takeaway',
+          delivery_address: orderType === 'delivery' ? deliveryAddress : null,
+          delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
+          delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
+        }])
         .select()
         .single()
 
@@ -1513,8 +1521,9 @@ export default function CafeteriaPage() {
 
       {showMapPicker && (
         <DeliveryMapModal
-          onConfirm={(addr) => {
+          onConfirm={(addr, coords) => {
             setDeliveryAddress(addr)
+            setDeliveryCoords(coords ?? null)
             setShowMapPicker(false)
             setStep('details')
           }}

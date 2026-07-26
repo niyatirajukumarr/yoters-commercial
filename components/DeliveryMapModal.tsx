@@ -6,7 +6,9 @@ import { motion } from 'framer-motion'
 import { hoverScale } from '@/lib/motion'
 
 interface Props {
-  onConfirm: (address: string) => void
+  // coords is omitted when the final address came from manual text entry —
+  // there's no map point behind it to report.
+  onConfirm: (address: string, coords?: { lat: number; lng: number }) => void
   onClose: () => void
 }
 
@@ -16,6 +18,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const markerRef = useRef<any>(null)
 
   const [address, setAddress] = useState('')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
@@ -81,7 +84,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           marker.setLatLng([lat, lng])
           map.setView([lat, lng], 16)
           const addr = await reverseGeocode(lat, lng)
-          if (!cancelled) setAddress(addr)
+          if (!cancelled) { setAddress(addr); setCoords({ lat, lng }) }
         }, () => {})
       }
 
@@ -90,6 +93,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         marker.setLatLng([lat, lng])
         const addr = await reverseGeocode(lat, lng)
         setAddress(addr)
+        setCoords({ lat, lng })
         setSuggestions([])
       })
 
@@ -97,6 +101,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         const { lat, lng } = marker.getLatLng()
         const addr = await reverseGeocode(lat, lng)
         setAddress(addr)
+        setCoords({ lat, lng })
       })
     }
 
@@ -111,6 +116,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     setSuggestions([])
     if (updateSearchBar) setSearchQuery(displayName)
     setAddress(displayName)
+    setCoords({ lat, lng })
     if (mapInstanceRef.current && markerRef.current) {
       mapInstanceRef.current.setView([lat, lng], 17)
       markerRef.current.setLatLng([lat, lng])
@@ -161,6 +167,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
                 const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
                 const d = await res.json()
                 if (d?.address) setAddress(d.address)
+                setCoords({ lat, lng })
                 setLocating(false)
               }, () => setLocating(false), { timeout: 8000 })
             }}
@@ -208,7 +215,11 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
 
         <motion.button
           {...((address || manualAddress) ? hoverScale : {})}
-          onClick={() => { const final = manualAddress.trim() || address.trim(); if (final) onConfirm(final) }}
+          onClick={() => {
+            const usingManual = !!manualAddress.trim()
+            const final = manualAddress.trim() || address.trim()
+            if (final) onConfirm(final, usingManual ? undefined : (coords ?? undefined))
+          }}
           disabled={!address.trim() && !manualAddress.trim()}
           style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
         >

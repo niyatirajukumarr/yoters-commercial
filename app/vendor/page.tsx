@@ -491,7 +491,11 @@ export default function VendorDashboard() {
                             <div style={{ fontSize: 12, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>🛵 DELIVERY ORDER</div>
                             <div style={{ fontSize: 13, color: '#78350f', marginBottom: 8, lineHeight: 1.5 }}>📍 {order.delivery_address}</div>
                             <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`}
+                              href={
+                                order.delivery_latitude != null && order.delivery_longitude != null
+                                  ? `https://www.google.com/maps/search/?api=1&query=${order.delivery_latitude},${order.delivery_longitude}`
+                                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.delivery_address)}`
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#1a73e8', background: '#e8f0fe', padding: '5px 10px', borderRadius: 6, textDecoration: 'none', marginBottom: 8 }}
