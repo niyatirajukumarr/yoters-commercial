@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 import { CONSENT_VERSION } from '@/lib/config'
+import PenguinFace from '@/components/PenguinFace'
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
@@ -249,6 +250,7 @@ export default function AuthPage() {
 
           {/* Hero */}
           <div className="auth-hero" style={{ textAlign: 'center', marginBottom: 32, padding: '0 8px' }}>
+            <PenguinFace size={64} />
             <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 30, fontWeight: 800, color: 'var(--navy)', margin: '0 0 8px' }}>
               Skip the queue.
             </h1>
