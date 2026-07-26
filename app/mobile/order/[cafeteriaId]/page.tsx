@@ -1504,7 +1504,7 @@ export default function CafeteriaPage() {
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', emoji: '🥡' },
                 { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', emoji: '🛵' },
               ].map(opt => (
-                <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { setOrderType(opt.key as 'dine_in' | 'takeaway' | 'delivery'); setShowOrderTypeModal(false); setStep('details') }}
+                <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'; setOrderType(t); if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') } }}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left' }}>
                   <span style={{ fontSize: 32 }}>{opt.emoji}</span>
                   <div>
@@ -1551,8 +1551,13 @@ export default function CafeteriaPage() {
           onConfirm={(addr) => {
             setDeliveryAddress(addr)
             setShowMapPicker(false)
+            setStep('details')
           }}
-          onClose={() => setShowMapPicker(false)}
+          onClose={() => {
+            setShowMapPicker(false)
+            // if closing without address, reopen order type modal so user can change
+            if (!deliveryAddress) setShowOrderTypeModal(true)
+          }}
         />
       )}
 
