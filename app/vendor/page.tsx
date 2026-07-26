@@ -514,6 +514,16 @@ export default function VendorDashboard() {
                             </div>
                           </div>
                         )}
+                        {order.order_type === 'takeaway' && (
+                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
+                            🥡 TAKEAWAY ORDER
+                          </div>
+                        )}
+                        {order.order_type === 'dine_in' && (
+                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
+                            🍽️ DINE-IN ORDER
+                          </div>
+                        )}
 
                         {/* Prep time if set */}
                         {order.prep_time_minutes && order.status !== 'paid' && (
