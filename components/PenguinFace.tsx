@@ -11,7 +11,7 @@ export default function PenguinFace({ size = 64 }: { size?: number }) {
   const rightPupilRef = useRef<SVGCircleElement>(null)
 
   useEffect(() => {
-    function handleMove(e: MouseEvent) {
+    function trackTo(clientX: number, clientY: number) {
       const container = containerRef.current
       const head = headRef.current
       const leftPupil = leftPupilRef.current
@@ -19,8 +19,8 @@ export default function PenguinFace({ size = 64 }: { size?: number }) {
       if (!container || !head || !leftPupil || !rightPupil) return
 
       const rect = container.getBoundingClientRect()
-      const dx = e.clientX - (rect.left + rect.width / 2)
-      const dy = e.clientY - (rect.top + rect.height / 2)
+      const dx = clientX - (rect.left + rect.width / 2)
+      const dy = clientY - (rect.top + rect.height / 2)
 
       const rotate = Math.max(-10, Math.min(10, dx / 40))
       const lift = Math.max(-3, Math.min(3, dy / 80))
@@ -35,8 +35,23 @@ export default function PenguinFace({ size = 64 }: { size?: number }) {
       rightPupil.setAttribute('cy', String(25 + py))
     }
 
-    window.addEventListener('mousemove', handleMove)
-    return () => window.removeEventListener('mousemove', handleMove)
+    function handleMouseMove(e: MouseEvent) {
+      trackTo(e.clientX, e.clientY)
+    }
+    // Touch devices never fire mousemove — track the active finger instead.
+    function handleTouchMove(e: TouchEvent) {
+      const touch = e.touches[0]
+      if (touch) trackTo(touch.clientX, touch.clientY)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('touchstart', handleTouchMove, { passive: true })
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('touchstart', handleTouchMove)
+      window.removeEventListener('touchmove', handleTouchMove)
+    }
   }, [])
 
   return (
