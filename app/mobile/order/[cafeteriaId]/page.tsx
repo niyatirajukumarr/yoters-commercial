@@ -18,6 +18,7 @@ import {
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
+import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 
 interface MenuItem {
   id: string
@@ -51,12 +52,6 @@ interface Order {
 
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 type Tab = 'home' | 'orders' | 'profile'
-
-// Real cafeteria logos, keyed by name — falls back to the image_emoji chip
-// when a cafeteria has no uploaded logo.
-const CAFETERIA_LOGOS: { [key: string]: string } = {
-  'LETHAFI': '/logos/lethafi.png',
-}
 
 const CATEGORY_EMOJI: { [key: string]: string } = {
   'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
