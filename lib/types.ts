@@ -61,6 +61,8 @@ export interface Order {
   ready_at?: string
   collected_at?: string
   prep_time_minutes?: number
+  order_type?: 'dine_in' | 'takeaway' | 'delivery'
+  delivery_address?: string | null
 }
 
 export type WaitLevel = 'low' | 'mid' | 'high'
