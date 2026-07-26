@@ -191,12 +191,36 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
 
         <details style={{ fontSize: 13 }}>
           <summary style={{ cursor: 'pointer', color: 'var(--muted)', padding: '4px 0' }}>Type address manually instead</summary>
-          <textarea
-            placeholder="Enter your full delivery address..."
-            value={manualAddress}
-            onChange={e => setManualAddress(e.target.value)}
-            style={{ width: '100%', marginTop: 8, padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 70, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
-          />
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <textarea
+              placeholder="Enter your full delivery address..."
+              value={manualAddress}
+              onChange={e => setManualAddress(e.target.value)}
+              style={{ width: '100%', padding: '12px 14px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, minHeight: 70, resize: 'none', boxSizing: 'border-box', outline: 'none' }}
+            />
+            <button
+              onClick={async () => {
+                if (!manualAddress.trim()) return
+                setLoadingSearch(true)
+                try {
+                  const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=1`,
+                    { headers: { 'Accept-Language': 'en' } }
+                  )
+                  const data = await res.json()
+                  if (data.length > 0) {
+                    const { lat, lon, display_name } = data[0]
+                    flyTo(parseFloat(lat), parseFloat(lon), display_name)
+                    setManualAddress(display_name)
+                  }
+                } catch {}
+                setLoadingSearch(false)
+              }}
+              style={{ padding: '11px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {loadingSearch ? 'Searching...' : '🔍 Search & move pin to this address'}
+            </button>
+          </div>
         </details>
 
         <motion.button
