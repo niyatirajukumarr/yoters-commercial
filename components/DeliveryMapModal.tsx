@@ -19,6 +19,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
+  const [loadingManual, setLoadingManual] = useState(false)
   const [manualAddress, setManualAddress] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -110,9 +111,9 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     }
   }, [])
 
-  const flyTo = (lat: number, lng: number, displayName: string) => {
+  const flyTo = (lat: number, lng: number, displayName: string, updateSearchBar = true) => {
     setSuggestions([])
-    setSearchQuery(displayName)
+    if (updateSearchBar) setSearchQuery(displayName)
     setAddress(displayName)
     if (mapInstanceRef.current && markerRef.current) {
       mapInstanceRef.current.setView([lat, lng], 17)
@@ -201,7 +202,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             <button
               onClick={async () => {
                 if (!manualAddress.trim()) return
-                setLoadingSearch(true)
+                setLoadingManual(true)
                 try {
                   const res = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=1`,
@@ -210,15 +211,15 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
                   const data = await res.json()
                   if (data.length > 0) {
                     const { lat, lon, display_name } = data[0]
-                    flyTo(parseFloat(lat), parseFloat(lon), display_name)
+                    flyTo(parseFloat(lat), parseFloat(lon), display_name, false)
                     setManualAddress(display_name)
                   }
                 } catch {}
-                setLoadingSearch(false)
+                setLoadingManual(false)
               }}
               style={{ padding: '11px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >
-              {loadingSearch ? 'Searching...' : '🔍 Search & move pin to this address'}
+              {loadingManual ? 'Searching...' : '🔍 Search & move pin to this address'}
             </button>
           </div>
         </details>
