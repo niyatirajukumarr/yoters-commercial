@@ -20,6 +20,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
   const [manualAddress, setManualAddress] = useState('')
+  const [locating, setLocating] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
@@ -145,6 +146,34 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             ref={containerRef}
             style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}
           />
+          {/* Pin current location button */}
+          <button
+            onClick={async () => {
+              if (!navigator.geolocation) return
+              setLocating(true)
+              navigator.geolocation.getCurrentPosition(async pos => {
+                const lat = pos.coords.latitude
+                const lng = pos.coords.longitude
+                if (markerRef.current && mapInstanceRef.current) {
+                  markerRef.current.setLatLng([lat, lng])
+                  mapInstanceRef.current.setView([lat, lng], 17)
+                }
+                const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+                const d = await res.json()
+                if (d?.address) setAddress(d.address)
+                setLocating(false)
+              }, () => setLocating(false), { timeout: 8000 })
+            }}
+            style={{
+              position: 'absolute', bottom: 12, left: 12, zIndex: 1000,
+              background: 'white', border: 'none', borderRadius: 10,
+              padding: '8px 14px', fontSize: 13, fontWeight: 700,
+              color: 'var(--accent)', boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            🎯 {locating ? 'Locating...' : 'Pin My Location'}
+          </button>
         </div>
 
         <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', margin: 0 }}>
