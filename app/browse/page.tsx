@@ -121,6 +121,23 @@ export default function StudentHome() {
         @import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes tilt { 0% { transform: perspective(1000px) rotateX(0) rotateY(0); } 100% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg); } }
+        @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+
+        .browse-hero-wrap { position: relative; padding: 24px 0 12px; }
+        .floating-food-img { position: absolute; border-radius: 50%; object-fit: cover; border: 4px solid var(--surface); box-shadow: 0 14px 30px rgba(0,0,0,0.14); animation: floatY 4.5s ease-in-out infinite; pointer-events: none; }
+        .ff-1 { width: 110px; height: 110px; top: -14px; left: 0; animation-delay: 0s; }
+        .ff-2 { width: 84px; height: 84px; top: 6px; right: 30px; animation-delay: 0.7s; }
+        .ff-3 { width: 72px; height: 72px; bottom: 4px; left: 70px; animation-delay: 1.4s; }
+        .ff-4 { width: 96px; height: 96px; bottom: -20px; right: 90px; animation-delay: 0.35s; }
+        @media (max-width: 900px) {
+          .ff-1 { width: 80px; height: 80px; left: -6px; }
+          .ff-2 { width: 60px; height: 60px; right: 10px; }
+          .ff-3 { width: 52px; height: 52px; left: 20px; }
+          .ff-4 { width: 68px; height: 68px; right: 30px; }
+        }
+        @media (max-width: 600px) {
+          .floating-food-img { display: none; }
+        }
 
         .browse-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); z-index:100; }
         .browse-hero { padding:32px 20px 20px; }
@@ -193,19 +210,35 @@ export default function StudentHome() {
         </Link>
       </nav>
 
-      {/* HERO */}
-      <div className="browse-hero" style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-light)', border: '1px solid var(--accent-light2)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '6px 14px', borderRadius: 20, marginBottom: 16 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-          Live Queue Visibility
+      {/* HERO — a central text block with gently floating food photos around it,
+          modeled on the "Floating Food Hero" pattern (21st.dev/@ravikatiyar162). */}
+      <div className="browse-hero-wrap" style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <img className="floating-food-img ff-1" alt="" aria-hidden="true"
+          src="https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=300&h=300&fit=crop"
+          onError={e => (e.currentTarget.style.display = 'none')} />
+        <img className="floating-food-img ff-2" alt="" aria-hidden="true"
+          src="https://images.unsplash.com/photo-1622597468739-9b66fac1c1a2?w=300&h=300&fit=crop"
+          onError={e => (e.currentTarget.style.display = 'none')} />
+        <img className="floating-food-img ff-3" alt="" aria-hidden="true"
+          src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=300&fit=crop"
+          onError={e => (e.currentTarget.style.display = 'none')} />
+        <img className="floating-food-img ff-4" alt="" aria-hidden="true"
+          src="https://images.unsplash.com/photo-1577805947697-89e18249d767?w=300&h=300&fit=crop"
+          onError={e => (e.currentTarget.style.display = 'none')} />
+
+        <div className="browse-hero" style={{ textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-light)', border: '1px solid var(--accent-light2)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '6px 14px', borderRadius: 20, marginBottom: 16 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+            Live Queue Visibility
+          </div>
+          <h1 className="h1-browse" style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(28px,5vw,58px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: -1, marginBottom: 10, color: 'var(--navy)' }}>
+            Pre-book your meal.<br />
+            <span style={{ color: 'var(--accent)' }}>Walk in. Pick up. Leave.</span>
+          </h1>
+          <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 460, lineHeight: 1.65, margin: '0 auto' }}>
+            Browse local restaurants, pre-order your food, and skip the queue entirely.
+          </p>
         </div>
-        <h1 className="h1-browse" style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(28px,5vw,58px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: -1, marginBottom: 10, color: 'var(--navy)' }}>
-          Pre-book your meal.<br />
-          <span style={{ color: 'var(--accent)' }}>Walk in. Pick up. Leave.</span>
-        </h1>
-        <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 460, lineHeight: 1.65 }}>
-          Browse local restaurants, pre-order your food, and skip the queue entirely.
-        </p>
       </div>
 
       {/* LIST */}
