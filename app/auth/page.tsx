@@ -3,14 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 import { CONSENT_VERSION } from '@/lib/config'
-
-// 3D penguin (Three.js) — client only, lazy-loaded so it never blocks the form
-const PenguinScene = dynamic(() => import('@/components/PenguinScene'), { ssr: false })
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
@@ -180,14 +176,6 @@ export default function AuthPage() {
         .auth-bg-blob {
           position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: 0.18;
         }
-        /* Sits in the empty margin left of the card, reaching toward it — was
-           left:-30/top:-150, which pushed most of the model off the top of the
-           viewport, leaving only its back/feet visible under the nav bar. */
-        .auth-penguin-pos { position: absolute; left: -150px; top: 10px; z-index: 6; pointer-events: none; }
-        .phew-sweat { position: absolute; left: 92px; top: 78px; width: 9px; height: 9px; border-radius: 50% 50% 50% 0; background: #5cc3ff; transform: rotate(45deg); opacity: 0; animation: sweatFly 4s ease-in-out both; }
-        .phew-text { position: absolute; left: 116px; top: 64px; font-size: 15px; font-weight: 600; font-style: italic; color: #6b7180; opacity: 0; animation: phewShow 4s ease-in-out both; }
-        @keyframes sweatFly { 0%,72% { opacity: 0; transform: translate(0,0) rotate(45deg) scale(0.5); } 76% { opacity: 1; transform: translate(0,0) rotate(45deg) scale(1); } 88% { opacity: 1; transform: translate(10px,-16px) rotate(45deg) scale(0.9); } 96% { opacity: 0; transform: translate(18px,-28px) rotate(45deg) scale(0.6); } 100% { opacity: 0; } }
-        @keyframes phewShow { 0%,80% { opacity: 0; transform: translate(0,0); } 87% { opacity: 1; transform: translate(5px,-4px); } 100% { opacity: 0; transform: translate(15px,-12px); } }
         .tab-pill {
           flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 600;
           font-family: var(--font-body); cursor: pointer; transition: all 0.2s; border-radius: 9px;
@@ -224,9 +212,6 @@ export default function AuthPage() {
         @media (max-width: 480px) {
           .auth-inner { padding: 24px 20px !important; }
           .auth-hero { padding: 0 !important; margin-bottom: 28px !important; }
-          /* No side margin to sit in on mobile — scale down and tuck it above
-             the heading instead of beside the card. */
-          .auth-penguin-pos { left: 55px; top: -28px; transform: scale(0.45); transform-origin: top left; }
         }
       `}</style>
 
@@ -252,28 +237,11 @@ export default function AuthPage() {
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: 420 }}>
-          {/* 3D penguin stays put and (whole-body) leans as it slide-pulls the card to center */}
-          <div className="auth-penguin-pos" aria-hidden="true">
-            <PenguinScene width={170} height={200} />
-            {/* 2D sweat + "phew" emote (static mesh can't wipe, so this sells the effort) */}
-            <span className="phew-sweat" />
-            <span className="phew-text">phew~</span>
-          </div>
-
-          {/*
-            Keyframes are hand-timed against PenguinScene's own animation clock
-            (drop 0-1s, reach 1.0-1.35s, lean-back/pull 1.35-2.45s, return upright
-            2.45-2.95s). The card sits still while the penguin reaches for it,
-            gets a tiny "grab" jerk right as the pull starts, gets dragged across
-            with a swinging rotation, then overshoots slightly and settles as the
-            penguin straightens back up — so the two animations read as one
-            connected pull instead of two things happening to coincide.
-          */}
           <motion.div
             style={{ width: '100%' }}
-            initial={{ x: '74%', rotate: 6, scale: 1 }}
-            animate={{ x: ['74%', '69%', '2%', '-1%', '0%'], rotate: [6, 7, -1.5, 0.5, 0], scale: [1, 0.985, 1, 1, 1] }}
-            transition={{ duration: 1.6, delay: 1.35, times: [0, 0.03, 0.69, 0.84, 1], ease: [0.34, 1.56, 0.64, 1] }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
 
           {/* Hero */}
