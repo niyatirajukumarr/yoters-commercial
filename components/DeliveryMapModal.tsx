@@ -158,6 +158,11 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         )}
 
 
+        {/* Disclaimer */}
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 13px', fontSize: 12, color: '#92400e' }}>
+          ⚠️ For a more precise location, enter a nearby landmark or address manually below.
+        </div>
+
         {/* OR manual address */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -168,7 +173,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           type="text"
           value={manualAddress}
           onChange={e => setManualAddress(e.target.value)}
-          placeholder="Enter your address manually..."
+          placeholder="Enter nearby landmark or full address..."
           style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
         />
 
