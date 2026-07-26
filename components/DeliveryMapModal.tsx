@@ -119,11 +119,6 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     }
   }
 
-  const handleSearchChange = (val: string) => {
-    setSearchQuery(val)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => searchAddress(val), 500)
-  }
 
   return (
     <motion.div
@@ -148,16 +143,22 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
 
         {/* Search */}
         <div style={{ position: 'relative' }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => handleSearchChange(e.target.value)}
-            placeholder="🔍 Search for your address..."
-            style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-          />
-          {loadingSearch && (
-            <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--muted)' }}>Searching...</div>
-          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') searchAddress(searchQuery) }}
+              placeholder="Enter address to search..."
+              style={{ flex: 1, padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+            />
+            <button
+              onClick={() => searchAddress(searchQuery)}
+              style={{ padding: '0 18px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {loadingSearch ? '...' : 'Search'}
+            </button>
+          </div>
           {suggestions.length > 0 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 10, zIndex: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto' }}>
               {suggestions.map((s, i) => (
