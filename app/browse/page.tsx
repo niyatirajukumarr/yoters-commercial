@@ -136,7 +136,11 @@ export default function StudentHome() {
           .ff-4 { width: 68px; height: 68px; right: 30px; }
         }
         @media (max-width: 600px) {
-          .floating-food-img { display: none; }
+          .browse-hero-wrap { padding-top: 34px; }
+          .ff-1 { width: 46px; height: 46px; top: -10px; left: 4px; border-width: 3px; }
+          .ff-2 { width: 38px; height: 38px; top: 0; right: 8px; border-width: 3px; }
+          .ff-3 { width: 34px; height: 34px; bottom: 10px; left: 10px; border-width: 3px; }
+          .ff-4 { width: 42px; height: 42px; bottom: -8px; right: 14px; border-width: 3px; }
         }
 
         .browse-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); z-index:100; }
