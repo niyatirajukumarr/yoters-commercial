@@ -23,29 +23,11 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
-    // Try Nominatim first
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&accept-language=en`
-      )
+      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
       const d = await res.json()
-      if (d?.display_name) return d.display_name as string
+      if (d?.address) return d.address as string
     } catch {}
-
-    // Fallback: bigdatacloud
-    try {
-      const res = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-      )
-      const d = await res.json()
-      const parts = [
-        d.locality || d.city,
-        d.principalSubdivision,
-        d.countryName,
-      ].filter(Boolean)
-      if (parts.length > 0) return parts.join(', ')
-    } catch {}
-
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   }
 
