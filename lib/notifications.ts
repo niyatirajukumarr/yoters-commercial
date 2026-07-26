@@ -99,6 +99,15 @@ async function notifyStudent(
   return smsOk
 }
 
+export async function notifyStudentPaymentPending(
+  studentPhone: string,
+  orderId: string,
+  cafeteriaName: string
+): Promise<boolean> {
+  const message = `⚠️ Your order at ${cafeteriaName} hasn't been paid yet. Please complete payment to confirm it.`
+  return notifyStudent(studentPhone, orderId, 'payment_pending', message)
+}
+
 export async function notifyStudentOrderApproved(
   studentPhone: string,
   orderId: string,

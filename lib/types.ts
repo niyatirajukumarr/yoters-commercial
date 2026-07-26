@@ -66,6 +66,7 @@ export interface Order {
   delivery_address?: string | null
   delivery_latitude?: number | null
   delivery_longitude?: number | null
+  customer_marked_collected_at?: string | null
 }
 
 export type WaitLevel = 'low' | 'mid' | 'high'

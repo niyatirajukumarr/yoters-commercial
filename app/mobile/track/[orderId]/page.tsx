@@ -18,6 +18,7 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(true)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [showTicket, setShowTicket] = useState(false)
+  const [markingCollected, setMarkingCollected] = useState(false)
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
@@ -87,6 +88,20 @@ export default function OrderTrackingPage() {
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [order?.prep_time_minutes, order?.approved_at])
+
+  // Lets the customer flag "I've got it" — visible to the vendor as a nudge
+  // on their dashboard. Doesn't set order.status itself; the vendor still
+  // owns that transition via their own "Mark as Collected" button.
+  const markCollected = async () => {
+    if (!order || markingCollected) return
+    setMarkingCollected(true)
+    try {
+      const { error } = await supabase.rpc('mark_order_collected_by_customer', { p_order_id: order.id })
+      if (!error) setOrder({ ...order, customer_marked_collected_at: new Date().toISOString() })
+    } finally {
+      setMarkingCollected(false)
+    }
+  }
 
   const steps = [
     { id: 'paid',      emoji: '💳', label: 'Payment Done',     sub: '₹' + (order?.total_amount ?? '') + ' received',                                              done: (o: Order) => o.payment_status === 'paid' },
@@ -183,6 +198,23 @@ export default function OrderTrackingPage() {
               {isCancelled ? 'Order Cancelled' : isReady ? 'Ready for Pickup!' : order.status === 'collected' ? 'Order Collected ✓' : 'Order in Progress'}
             </span>
           </div>
+
+          {isReady && (
+            <div style={{ marginBottom: 8 }}>
+              {order.customer_marked_collected_at ? (
+                <div style={{ fontSize: 12, color: '#2e9e6b', fontWeight: 600 }}>✓ Marked as collected — thanks!</div>
+              ) : (
+                <motion.button
+                  {...(markingCollected ? {} : hoverScale)}
+                  onClick={markCollected}
+                  disabled={markingCollected}
+                  style={{ background: 'rgba(46,158,107,0.15)', border: '1px solid rgba(46,158,107,0.4)', borderRadius: 10, padding: '8px 18px', color: '#2e9e6b', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {markingCollected ? 'Marking...' : '✅ I\'ve Collected My Order'}
+                </motion.button>
+              )}
+            </div>
+          )}
 
           <div style={{ fontSize: 12, color: '#555' }}>
             {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}

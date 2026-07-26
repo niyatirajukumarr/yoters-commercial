@@ -32,6 +32,8 @@ export default function VendorDashboard() {
   const [denialReason, setDenialReason] = useState('')
   const [approveLoading, setApproveLoading] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
+  const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
@@ -303,6 +305,46 @@ export default function VendorDashboard() {
     }
   }
 
+  async function remindPayment(order: Order) {
+    setRemindingOrderId(order.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+      const response = await fetch('/api/vendor/remind-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId: order.id }),
+      })
+      const result = await response.json()
+      setMsg(response.ok ? '🔔 Payment reminder sent.' : `Error: ${result.error}`)
+    } catch (err: any) {
+      setMsg(`Error: ${err.message}`)
+    } finally {
+      setRemindingOrderId(null)
+      setTimeout(() => setMsg(''), 2000)
+    }
+  }
+
+  // Deletion is only allowed once an order is 'collected' (RLS-enforced —
+  // supabase/migrations/20260726_customer_collected_and_vendor_delete.sql).
+  // .select() so a silently-blocked delete (0 rows) doesn't get mistaken for
+  // success and desync local state from the DB.
+  async function deleteOrder(order: Order) {
+    if (!confirm('Delete this order permanently?')) return
+    setDeletingOrderId(order.id)
+    try {
+      const { data, error } = await supabase.from('orders').delete().eq('id', order.id).select()
+      if (!error && data && data.length > 0) {
+        setOrders(prev => prev.filter(o => o.id !== order.id))
+      } else {
+        setMsg('Could not delete this order. Please try again.')
+        setTimeout(() => setMsg(''), 2000)
+      }
+    } finally {
+      setDeletingOrderId(null)
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: '#d4821a', paid: 'var(--accent)', preparing: '#7c5cfc', ready: 'var(--green)', collected: 'var(--muted)'
   }
@@ -430,6 +472,7 @@ export default function VendorDashboard() {
             const activeOrders = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
 
             const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+              pending:   { label: '💳 Payment Pending',   color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
               paid:      { label: '⏳ Awaiting Approval', color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
               approved:  { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
               preparing: { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
@@ -530,8 +573,20 @@ export default function VendorDashboard() {
                           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
                         )}
 
+                        {/* Customer says they've already collected it — nudge to close it out */}
+                        {order.customer_marked_collected_at && order.status !== 'collected' && (
+                          <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, fontWeight: 600, color: 'var(--green)' }}>
+                            📩 {order.student_name} says they've collected this order.
+                          </div>
+                        )}
+
                         {/* Action buttons */}
                         <div className="order-actions">
+                          {order.status === 'pending' && (
+                            <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                              {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
+                            </motion.button>
+                          )}
                           {order.status === 'paid' && (
                             <>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</motion.button>
@@ -596,14 +651,27 @@ export default function VendorDashboard() {
             const revenue = collected.reduce((s, o) => s + o.total_amount, 0)
             const lostRevenue = cancelled.reduce((s, o) => s + o.total_amount, 0)
 
-            const OrderRow = ({ order, borderColor }: { order: Order; borderColor: string }) => (
-              <div style={{ background: 'var(--surface2)', padding: '10px 14px', borderRadius: 10, borderLeft: `3px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            const OrderRow = ({ order, borderColor, onDelete }: { order: Order; borderColor: string; onDelete?: (order: Order) => void }) => (
+              <div style={{ background: 'var(--surface2)', padding: '10px 14px', borderRadius: 10, borderLeft: `3px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>#{order.queue_position} · {order.student_name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>#{order.token_number ?? order.queue_position} · {order.student_name}</div>
                   <div style={{ color: 'var(--muted)', fontSize: 12 }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 14, color: borderColor }}>₹{order.total_amount}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: borderColor }}>₹{order.total_amount}</div>
+                  {onDelete && (
+                    <motion.button
+                      {...(deletingOrderId !== order.id ? hoverScale : {})}
+                      onClick={() => onDelete(order)}
+                      disabled={deletingOrderId === order.id}
+                      aria-label="Delete order"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 15, padding: 4 }}
+                    >
+                      {deletingOrderId === order.id ? '...' : '🗑️'}
+                    </motion.button>
+                  )}
+                </div>
               </div>
             )
 
@@ -645,7 +713,7 @@ export default function VendorDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                     {collected.length === 0
                       ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
-                      : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
+                      : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" onDelete={deleteOrder} />)
                     }
                   </div>
                 </div>
