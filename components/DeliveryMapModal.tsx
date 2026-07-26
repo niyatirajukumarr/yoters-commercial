@@ -142,29 +142,6 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           <motion.button {...hoverScale} onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</motion.button>
         </div>
 
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => searchAddress(e.target.value), 500) }}
-            placeholder="🔍 Search for your address..."
-            style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-          />
-          {loadingSearch && (
-            <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--muted)' }}>Searching...</div>
-          )}
-          {suggestions.length > 0 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 10, zIndex: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto' }}>
-              {suggestions.map((s, i) => (
-                <button key={i} onClick={() => flyTo(parseFloat(s.lat), parseFloat(s.lon), s.display_name)}
-                  style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', fontSize: 13, cursor: 'pointer', color: 'var(--navy)', lineHeight: 1.4 }}>
-                  📍 {s.display_name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Map container — same pattern as RestaurantMap */}
         <div style={{ position: 'relative', width: '100%', height: 280, boxSizing: 'border-box' }}>
