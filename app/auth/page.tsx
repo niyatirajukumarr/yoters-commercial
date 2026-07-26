@@ -204,10 +204,13 @@ export default function AuthPage() {
         }
         .guest-btn:hover { background: var(--surface); color: var(--text); }
         .feature-chip {
-          display: inline-flex; align-items: center; gap: 6px;
+          display: inline-flex; align-items: center; gap: 7px;
           background: var(--surface); border: 1px solid var(--border);
-          borderRadius: 20px; padding: 6px 13px; font-size: 12px; color: var(--text2);
-          border-radius: 20px;
+          border-radius: 20px; padding: 6px 14px 6px 11px; font-size: 12px; font-weight: 600;
+          color: var(--text2); letter-spacing: 0.2px;
+        }
+        .feature-chip-dot {
+          width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
         }
         @media (max-width: 480px) {
           .auth-inner { padding: 24px 20px !important; }
@@ -246,7 +249,6 @@ export default function AuthPage() {
 
           {/* Hero */}
           <div className="auth-hero" style={{ textAlign: 'center', marginBottom: 32, padding: '0 8px' }}>
-            <div style={{ fontSize: 52, marginBottom: 10, lineHeight: 1 }}>🍱</div>
             <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 30, fontWeight: 800, color: 'var(--navy)', margin: '0 0 8px' }}>
               Skip the queue.
             </h1>
@@ -255,8 +257,11 @@ export default function AuthPage() {
             </p>
             {/* Feature chips */}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' }}>
-              {['⚡ Real-time queue', '💳 Pay online', '🔔 Get notified'].map(f => (
-                <span key={f} className="feature-chip">{f}</span>
+              {['Real-time queue', 'Pay online', 'Get notified'].map(f => (
+                <span key={f} className="feature-chip">
+                  <span className="feature-chip-dot" />
+                  {f}
+                </span>
               ))}
             </div>
           </div>
