@@ -8,6 +8,7 @@ import { Order, Cafeteria } from '@/lib/types'
 import { stagger, staggerItem, hoverScale } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 import { withTimeout } from '@/lib/utils/withTimeout'
+import { TokenTicket } from '@/components/TokenTicket'
 
 export default function OrderTrackingPage() {
   const params = useParams()
@@ -16,9 +17,24 @@ export default function OrderTrackingPage() {
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [showTicket, setShowTicket] = useState(false)
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
+
+    // The token popup should surface exactly once per order — the instant the
+    // vendor marks it ready, whether that happens while this page is open
+    // (via realtime) or already happened before the customer got here (via
+    // the initial fetch). A sessionStorage flag stops it from re-popping on
+    // every remount/reload once it's already been shown.
+    const revealTokenIfNew = (tokenNumber: number | null | undefined) => {
+      if (tokenNumber == null) return
+      const seenKey = `token-seen-${orderId}`
+      if (sessionStorage.getItem(seenKey)) return
+      sessionStorage.setItem(seenKey, '1')
+      setShowTicket(true)
+    }
+
     const fetchOrder = async () => {
       try {
         const cached = sessionStorage.getItem(`track-${orderId}`)
@@ -35,6 +51,7 @@ export default function OrderTrackingPage() {
         ) as any
         if (error || !orderData) { setLoading(false); return }
         setOrder(orderData as Order)
+        revealTokenIfNew(orderData.token_number)
         const { data: cafData } = await withTimeout(
           supabase.from('cafeterias').select('*').eq('id', orderData.cafeteria_id).single(),
           8000,
@@ -48,6 +65,7 @@ export default function OrderTrackingPage() {
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
             (payload) => {
               setOrder(payload.new as Order)
+              revealTokenIfNew((payload.new as Order).token_number)
               sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: payload.new, cafeteria: cafData }))
             })
           .subscribe()
@@ -146,7 +164,7 @@ export default function OrderTrackingPage() {
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 64, fontWeight: 900, lineHeight: 1,
                 color: isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : 'white',
               }}>
-                {order.queue_position ?? '—'}
+                {order.token_number ?? order.queue_position ?? '—'}
               </div>
             </motion.div>
           </div>
@@ -281,7 +299,7 @@ export default function OrderTrackingPage() {
           <motion.div variants={staggerItem} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: '#444', textTransform: 'uppercase' }}>Order Summary</span>
-              <span style={{ fontSize: 11, color: '#444' }}>#{order.queue_position} · {cafeteria?.name}</span>
+              <span style={{ fontSize: 11, color: '#444' }}>#{order.token_number ?? order.queue_position} · {cafeteria?.name}</span>
             </div>
             <div style={{ padding: '12px 20px' }}>
               {(order.items as Array<{ name: string; quantity: number; price: number }>).map((item, i) => (
@@ -310,6 +328,17 @@ export default function OrderTrackingPage() {
           )}
         </div>
       </motion.div>
+
+      {showTicket && order.token_number != null && (
+        <TokenTicket
+          token={order.token_number}
+          cafeteriaName={cafeteria?.name ?? ''}
+          items={order.items as Array<{ name: string; quantity: number }>}
+          total={order.total_amount}
+          orderId={order.id}
+          onClose={() => setShowTicket(false)}
+        />
+      )}
     </div>
   )
 }

@@ -86,8 +86,8 @@ export function TokenTicket({ token, cafeteriaName, items, total, orderId, onClo
         {/* Footer */}
         <div style={{ padding: '16px 24px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-            We&apos;ll notify you when your order is ready!<br />
-            Show this token at the counter.
+            Your order is ready!<br />
+            Show this token at the counter to collect it.
           </div>
           <motion.button {...hoverScale} onClick={onClose} style={{
             width: '100%', padding: '12px', borderRadius: 12, border: 'none',

@@ -675,10 +675,14 @@ export default function CafeteriaPage() {
     }, 2000)
   }
 
-  // token_number is only assigned once the vendor approves the order (DB
-  // trigger, supabase/migrations/20260722_token_on_vendor_approval.sql) — it
-  // doubles as the vendor's confirmation, not just proof of payment. Poll
-  // until it appears instead of showing a fake `?? 0` token immediately.
+  // token_number is only assigned once the vendor marks the order ready for
+  // pickup (DB trigger, supabase/migrations/20260726_token_on_order_ready.sql)
+  // — food prep realistically takes longer than this screen should keep
+  // someone waiting, so this poll gives up after 2 minutes and hands off to
+  // the tracking page, which shows the same ticket the moment it appears
+  // (see app/mobile/track/[orderId]/page.tsx) — this early poll is just for
+  // the (less common) case where the food's already ready by the time
+  // payment finishes.
   const fetchTokenData = async (attempt = 0) => {
     if (!orderId) return
     const { data } = await supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
@@ -689,7 +693,7 @@ export default function CafeteriaPage() {
       setTimeout(() => router.push(`/mobile/track/${orderId}`), 2000)
       return
     }
-    // Not yet approved — keep checking for up to 2 minutes, then move on to
+    // Not ready yet — keep checking for up to 2 minutes, then move on to
     // tracking anyway rather than stranding the customer on this screen.
     if (attempt < 60) {
       setTimeout(() => fetchTokenData(attempt + 1), 2000)
@@ -1431,7 +1435,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Payment confirmed!</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Waiting for {cafeteria.name} to confirm your order…</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria.name} is on it — we'll show your token the moment it's ready.</div>
         </motion.div>
       )}
 

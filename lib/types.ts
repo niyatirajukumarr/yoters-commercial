@@ -50,6 +50,7 @@ export interface Order {
   items: OrderItem[]
   total_amount: number
   queue_position: number
+  token_number?: number | null
   status: 'pending' | 'paid' | 'approved' | 'preparing' | 'ready' | 'collected' | 'cancelled'
   payment_status: 'unpaid' | 'paid'
   cashfree_order_id?: string
