@@ -128,24 +128,6 @@ export default function AuthPage() {
     } catch { setError('Connection error. Check your internet.'); setLoading(false) }
   }
 
-  // Social login via Supabase Auth (provider must be enabled in the Supabase
-  // dashboard: Authentication → Providers → Google).
-  async function handleOAuth(provider: 'google') {
-    setError('')
-    // Must redirect to a proxy-public path: the session is only established
-    // client-side (detectSessionInUrl) once this page's JS runs, and proxy.ts
-    // would otherwise bounce an unauthenticated-looking request straight back
-    // to /auth before that JS ever executes. '/' handles the post-OAuth bounce
-    // to /browse itself once the session is detected (see app/page.tsx).
-    const redirectTo = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/`
-      : `${window.location.origin}/`
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo },
-    })
-    if (oauthError) setError('Could not start social sign-in. Please try again.')
-  }
 
   const handleSubmit = mode === 'login' ? handleLogin : (mode === 'signup' ? handleSignup : handleForgotPassword)
 
@@ -195,15 +177,6 @@ export default function AuthPage() {
         .submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
         .submit-btn:active:not(:disabled) { transform: translateY(0); }
         .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .divider-row { display: flex; align-items: center; gap: 12px; margin: 6px 0; }
-        .divider-line { flex: 1; height: 1px; background: var(--border); }
-        .guest-btn {
-          width: 100%; padding: 11px; border-radius: 11px; background: var(--surface2);
-          border: 1px solid var(--border); color: var(--text2); font-size: 14px;
-          font-weight: 600; cursor: pointer; font-family: var(--font-body);
-          transition: background 0.15s, color 0.15s;
-        }
-        .guest-btn:hover { background: var(--surface); color: var(--text); }
         .feature-chip {
           display: inline-flex; align-items: center; gap: 7px;
           background: var(--surface); border: 1px solid var(--border);
@@ -438,28 +411,6 @@ export default function AuthPage() {
                   : (mode === 'login' ? 'Sign In →' : mode === 'signup' ? 'Create Account →' : 'Send Reset Link →')
                 }
               </motion.button>
-
-              {/* Social login (Google) — only on sign in / sign up */}
-              {mode !== 'forgot' && (
-                <>
-                  <div className="divider-row">
-                    <div className="divider-line" />
-                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>or continue with</span>
-                    <div className="divider-line" />
-                  </div>
-                  <motion.button
-                    type="button"
-                    className="guest-btn"
-                    onClick={() => handleOAuth('google')}
-                    disabled={loading}
-                    style={{ width: '100%' }}
-                    whileHover={!loading ? { scale: 1.01 } : undefined}
-                    whileTap={!loading ? { scale: 0.98 } : undefined}
-                  >
-                    Google
-                  </motion.button>
-                </>
-              )}
             </div>
           </div>
           </div>
