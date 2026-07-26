@@ -19,6 +19,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
+  const [manualAddress, setManualAddress] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const reverseGeocode = async (lat: number, lng: number) => {
@@ -143,22 +144,16 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
 
         {/* Search */}
         <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') searchAddress(searchQuery) }}
-              placeholder="Enter address to search..."
-              style={{ flex: 1, padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-            />
-            <button
-              onClick={() => searchAddress(searchQuery)}
-              style={{ padding: '0 18px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-            >
-              {loadingSearch ? '...' : 'Search'}
-            </button>
-          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => searchAddress(e.target.value), 500) }}
+            placeholder="🔍 Search for your address..."
+            style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+          />
+          {loadingSearch && (
+            <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--muted)' }}>Searching...</div>
+          )}
           {suggestions.length > 0 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border)', borderRadius: 10, zIndex: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto' }}>
               {suggestions.map((s, i) => (
@@ -190,11 +185,25 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         )}
 
 
+        {/* OR manual address */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+        <input
+          type="text"
+          value={manualAddress}
+          onChange={e => setManualAddress(e.target.value)}
+          placeholder="Enter your address manually..."
+          style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+        />
+
         <motion.button
-          {...(address ? hoverScale : {})}
-          onClick={() => { if (address.trim()) onConfirm(address.trim()) }}
-          disabled={!address.trim()}
-          style={{ width: '100%', padding: 15, background: address ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: address ? 'pointer' : 'not-allowed' }}
+          {...((address || manualAddress) ? hoverScale : {})}
+          onClick={() => { const final = manualAddress.trim() || address.trim(); if (final) onConfirm(final) }}
+          disabled={!address.trim() && !manualAddress.trim()}
+          style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
         >
           Confirm Delivery Location →
         </motion.button>
