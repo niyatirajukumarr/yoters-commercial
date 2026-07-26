@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
-import { Clock, CheckCircle, ChefHat, Loader, ChevronDown, ChevronUp, ArrowLeft, MoreVertical, CreditCard, RotateCcw, Ticket, Heart, X, Pencil, Settings, LogOut } from 'lucide-react'
+import { Clock, CheckCircle, ChefHat, Loader, ChevronDown, ChevronUp, ArrowLeft, MoreVertical, CreditCard, RotateCcw, Ticket, Heart, X, Pencil } from 'lucide-react'
 import { OrderTrackingRoadmap } from '@/components/OrderTrackingRoadmap'
-import { UserProfileSidebar } from '@/components/ui/menu'
 import { Order } from '@/lib/types'
 import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
@@ -142,36 +141,9 @@ export default function ProfilePage() {
 
   const pastOrders = orders.filter(o => ['collected', 'cancelled'].includes(o.status))
 
-  // Real routes/actions only — no "Reviews"/"Recently viewed"/"Delivery
-  // addresses" entries, since none of those exist anywhere in this app and a
-  // nav item that leads nowhere is worse than not having it.
-  const sidebarNavItems = [
-    { label: 'My Orders', href: '#past-orders', icon: <Clock className="h-full w-full" /> },
-    { label: 'Favourites', href: '/profile/favourites', icon: <Heart className="h-full w-full" /> },
-    { label: 'Payment Modes', href: '/profile/payment-modes', icon: <CreditCard className="h-full w-full" /> },
-    { label: 'My Refunds', href: '/profile/refunds', icon: <RotateCcw className="h-full w-full" /> },
-    { label: 'My Vouchers', href: '/profile/vouchers', icon: <Ticket className="h-full w-full" /> },
-    { label: 'Settings', href: '/profile/settings', icon: <Settings className="h-full w-full" />, isSeparator: true },
-  ]
-
   return (
     <div style={{ minHeight: '100vh', background: '#f5f0eb', fontFamily: 'var(--font-body, sans-serif)' }}>
-
-      {/*
-        Desktop-only sidebar (this page has no desktop layout at all today —
-        content just stretches edge to edge). Hidden below md; the existing
-        mobile header/hamburger-menu below is untouched and still the only
-        nav on small screens.
-      */}
-      <div className="hidden md:block md:fixed md:left-6 md:top-6 md:bottom-6 md:w-72">
-        <UserProfileSidebar
-          user={{ name: user?.name || 'User', email: user?.phone ? `+91 ${user.phone}` : (user?.email || '') }}
-          navItems={sidebarNavItems}
-          logoutItem={{ label: 'Log out', icon: <LogOut className="h-full w-full" />, onClick: handleLogout }}
-          className="max-w-none"
-        />
-      </div>
-      <div className="md:ml-80">
+      <div>
 
       {/* Header */}
       <div style={{ background: '#f5f0eb', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
