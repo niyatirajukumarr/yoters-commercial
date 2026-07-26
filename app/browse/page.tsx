@@ -165,8 +165,12 @@ export default function StudentHome() {
         .cafe-menu-image { position:relative; height:400px; border-radius:12px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.1); cursor:pointer; transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style:preserve-3d; }
         .cafe-menu-image:hover { box-shadow:0 30px 60px rgba(0,0,0,0.15); transform:translateY(-8px) rotateX(2deg) rotateY(2deg); }
         .cafe-menu-image img { width:100%; height:100%; object-fit:cover; }
-        .cafe-menu-image-logo { background: #fffdf7; }
-        .cafe-menu-image-logo img { object-fit: contain; padding: 48px; box-sizing: border-box; }
+        /* Flat background + a 3D perspective tilt shows a seam/shading artifact
+           at the edges (invisible on a busy full-bleed photo, obvious here) —
+           drop the tilt for the logo variant, keep just a plain lift. */
+        .cafe-menu-image-logo { background: #fffdf7; transform-style: flat; }
+        .cafe-menu-image-logo:hover { transform: translateY(-8px); }
+        .cafe-menu-image-logo img { object-fit: contain; padding: 16px; box-sizing: border-box; }
 
         .cafe-info { display:flex; flex-direction:column; justify-content:center; padding:20px; }
         .cafe-name { font-family:'Allura', cursive; font-size:64px; font-weight:400; color:var(--accent); margin-bottom:12px; line-height:1; }
@@ -178,14 +182,14 @@ export default function StudentHome() {
           .cafe-newspaper-card { grid-template-columns:1fr; gap:20px; }
           .cafe-newspaper-card.reversed { direction:ltr; }
           .cafe-menu-image { height:280px; }
-          .cafe-menu-image-logo img { padding: 32px; }
+          .cafe-menu-image-logo img { padding: 12px; }
           .cafe-name { font-size:48px; }
           .browse-list { padding:20px 20px 90px; }
         }
         @media (max-width: 480px) {
           .newspaper-grid { gap:40px; }
           .cafe-menu-image { height:220px; }
-          .cafe-menu-image-logo img { padding: 24px; }
+          .cafe-menu-image-logo img { padding: 10px; }
           .cafe-name { font-size:36px; }
           .cafe-info { padding:0; }
           .h1-browse { font-size:26px !important; }
