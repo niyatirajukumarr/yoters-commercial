@@ -173,17 +173,19 @@ export default function StudentHome() {
               width: 42,
               height: 42,
               borderRadius: '50%',
-              background: 'var(--accent)',
+              background: 'linear-gradient(145deg, #ff5068, var(--accent) 60%, var(--accent-hover))',
               color: 'white',
-              border: 'none',
-              fontSize: 18,
+              border: '2px solid rgba(255,255,255,0.85)',
+              boxShadow: '0 2px 8px rgba(232,51,74,0.35), inset 0 1px 1px rgba(255,255,255,0.3)',
+              fontSize: 17,
               fontWeight: 700,
+              letterSpacing: 0.5,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            whileHover={{ scale: 1.1, boxShadow: '0 4px 12px rgba(232,51,74,0.3)' }}
+            whileHover={{ scale: 1.08, boxShadow: '0 6px 16px rgba(232,51,74,0.4), inset 0 1px 1px rgba(255,255,255,0.3)' }}
             whileTap={{ scale: 0.95 }}
           >
             {user?.name ? user.name.charAt(0).toUpperCase() : '👤'}
