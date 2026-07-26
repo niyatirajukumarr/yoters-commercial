@@ -866,7 +866,9 @@ export default function CafeteriaPage() {
         <div>
           <style>{`
             .menu-sticky-top { position: sticky; top: 0; z-index: 50; background: white; }
-            .menu-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(26,31,46,0.07); }
+            .menu-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: linear-gradient(180deg, #fff8f5, #ffffff); box-shadow: 0 2px 10px rgba(26,31,46,0.06); position: relative; z-index: 1; }
+            .menu-back-btn { width: 36px; height: 36px; border-radius: 50%; background: #f5f5f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+            .menu-cafe-avatar { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(145deg, #fff0f2, #ffe1e5); border: 1px solid var(--accent-light2); display: flex; align-items: center; justify-content: center; font-size: 21px; flex-shrink: 0; }
             .menu-search-bar { display: flex; align-items: center; gap: 10px; background: #f5f5f7; border-radius: 12px; padding: 10px 14px; margin: 10px 16px 0; }
             .menu-search-bar input { background: none; border: none; outline: none; font-size: 14px; color: var(--text); flex: 1; }
             .cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 12px; scrollbar-width: none; }
@@ -919,12 +921,13 @@ export default function CafeteriaPage() {
           {/* Sticky top: header + search + category pills */}
           <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
             <div className="menu-header">
-              <motion.button {...hoverScale} onClick={() => { window.location.href = '/browse' }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <ChevronLeft size={24} color='var(--text)' />
+              <motion.button {...hoverScale} className="menu-back-btn" onClick={() => { window.location.href = '/browse' }} style={{ border: 'none', cursor: 'pointer' }}>
+                <ChevronLeft size={22} color='var(--text)' />
               </motion.button>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>{cafeteria.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{cafeteria.location}</div>
+              <div className="menu-cafe-avatar" aria-hidden="true">{cafeteria.image_emoji || '🍽️'}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
               {/* Veg / Non-veg toggle */}
               <motion.button
