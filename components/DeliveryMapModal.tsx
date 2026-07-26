@@ -27,11 +27,13 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
       const res = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       )
-      const data = await res.json()
+      const d = await res.json()
+      // Build address from most specific to least specific
       const parts = [
-        data.locality,
-        data.principalSubdivision,
-        data.countryName,
+        d.locality || d.localityInfo?.administrative?.[4]?.name || d.localityInfo?.administrative?.[3]?.name,
+        d.city || d.localityInfo?.administrative?.[2]?.name,
+        d.principalSubdivision,
+        d.countryName,
       ].filter(Boolean)
       if (parts.length > 0) return parts.join(', ')
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
