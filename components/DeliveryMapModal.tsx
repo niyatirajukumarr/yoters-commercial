@@ -25,13 +25,15 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en', 'User-Agent': 'YotersApp/1.0' } }
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       )
       const data = await res.json()
-      if (data && typeof data.display_name === 'string' && data.display_name) {
-        return data.display_name
-      }
+      const parts = [
+        data.locality,
+        data.principalSubdivision,
+        data.countryName,
+      ].filter(Boolean)
+      if (parts.length > 0) return parts.join(', ')
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
