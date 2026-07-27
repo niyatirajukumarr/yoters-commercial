@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
-import { requireVendorForOrder, authErrorStatus } from '@/lib/auth-server'
+import { getAdminClient, requireVendorForOrder, authErrorStatus } from '@/lib/auth-server'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { notifyStudentPaymentPending } from '@/lib/notifications'
+
+const supabase = getAdminClient()
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +29,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This order is already paid.' }, { status: 400 })
     }
 
+    // Stamped so the customer's own order card can show "won't be confirmed
+    // until paid" without needing a notifications inbox UI.
+    await supabase.from('orders').update({ payment_reminder_sent_at: new Date().toISOString() }).eq('id', orderId)
     await notifyStudentPaymentPending(order.student_phone, orderId, ctx.cafeteria.name)
 
     return NextResponse.json({ success: true })

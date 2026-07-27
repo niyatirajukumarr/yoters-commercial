@@ -48,6 +48,8 @@ interface Order {
   status: string
   is_shared: boolean
   created_at: string
+  payment_reminder_sent_at?: string | null
+  denial_reason?: string
 }
 
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
@@ -345,6 +347,7 @@ export default function CafeteriaPage() {
   // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
   const [loadingCafeOrders, setLoadingCafeOrders] = useState(true)
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
 
   // Payment & UI
 
@@ -644,6 +647,24 @@ export default function CafeteriaPage() {
     } catch (error) {
       console.error('Delete failed:', error)
       alert('Failed to delete order: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  // Lets the customer cancel an order they never paid for (mistake, or
+  // changed their mind) — the vendor sees why on their end and can delete
+  // it from there, rather than it silently vanishing.
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm('Cancel this order? This cannot be undone.')) return
+    setCancellingOrderId(orderId)
+    try {
+      const { error } = await supabase.rpc('cancel_order_by_customer', { p_order_id: orderId })
+      if (!error) {
+        setCafeOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled', denial_reason: 'Customer cancelled before payment' } : o))
+      } else {
+        alert('Could not cancel this order. Please try again.')
+      }
+    } finally {
+      setCancellingOrderId(null)
     }
   }
 
@@ -1250,6 +1271,7 @@ export default function CafeteriaPage() {
                   }
                   const cfg = statusConfig[order.status] ?? statusConfig.pending
                   const isPast = ['collected', 'cancelled'].includes(order.status)
+                  const isPending = order.status === 'pending'
 
                   return (
                     <motion.div
@@ -1257,8 +1279,8 @@ export default function CafeteriaPage() {
                       variants={staggerItem}
                       whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(26,31,46,0.08)' }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => window.location.href = `/mobile/track/${order.id}`}
-                      style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12, cursor: 'pointer', borderLeft: `4px solid ${cfg.color}` }}
+                      onClick={() => { if (!isPending) window.location.href = `/mobile/track/${order.id}` }}
+                      style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12, cursor: isPending ? 'default' : 'pointer', borderLeft: `4px solid ${cfg.color}` }}
                     >
                       {/* Top row: token + time */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -1277,6 +1299,13 @@ export default function CafeteriaPage() {
                         {cfg.label}
                       </div>
 
+                      {/* Vendor sent a payment reminder */}
+                      {isPending && order.payment_reminder_sent_at && (
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#E8334A', background: '#fff0f2', border: '1px solid rgba(232,51,74,0.25)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                          ⚠️ Order won&apos;t be confirmed until paid
+                        </div>
+                      )}
+
                       {/* Items */}
                       <div style={{ paddingTop: 10, borderTop: '1px solid var(--border)', marginBottom: 8 }}>
                         {order.items?.map((item, i) => (
@@ -1290,7 +1319,25 @@ export default function CafeteriaPage() {
                       {/* Total + action */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>₹{order.total_amount}</span>
-                        {!isPast
+                        {isPending ? (
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <motion.button
+                              {...hoverScale}
+                              onClick={e => { e.stopPropagation(); window.location.href = `/payment?orderId=${order.id}&amount=${order.total_amount}&name=${encodeURIComponent(order.student_name)}` }}
+                              style={{ fontSize: 12, color: 'white', background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              Continue to Payment
+                            </motion.button>
+                            <motion.button
+                              {...(cancellingOrderId === order.id ? {} : hoverScale)}
+                              onClick={e => { e.stopPropagation(); cancelOrder(order.id) }}
+                              disabled={cancellingOrderId === order.id}
+                              style={{ fontSize: 12, color: '#dc2626', background: 'none', border: '1px solid #dc2626', borderRadius: 8, padding: '6px 12px', cursor: cancellingOrderId === order.id ? 'default' : 'pointer', fontWeight: 700, opacity: cancellingOrderId === order.id ? 0.6 : 1 }}
+                            >
+                              {cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel Order'}
+                            </motion.button>
+                          </div>
+                        ) : !isPast
                           ? <span style={{ fontSize: 12, color: '#E8334A', fontWeight: 700 }}>Track order →</span>
                           : <motion.button {...hoverScale} onClick={e => { e.stopPropagation(); handleDeleteOrder(order.id) }} style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>🗑️ Delete</motion.button>
                         }

@@ -325,10 +325,11 @@ export default function VendorDashboard() {
     }
   }
 
-  // Deletion is only allowed once an order is 'collected' (RLS-enforced —
-  // supabase/migrations/20260726_customer_collected_and_vendor_delete.sql).
-  // .select() so a silently-blocked delete (0 rows) doesn't get mistaken for
-  // success and desync local state from the DB.
+  // Deletion is only allowed once an order is 'collected' or 'cancelled'
+  // (RLS-enforced — supabase/migrations/20260726_customer_collected_and_vendor_delete.sql,
+  // extended by 20260727_unpaid_order_cancel_flow.sql). .select() so a
+  // silently-blocked delete (0 rows) doesn't get mistaken for success and
+  // desync local state from the DB.
   async function deleteOrder(order: Order) {
     if (!confirm('Delete this order permanently?')) return
     setDeletingOrderId(order.id)
@@ -657,6 +658,11 @@ export default function VendorDashboard() {
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>#{order.token_number ?? order.queue_position} · {order.student_name}</div>
                   <div style={{ color: 'var(--muted)', fontSize: 12 }}>{(order.items as {name:string;quantity:number}[]).map(i => `${i.name}×${i.quantity}`).join(', ')}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+                  {order.denial_reason && (
+                    <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4, fontWeight: 600 }}>
+                      {order.denial_reason === 'Customer cancelled before payment' ? '📩 ' : 'Reason: '}{order.denial_reason}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: borderColor }}>₹{order.total_amount}</div>
@@ -723,7 +729,7 @@ export default function VendorDashboard() {
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders ({cancelled.length})</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                      {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
+                      {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
                     </div>
                   </div>
                 )}
