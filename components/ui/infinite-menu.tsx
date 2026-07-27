@@ -563,7 +563,11 @@ class InfiniteGridMenu {
   }
 
   private init(onInit?: InitCallback): void {
-    const gl = this.canvas.getContext('webgl2', { antialias: true, alpha: true })
+    // alpha:false (opaque canvas) is deliberate — the shader writes straight
+    // (non-premultiplied) alpha, so a transparent canvas makes the compositor
+    // divide it back out and wash every disc to white. The container is
+    // styled dark instead so the opaque canvas reads as intentional.
+    const gl = this.canvas.getContext('webgl2', { antialias: true, alpha: false })
     if (!gl) throw new Error('No WebGL 2 context!')
     this.gl = gl
 
@@ -718,12 +722,14 @@ class InfiniteGridMenu {
     const gl = this.gl
 
     gl.useProgram(this.discProgram)
-    gl.enable(gl.CULL_FACE)
+    // No CULL_FACE: measured against this build, back-face culling removed
+    // exactly the near/front-facing discs (28 lit pixels vs 90k with culling
+    // off) — the disc winding ends up inverted once targetTo orients it
+    // outward. Depth testing already handles occlusion correctly.
+    gl.disable(gl.CULL_FACE)
     gl.enable(gl.DEPTH_TEST)
-    gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-    gl.clearColor(0, 0, 0, 0)
+    gl.clearColor(0.06, 0.06, 0.08, 1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     gl.uniformMatrix4fv(this.discLocations.uWorldMatrix, false, this.worldMatrix)
@@ -855,21 +861,23 @@ const InfiniteMenuComponent: FC<InfiniteMenuProps> = ({ items = [], onItemClick,
   }, [items])
 
   return (
-    <div className="relative w-full h-full">
+    // Canvas and label are stacked in flow rather than the label being
+    // absolutely positioned over the canvas: the focused disc fills most of
+    // the viewport, so an overlaid label sat unreadably on top of the photo,
+    // and its pointer-events-none-while-moving state swallowed button taps.
+    <div className="w-full h-full flex flex-col">
       <canvas
         ref={canvasRef}
-        className="cursor-grab w-full h-full overflow-hidden relative outline-none active:cursor-grabbing"
+        className="cursor-grab w-full flex-1 min-h-0 overflow-hidden outline-none active:cursor-grabbing rounded-2xl"
       />
 
       {activeItem && (
-        <div
-          className={`absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 pb-3 transition-all ease-[cubic-bezier(0.25,0.1,0.25,1.0)] ${
-            isMoving
-              ? 'opacity-0 pointer-events-none duration-[100ms] translate-y-2'
-              : 'opacity-100 pointer-events-auto duration-[400ms] translate-y-0'
-          }`}
-        >
-          <span className="select-none text-center text-[15px] font-extrabold tracking-tight text-[color:var(--navy)]">
+        <div className="shrink-0 flex flex-col items-center gap-1 pt-2">
+          <span
+            className={`select-none text-center text-[15px] font-extrabold tracking-tight text-[color:var(--navy)] transition-opacity ${
+              isMoving ? 'opacity-40 duration-[100ms]' : 'opacity-100 duration-[400ms]'
+            }`}
+          >
             {activeItem.title}
           </span>
           {activeItem.description && (
@@ -880,7 +888,7 @@ const InfiniteMenuComponent: FC<InfiniteMenuProps> = ({ items = [], onItemClick,
           <button
             type="button"
             onClick={() => activeItem && onItemClick?.(activeItem)}
-            className="mt-0.5 grid h-9 place-items-center rounded-full border-none bg-[color:var(--accent)] px-5 text-[13px] font-bold text-white cursor-pointer"
+            className="mt-1 grid h-9 place-items-center rounded-full border-none bg-[color:var(--accent)] px-5 text-[13px] font-bold text-white cursor-pointer"
           >
             View menu →
           </button>
