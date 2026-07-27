@@ -307,13 +307,23 @@ export default function OrderTrackingPage() {
         {/* DETAIL CARDS */}
         <div style={{ margin: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Active step detail */}
+          {/* Active step detail — the "collected" step goes active the moment
+              ready is done (it's just the next un-done step), which jumps
+              straight to "Currently: Collected / Enjoy your meal!" before the
+              customer has actually confirmed pickup. Show a prompt to use the
+              button above instead, until they do. */}
           {!isCancelled && activeIdx >= 0 && activeIdx < steps.length && (
             <motion.div variants={staggerItem} style={{ background: 'rgba(232,51,74,0.08)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontSize: 36 }}>{steps[activeIdx]?.emoji}</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A', marginBottom: 2 }}>Currently: {steps[activeIdx]?.label}</div>
-                <div style={{ fontSize: 12, color: '#666' }}>{steps[activeIdx]?.sub}</div>
+                {steps[activeIdx]?.id === 'collected' && !order.customer_marked_collected_at ? (
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A' }}>Please mark you&apos;ve collected your order above</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A', marginBottom: 2 }}>Currently: {steps[activeIdx]?.label}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>{steps[activeIdx]?.sub}</div>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
