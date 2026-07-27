@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef, type CSSProperties } from 'react'
+import { useEffect, useState, useRef, useMemo, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import nextDynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/useCart'
@@ -13,12 +14,17 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
-  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
+  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift, LayoutGrid,
 } from 'lucide-react'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
+import type { InfiniteMenuItem } from '@/components/ui/infinite-menu'
+
+// WebGL + gl-matrix: client-only and heavy, so keep it out of the initial
+// bundle and off the server render.
+const InfiniteMenu = nextDynamic(() => import('@/components/ui/infinite-menu'), { ssr: false })
 
 interface MenuItem {
   id: string
@@ -349,6 +355,11 @@ export default function CafeteriaPage() {
   const [loadingCafeOrders, setLoadingCafeOrders] = useState(true)
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
 
+  // Category browsing starts on the rotatable sphere; picking one drops into
+  // that category's list (with the pill row for quick switching from there).
+  // Flipped off permanently if WebGL2 isn't available.
+  const [showSphere, setShowSphere] = useState(true)
+
   // Payment & UI
 
   const { cart, addItem, updateQuantity, removeItem, clear: clearCart, total, itemCount } = useCart()
@@ -505,6 +516,24 @@ export default function CafeteriaPage() {
   // whatever order the rows happen to come back from the DB in.
   const categories = [...new Set(visibleItems.map(m => m.category))]
     .sort((a, b) => a.localeCompare(b))
+
+  // Each category's disc on the sphere shows a real dish photo from that
+  // category (first item that has one), since the sphere renders images —
+  // the lucide line icons used by the pill row aren't textures.
+  const sphereItems: InfiniteMenuItem[] = useMemo(() => (
+    categories.map(cat => {
+      const inCat = visibleItems.filter(m => m.category === cat)
+      const withImage = inCat.find(m => m.image_url) ?? inCat.find(m => ITEM_IMAGES[m.name]) ?? inCat[0]
+      const image = withImage?.image_url || ITEM_IMAGES[withImage?.name] || CATEGORY_IMAGES[cat] || ''
+      return {
+        image,
+        link: cat,
+        title: cat,
+        description: `${inCat.length} item${inCat.length === 1 ? '' : 's'}`,
+      }
+    }).filter(i => i.image)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [categories.join('|'), vegMode])
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
@@ -916,6 +945,9 @@ export default function CafeteriaPage() {
             .cat-pill-icon.inactive { background: #f5f5f7; }
             .cat-pill-label { font-size: 11px; font-weight: 600; color: var(--text2); max-width: 64px; text-align: center; line-height: 1.2; }
             .cat-pill-label.active { color: var(--accent); }
+            .cat-sphere-wrap { padding: 4px 0 8px; }
+            .cat-sphere-hint { text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.3px; margin-bottom: -4px; }
+            .cat-sphere { height: 62vh; min-height: 380px; max-height: 560px; width: 100%; position: relative; }
             .menu-section-title { font-size: 18px; font-weight: 800; color: var(--navy); padding: 20px 16px 8px; }
             .menu-item-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f0f2; background: white; }
             .menu-item-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #f5f5f7; }
@@ -1029,9 +1061,22 @@ export default function CafeteriaPage() {
               </div>
             </div>
 
-            {/* Category pills */}
-            {!menuSearch && (
+            {/* Category pills — hidden while the sphere picker is showing */}
+            {!menuSearch && !(showSphere && sphereItems.length > 0) && (
               <div className="cat-pills">
+                {sphereItems.length > 0 && (
+                  <button
+                    className="cat-pill"
+                    onClick={() => setShowSphere(true)}
+                    style={{ background: 'none', border: 'none', padding: 0 }}
+                    aria-label="Browse all categories"
+                  >
+                    <div className="cat-pill-icon inactive">
+                      <LayoutGrid size={24} strokeWidth={1.6} color="#1a1a1a" />
+                    </div>
+                    <span className="cat-pill-label">All</span>
+                  </button>
+                )}
                 {categories.map(cat => {
                   // Black-and-white line icons instead of colored emoji, to match
                   // a sketched/outline look rather than a full-color glyph set.
@@ -1069,8 +1114,22 @@ export default function CafeteriaPage() {
             )}
           </div>
 
+          {/* Rotatable category sphere — drag to spin, tap to open a category */}
+          {!menuSearch && showSphere && sphereItems.length > 0 && (
+            <div className="cat-sphere-wrap">
+              <div className="cat-sphere-hint">Drag to spin · tap a category</div>
+              <div className="cat-sphere">
+                <InfiniteMenu
+                  items={sphereItems}
+                  onItemClick={item => { setSelectedCategory(item.link); setShowSphere(false) }}
+                  onUnsupported={() => setShowSphere(false)}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Items list */}
-          <div style={{ paddingBottom: 180 }}>
+          <div style={{ paddingBottom: 180, display: showSphere && sphereItems.length > 0 && !menuSearch ? 'none' : undefined }}>
             {menuSearch ? (
               // Search results across all categories
               (() => {
