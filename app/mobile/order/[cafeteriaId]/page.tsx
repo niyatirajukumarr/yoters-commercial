@@ -501,7 +501,10 @@ export default function CafeteriaPage() {
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   const visibleItems = menuItems.filter(m => (vegMode === 'veg' ? itemIsVeg(m) : !itemIsVeg(m)))
+  // Alphabetical so the pill row has a predictable order, rather than
+  // whatever order the rows happen to come back from the DB in.
   const categories = [...new Set(visibleItems.map(m => m.category))]
+    .sort((a, b) => a.localeCompare(b))
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
