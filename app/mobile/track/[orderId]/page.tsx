@@ -113,7 +113,20 @@ export default function OrderTrackingPage() {
 
   const mins = timeRemaining !== null ? Math.floor(timeRemaining / 60000) : null
   const secs = timeRemaining !== null ? Math.floor((timeRemaining % 60000) / 1000) : null
+  // Used for the step-circle highlighting: which step to draw as "up next".
   const activeIdx = order ? steps.findIndex(s => !s.done(order)) : 0
+  // Used for the "Currently: X" banner: the *last* stage actually reached,
+  // not the next upcoming one — done() checks are inclusive ("has reached or
+  // passed this stage"), so as soon as e.g. preparing.done flips true,
+  // activeIdx above jumps straight to 'ready' and the banner would describe
+  // a stage that hasn't happened yet ("Currently: Ready!" while still being
+  // cooked).
+  let currentStageIdx = -1
+  if (order) {
+    for (let i = steps.length - 1; i >= 0; i--) {
+      if (steps[i].done(order)) { currentStageIdx = i; break }
+    }
+  }
   const isCancelled = order?.status === 'cancelled'
   const isReady = order?.status === 'ready'
 
@@ -307,21 +320,21 @@ export default function OrderTrackingPage() {
         {/* DETAIL CARDS */}
         <div style={{ margin: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Active step detail — the "collected" step goes active the moment
-              ready is done (it's just the next un-done step), which jumps
-              straight to "Currently: Collected / Enjoy your meal!" before the
-              customer has actually confirmed pickup. Show a prompt to use the
-              button above instead, until they do. */}
-          {!isCancelled && activeIdx >= 0 && activeIdx < steps.length && (
+          {/* Active step detail — uses currentStageIdx (the last stage
+              actually reached), not activeIdx (the next upcoming one), so
+              this describes what's really happening right now. The
+              "collected" stage additionally waits on the customer's own
+              confirmation before celebrating, same as before. */}
+          {!isCancelled && currentStageIdx >= 0 && currentStageIdx < steps.length && (
             <motion.div variants={staggerItem} style={{ background: 'rgba(232,51,74,0.08)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ fontSize: 36 }}>{steps[activeIdx]?.emoji}</div>
+              <div style={{ fontSize: 36 }}>{steps[currentStageIdx]?.emoji}</div>
               <div>
-                {steps[activeIdx]?.id === 'collected' && !order.customer_marked_collected_at ? (
+                {steps[currentStageIdx]?.id === 'collected' && !order.customer_marked_collected_at ? (
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A' }}>Please mark you&apos;ve collected your order above</div>
                 ) : (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A', marginBottom: 2 }}>Currently: {steps[activeIdx]?.label}</div>
-                    <div style={{ fontSize: 12, color: '#666' }}>{steps[activeIdx]?.sub}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E8334A', marginBottom: 2 }}>Currently: {steps[currentStageIdx]?.label}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>{steps[currentStageIdx]?.sub}</div>
                   </>
                 )}
               </div>
