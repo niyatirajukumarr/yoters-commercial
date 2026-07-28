@@ -13,7 +13,7 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
-  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift, Scroll,
+  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
 } from 'lucide-react'
 import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { WrapIcon } from '@/components/icons/WrapIcon'
@@ -80,11 +80,11 @@ function categoryIcon(cat: string) {
   if (c.includes('shake')) return IceCreamCone
   if (c.includes('soda') || c.includes('drink')) return CupSoda
   if (c.includes('burger')) return Hamburger
-  // Rolls before sandwiches — they used to fall into the same branch and
-  // share the sandwich icon. Lucide has no roll/wrap glyph, hence the
-  // hand-drawn one.
-  if (c.includes('roll')) return WrapIcon
-  if (c.includes('wrap')) return Scroll
+  // Rolls/wraps before sandwiches — they used to fall into the same branch
+  // and share the sandwich icon. Lucide has no roll/wrap glyph, hence the
+  // hand-drawn one; the two categories share it since they're the same shape
+  // of food.
+  if (c.includes('roll') || c.includes('wrap')) return WrapIcon
   if (c.includes('sandwich') || c.includes('club')) return Sandwich
   if (c.includes('egg')) return Egg
   if (c.includes('strip')) return Drumstick
@@ -1057,29 +1057,53 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg toggle */}
-              <motion.button
-                {...hoverScale}
-                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                aria-label={vegMode === 'veg' ? 'Showing veg. Tap for non-veg' : 'Showing non-veg. Tap for veg'}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  background: vegMode === 'veg' ? '#edfaf3' : '#fff0e8',
-                  border: `1.5px solid ${vegMode === 'veg' ? '#2e9e6b' : '#e8734a'}`,
-                  borderRadius: 999, padding: '5px 10px', cursor: 'pointer', flexShrink: 0,
-                }}
-              >
-                <span style={{
-                  width: 14, height: 14, borderRadius: 4, flexShrink: 0,
-                  border: `2px solid ${vegMode === 'veg' ? '#2e9e6b' : '#e8734a'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: vegMode === 'veg' ? '#2e9e6b' : '#e8734a' }} />
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: vegMode === 'veg' ? '#2e9e6b' : '#e8734a' }}>
-                  {vegMode === 'veg' ? 'Veg' : 'Non-veg'}
-                </span>
-              </motion.button>
+              {/* Veg / Non-veg switch. The two modes are exclusive, so the
+                  knob sits left for veg and right for non-veg and the whole
+                  control recolours — the label carries the meaning, the
+                  colour just reinforces it. */}
+              {(() => {
+                const isVeg = vegMode === 'veg'
+                const accent = isVeg ? '#2e9e6b' : '#e8734a'
+                return (
+                  <button
+                    onClick={() => setVegMode(isVeg ? 'nonveg' : 'veg')}
+                    role="switch"
+                    aria-checked={!isVeg}
+                    aria-label="Show non-veg dishes"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      position: 'relative', boxSizing: 'border-box',
+                      width: 46, height: 26, borderRadius: 999, flexShrink: 0,
+                      background: isVeg ? '#edfaf3' : '#fff0e8',
+                      border: `1.5px solid ${accent}`,
+                      transition: 'background-color 180ms ease, border-color 180ms ease',
+                    }}>
+                      <motion.span
+                        animate={{ x: isVeg ? 0 : 20 }}
+                        transition={{ type: 'spring', stiffness: 520, damping: 34 }}
+                        style={{
+                          position: 'absolute', top: 1.5, left: 1.5,
+                          width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.22)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <span style={{
+                          width: 8, height: 8, borderRadius: '50%', background: accent,
+                          transition: 'background-color 180ms ease',
+                        }} />
+                      </motion.span>
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: accent, whiteSpace: 'nowrap' }}>
+                      {isVeg ? 'Veg' : 'Non-veg'}
+                    </span>
+                  </button>
+                )
+              })()}
             </div>
 
             {/* Filter + Search */}

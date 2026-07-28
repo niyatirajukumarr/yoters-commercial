@@ -5,13 +5,16 @@ export interface WrapIconProps extends Omit<SVGProps<SVGSVGElement>, 'ref'> {
   strokeWidth?: number | string
 }
 
-// A roll in a paper cone, filling spilling over the top. Hand-drawn because
-// lucide has no wrap/roll/burrito glyph; the props match a lucide icon
-// (size / color / strokeWidth) so it drops straight into categoryIcon().
+// A rolled wrap on the diagonal: one end folded shut, the other open with the
+// filling spilling out, and two seams where the flatbread laps over itself.
+// Hand-drawn because lucide has no roll/wrap/burrito glyph; the props match a
+// lucide icon (size / color / strokeWidth) so it drops into categoryIcon().
 //
-// Deliberately coarse: at 24px with a 1.6 stroke, anything under ~3 units
-// wide fills in solid, so this is two big scallops rather than the four or
-// five a larger drawing would use.
+// Drawn flat and rotated as a group rather than doing the trig by hand. The
+// earlier upright version — a tapered sleeve with a fluffy top — read as a
+// popcorn tub, and a symmetric capsule read as a bandage; the open filled end
+// is what makes it a wrap. Geometry is sized so the rotated shape fills about
+// as much of the 24px box as the lucide icons it sits beside.
 export const WrapIcon = forwardRef<SVGSVGElement, WrapIconProps>(function WrapIcon(
   { size = 24, color = 'currentColor', strokeWidth = 2, ...props },
   ref,
@@ -30,15 +33,15 @@ export const WrapIcon = forwardRef<SVGSVGElement, WrapIconProps>(function WrapIc
       strokeLinejoin="round"
       {...props}
     >
-      {/* filling bulging over the rim */}
-      <path d="M6 10.5c-2-3.4.9-6.9 4-5.3 1-3.4 5.6-3.2 6.4.3 2.6-.6 4 2.6 1.6 5" />
-      {/* the paper cone */}
-      <path d="M6 10.5 8.6 20.8c.2.7.8 1.2 1.5 1.2h3.8c.7 0 1.3-.5 1.5-1.2L18 10.5" />
-      {/* where the paper laps over itself */}
-      <path d="M6.9 14.6c2 2 2.9 4.6 2.7 7.4" />
-      {/* seasoning — solid dots, rings close up at this size */}
-      <circle cx="14.2" cy="14.6" r=".75" fill={color} stroke="none" />
-      <circle cx="12.6" cy="18.2" r=".75" fill={color} stroke="none" />
+      <g transform="rotate(-40 12 12)">
+        {/* the roll, folded shut at the near end */}
+        <path d="M18.8 8.4H6.6a3.6 3.6 0 0 0 0 7.2h12.2" />
+        {/* filling at the open end */}
+        <path d="M18.8 15.6c2.4.8 4.4-.9 3.7-2.7 1.6-.9 1.3-3-.5-3.4.4-1.8-1.6-2.9-3.2-1.1" />
+        {/* seams where the flatbread laps over */}
+        <path d="M11.6 8.6 9.9 15.4" />
+        <path d="M15.8 8.5 14.1 15.5" />
+      </g>
     </svg>
   )
 })
