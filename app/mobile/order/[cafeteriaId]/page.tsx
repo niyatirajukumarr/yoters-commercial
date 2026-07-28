@@ -57,6 +57,40 @@ interface Order {
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 type Tab = 'home' | 'orders' | 'profile'
 
+// The drink/dessert categories are collapsed behind one pill — there were
+// enough of them to push everything else off the end of the scroll row.
+const BEVERAGE_GROUP = 'Beverages and Delights'
+const BEVERAGE_CATEGORIES = [
+  'Coffee Shake', 'Delights', 'Fresh Juices', 'Fruit Milkshakes', 'Hot Beverages',
+  'Ice Cream Shakes', 'Lassi', 'Mojitos', 'Sodas', 'Special Shakes', 'Thick Shake',
+]
+const BEVERAGE_SET = new Set(BEVERAGE_CATEGORIES.map(c => c.toLowerCase()))
+const isBeverageCategory = (cat: string) => BEVERAGE_SET.has(cat.toLowerCase())
+
+// Black-and-white line icons instead of colored emoji, to match a
+// sketched/outline look rather than a full-color glyph set.
+function categoryIcon(cat: string) {
+  const c = cat.toLowerCase()
+  if (c === BEVERAGE_GROUP.toLowerCase()) return CupSoda
+  if (c.includes('juice') || c.includes('fresh')) return Citrus
+  if (c.includes('mojito')) return Martini
+  if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return Coffee
+  if (c.includes('milkshake') || c.includes('thick shake') || c.includes('ice cream shake') || c.includes('lassi')) return Milk
+  if (c.includes('shake')) return IceCreamCone
+  if (c.includes('soda') || c.includes('drink')) return CupSoda
+  if (c.includes('burger')) return Hamburger
+  if (c.includes('roll') || c.includes('wrap') || c.includes('sandwich') || c.includes('club')) return Sandwich
+  if (c.includes('egg')) return Egg
+  if (c.includes('strip')) return Drumstick
+  if (c.includes('bun')) return Croissant
+  if (c.includes('maggi')) return Soup
+  if (c.includes('delight')) return Sparkles
+  if (c.includes('quick') || c.includes('snack') || c.includes('bite')) return Zap
+  if (c.includes('biryani') || c.includes('momos')) return UtensilsCrossed
+  if (c.includes('combo')) return Gift
+  return Utensils
+}
+
 const CATEGORY_EMOJI: { [key: string]: string } = {
   'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
   'Thick Shake': '🧋', 'Sodas': '🫧', 'Coffee Shake': '☕', 'Special Shakes': '🧋',
@@ -508,6 +542,17 @@ export default function CafeteriaPage() {
   const categories = [...new Set(visibleItems.map(m => m.category))]
     .sort((a, b) => a.localeCompare(b))
 
+  // Top row shows one "Beverages and Delights" pill standing in for all the
+  // drink/dessert categories; picking it reveals them as a second row.
+  const beverageCats = categories.filter(isBeverageCategory)
+  const topLevelCategories = [
+    ...categories.filter(c => !isBeverageCategory(c)),
+    ...(beverageCats.length ? [BEVERAGE_GROUP] : []),
+  ].sort((a, b) => a.localeCompare(b))
+  // Derived rather than its own state, so the sub-row can never disagree with
+  // which category is actually selected.
+  const groupOpen = isBeverageCategory(selectedCategory)
+
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
 
@@ -918,6 +963,17 @@ export default function CafeteriaPage() {
             .cat-pill-icon.inactive { background: #f5f5f7; }
             .cat-pill-label { font-size: 11px; font-weight: 600; color: var(--text2); max-width: 64px; text-align: center; line-height: 1.2; }
             .cat-pill-label.active { color: var(--accent); }
+            .cat-subpills { display: flex; gap: 8px; overflow-x: auto; padding: 2px 16px 12px; scrollbar-width: none; }
+            .cat-subpills::-webkit-scrollbar { display: none; }
+            .cat-subpill {
+              display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+              padding: 7px 14px; border-radius: 999px; cursor: pointer;
+              border: 1px solid rgba(26,31,46,0.12); background: #f5f5f7;
+              color: var(--text2); font-size: 12.5px; font-weight: 600;
+              font-family: var(--font-body); white-space: nowrap;
+              transition: background 0.18s, color 0.18s, border-color 0.18s;
+            }
+            .cat-subpill.active { background: #fff0f2; border-color: var(--accent); color: var(--accent); }
             .menu-section-title { font-size: 18px; font-weight: 800; color: var(--navy); padding: 20px 16px 8px; }
             .menu-item-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f0f2; background: white; }
             .menu-item-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #f5f5f7; }
@@ -1034,41 +1090,50 @@ export default function CafeteriaPage() {
 
             {/* Category pills */}
             {!menuSearch && (
-              <div className="cat-pills">
-                {categories.map(cat => {
-                  // Black-and-white line icons instead of colored emoji, to match
-                  // a sketched/outline look rather than a full-color glyph set.
-                  const CategoryIcon = (() => {
-                    const c = cat.toLowerCase()
-                    if (c.includes('juice') || c.includes('fresh')) return Citrus
-                    if (c.includes('mojito')) return Martini
-                    if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return Coffee
-                    if (c.includes('milkshake') || c.includes('thick shake') || c.includes('ice cream shake') || c.includes('lassi')) return Milk
-                    if (c.includes('shake')) return IceCreamCone
-                    if (c.includes('soda') || c.includes('drink')) return CupSoda
-                    if (c.includes('burger')) return Hamburger
-                    if (c.includes('roll') || c.includes('wrap') || c.includes('sandwich') || c.includes('club')) return Sandwich
-                    if (c.includes('egg')) return Egg
-                    if (c.includes('strip')) return Drumstick
-                    if (c.includes('bun')) return Croissant
-                    if (c.includes('maggi')) return Soup
-                    if (c.includes('delight')) return Sparkles
-                    if (c.includes('quick') || c.includes('snack') || c.includes('bite')) return Zap
-                    if (c.includes('biryani') || c.includes('momos')) return UtensilsCrossed
-                    if (c.includes('combo')) return Gift
-                    return Utensils
-                  })()
-                  const isActive = selectedCategory === cat
-                  return (
-                    <button key={cat} className="cat-pill" onClick={() => setSelectedCategory(cat)} style={{ background: 'none', border: 'none', padding: 0 }}>
-                      <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
-                        <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
-                      </div>
-                      <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <>
+                <div className="cat-pills">
+                  {topLevelCategories.map(cat => {
+                    const isGroup = cat === BEVERAGE_GROUP
+                    const CategoryIcon = categoryIcon(cat)
+                    const isActive = isGroup ? groupOpen : selectedCategory === cat
+                    return (
+                      <button
+                        key={cat}
+                        className="cat-pill"
+                        // Opening the group jumps to its first category so the
+                        // list below always has something in it.
+                        onClick={() => setSelectedCategory(isGroup ? beverageCats[0] : cat)}
+                        style={{ background: 'none', border: 'none', padding: 0 }}
+                      >
+                        <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
+                          <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
+                        </div>
+                        <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Sub-row for the beverage group */}
+                {groupOpen && (
+                  <div className="cat-subpills">
+                    {beverageCats.map(cat => {
+                      const CategoryIcon = categoryIcon(cat)
+                      const isActive = selectedCategory === cat
+                      return (
+                        <button
+                          key={cat}
+                          className={`cat-subpill ${isActive ? 'active' : ''}`}
+                          onClick={() => setSelectedCategory(cat)}
+                        >
+                          <CategoryIcon size={16} strokeWidth={1.8} />
+                          <span>{cat}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
