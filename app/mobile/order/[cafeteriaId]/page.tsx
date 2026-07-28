@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { WrapIcon } from '@/components/icons/WrapIcon'
+import { FlipButton } from '@/components/ui/flip-button'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
@@ -1072,53 +1073,20 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg switch. The two modes are exclusive, so the
-                  knob sits left for veg and right for non-veg and the whole
-                  control recolours — the label carries the meaning, the
-                  colour just reinforces it. */}
-              {(() => {
-                const isVeg = vegMode === 'veg'
-                const accent = isVeg ? '#2e9e6b' : '#e8734a'
-                return (
-                  <button
-                    onClick={() => setVegMode(isVeg ? 'nonveg' : 'veg')}
-                    role="switch"
-                    aria-checked={!isVeg}
-                    aria-label="Show non-veg dishes"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
-                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    }}
-                  >
-                    <span style={{
-                      position: 'relative', boxSizing: 'border-box',
-                      width: 46, height: 26, borderRadius: 999, flexShrink: 0,
-                      background: isVeg ? '#edfaf3' : '#fff0e8',
-                      border: `1.5px solid ${accent}`,
-                      transition: 'background-color 180ms ease, border-color 180ms ease',
-                    }}>
-                      <motion.span
-                        animate={{ x: isVeg ? 0 : 20 }}
-                        transition={{ type: 'spring', stiffness: 520, damping: 34 }}
-                        style={{
-                          position: 'absolute', top: 1.5, left: 1.5,
-                          width: 20, height: 20, borderRadius: '50%', background: '#fff',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.22)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        <span style={{
-                          width: 8, height: 8, borderRadius: '50%', background: accent,
-                          transition: 'background-color 180ms ease',
-                        }} />
-                      </motion.span>
-                    </span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: accent, whiteSpace: 'nowrap' }}>
-                      {isVeg ? 'Veg' : 'Non-veg'}
-                    </span>
-                  </button>
-                )
-              })()}
+              {/* Veg / Non-veg. Flips between the two faces on tap rather than
+                  on hover — phones have no hover, and the flip is the whole
+                  point of the control. */}
+              <FlipButton
+                frontText="Veg"
+                backText="Non-veg"
+                from="top"
+                flipped={vegMode === 'nonveg'}
+                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
+                className="h-8 shrink-0 px-3.5 py-0 text-[12px] font-bold"
+                frontClassName="rounded-full border border-[#2e9e6b] bg-[#edfaf3] text-[#2e9e6b]"
+                backClassName="rounded-full border border-[#e8734a] bg-[#fff0e8] text-[#e8734a]"
+              />
             </div>
 
             {/* Filter + Search */}
