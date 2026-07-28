@@ -643,6 +643,12 @@ class InfiniteGridMenu {
       }))
     ).then(images => {
       if (this.disposed) return
+      // Pre-fill every cell. An unpainted cell is transparent black, which on
+      // an opaque canvas renders as a solid black disc — so a single dead
+      // image URL (there are some in the menu data) becomes a black hole on
+      // the sphere. A neutral tile degrades far more gracefully.
+      ctx.fillStyle = '#3a3a42'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
       images.forEach((img, i) => {
         if (!img) return
         const x = (i % this.atlasSize) * cellSize
