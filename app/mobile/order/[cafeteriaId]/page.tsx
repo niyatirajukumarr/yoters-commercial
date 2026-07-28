@@ -379,6 +379,9 @@ export default function CafeteriaPage() {
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<Tab>('home')
+  // Search isn't a tab of its own here — it focuses the menu search box — so
+  // track it separately to keep the nav highlighted while searching.
+  const [navSearchActive, setNavSearchActive] = useState(false)
 
   // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
@@ -1670,25 +1673,27 @@ export default function CafeteriaPage() {
       {/* TAB NAVIGATION — same four tabs as the rest of the app, but scoped to
           this restaurant: its menu, its food search, its orders. */}
       <InteractiveMenu
-        activeIndex={activeTab === 'orders' ? 2 : activeTab === 'profile' ? 3 : menuSearch ? 1 : 0}
+        activeIndex={activeTab === 'orders' ? 2 : navSearchActive ? 1 : 0}
         items={[
           {
             label: 'home',
             icon: Home,
-            onSelect: () => { setActiveTab('home'); setStep('menu'); setMenuSearch('') },
+            onSelect: () => { setNavSearchActive(false); setActiveTab('home'); setStep('menu'); setMenuSearch('') },
           },
           {
             label: 'search',
             icon: Search,
             onSelect: () => {
+              setNavSearchActive(true)
               setActiveTab('home')
               setStep('menu')
-              // Wait for the menu view to render, then scroll to the search
-              // box and put the cursor in it.
-              setTimeout(() => focusPageSearch(), 60)
+              // Focus in the tap handler itself where possible — deferring it
+              // past the gesture stops mobile keyboards from opening. Only
+              // fall back to waiting if the menu view isn't mounted yet.
+              if (!focusPageSearch()) setTimeout(() => focusPageSearch(), 60)
             },
           },
-          { label: 'orders', icon: ShoppingBag, onSelect: () => setActiveTab('orders') },
+          { label: 'orders', icon: ShoppingBag, onSelect: () => { setNavSearchActive(false); setActiveTab('orders') } },
           { label: 'profile', icon: User, onSelect: () => router.push('/profile') },
         ]}
       />

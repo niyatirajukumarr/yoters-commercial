@@ -7,7 +7,13 @@ export function focusPageSearch(): boolean {
   const el = document.querySelector<HTMLInputElement>('[data-app-search]')
   if (!el) return false
 
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  // Only scroll if it isn't already on screen — some search boxes live in a
+  // sticky header, and centring one that's already visible yanks the page
+  // for no reason.
+  const rect = el.getBoundingClientRect()
+  const alreadyVisible = rect.top >= 0 && rect.bottom <= (window.innerHeight || 0)
+  if (!alreadyVisible) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
   // preventScroll so focusing doesn't fight the smooth scroll with an
   // instant jump of its own.
   el.focus({ preventScroll: true })
