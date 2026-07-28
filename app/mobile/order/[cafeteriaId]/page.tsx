@@ -12,6 +12,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
+  MoreHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
   Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
 } from 'lucide-react'
@@ -330,6 +331,8 @@ export default function CafeteriaPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
+  // Whether the non-beverage pills are showing while the group is open.
+  const [othersOpen, setOthersOpen] = useState(false)
   const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
   const [showFilter, setShowFilter] = useState(false)
   const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
@@ -564,6 +567,12 @@ export default function CafeteriaPage() {
   // Derived rather than its own state, so the sub-row can never disagree with
   // which category is actually selected.
   const groupOpen = isBeverageCategory(selectedCategory)
+  // With the group open the top row is mostly noise — the sub-row is what the
+  // user is reading — so the other categories fold behind one button until
+  // they ask for them back.
+  const visibleTopCategories = groupOpen && !othersOpen
+    ? topLevelCategories.filter(c => c === BEVERAGE_GROUP)
+    : topLevelCategories
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
@@ -574,6 +583,12 @@ export default function CafeteriaPage() {
       setSelectedCategory(categories[0])
     }
   }, [categories.join('|'), selectedCategory])
+
+  // Leaving the group puts every pill back on screen, so the row can't come
+  // back collapsed the next time the group is opened.
+  useEffect(() => {
+    if (!groupOpen) setOthersOpen(false)
+  }, [groupOpen])
 
   // Switching category should start you at the top of that category, not at
   // whatever depth you'd scrolled to in the previous one. Instant rather than
@@ -1140,7 +1155,7 @@ export default function CafeteriaPage() {
             {!menuSearch && (
               <>
                 <div className="cat-pills">
-                  {topLevelCategories.map(cat => {
+                  {visibleTopCategories.map(cat => {
                     const isGroup = cat === BEVERAGE_GROUP
                     const CategoryIcon = categoryIcon(cat)
                     const isActive = isGroup ? groupOpen : selectedCategory === cat
@@ -1160,6 +1175,21 @@ export default function CafeteriaPage() {
                       </button>
                     )
                   })}
+                  {groupOpen && (
+                    <button
+                      className="cat-pill"
+                      onClick={() => setOthersOpen(o => !o)}
+                      aria-expanded={othersOpen}
+                      style={{ background: 'none', border: 'none', padding: 0 }}
+                    >
+                      <div className="cat-pill-icon inactive">
+                        {othersOpen
+                          ? <ChevronLeft size={24} strokeWidth={1.6} color="#1a1a1a" />
+                          : <MoreHorizontal size={24} strokeWidth={1.6} color="#1a1a1a" />}
+                      </div>
+                      <span className="cat-pill-label">{othersOpen ? 'Show less' : 'View others'}</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Sub-row for the beverage group */}
