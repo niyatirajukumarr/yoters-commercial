@@ -11,6 +11,20 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
+// Mirrors the payload from /api/vendor/summary.
+type RangeSummary = {
+  orders: number
+  completed: number
+  active: number
+  cancelled: number
+  revenue: number
+  lost: number
+  received: number
+  awaiting: number
+  refunded: number
+}
+type VendorSummary = { today: RangeSummary; allTime: RangeSummary; dayStart: string }
+
 export default function VendorDashboard() {
   const router = useRouter()
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
@@ -37,6 +51,30 @@ export default function VendorDashboard() {
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
+
+  // Totals come from the server, not from the loaded order list — the list is
+  // deliberately today-only (the queue would be unusable otherwise), so all-time
+  // figures can't be derived from it.
+  const [summary, setSummary] = useState<VendorSummary | null>(null)
+  const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
+
+  const fetchSummary = useCallback(async (cafId: string) => {
+    try {
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+      if (!session?.access_token) return
+      const res = await withTimeout(
+        fetch(`/api/vendor/summary?cafeteriaId=${cafId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        8000,
+        'Summary fetch timed out'
+      )
+      if (!res.ok) return
+      setSummary(await res.json())
+    } catch (error) {
+      console.error('Vendor summary fetch error:', error)
+    }
+  }, [])
 
   const fetchOrders = useCallback(async (cafId: string, notify = false) => {
     try {
@@ -117,6 +155,16 @@ export default function VendorDashboard() {
     init()
     return () => { channel?.unsubscribe(); if (poll) clearInterval(poll) }
   }, [router, fetchOrders])
+
+  // Refresh the totals when an order's money or fulfilment state actually
+  // changes — keyed on a signature rather than the array, since the 5s poll
+  // replaces `orders` with a new array every tick even when nothing moved.
+  const orderStateSignature = orders
+    .map(o => `${o.id}:${o.status}:${(o as { payment_status?: string }).payment_status ?? ''}:${o.total_amount}`)
+    .join('|')
+  useEffect(() => {
+    if (cafeteria) fetchSummary(cafeteria.id)
+  }, [cafeteria, orderStateSignature, fetchSummary])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
@@ -644,13 +692,29 @@ export default function VendorDashboard() {
             </>
           )}
 
-          {/* TODAY'S SALES */}
+          {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
             const collected = orders.filter(o => o.status === 'collected')
             const cancelled = orders.filter(o => o.status === 'cancelled')
             const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
-            const revenue = collected.reduce((s, o) => s + o.total_amount, 0)
-            const lostRevenue = cancelled.reduce((s, o) => s + o.total_amount, 0)
+
+            // Server figures once they land; until then fall back to today's
+            // loaded orders so the tab is never blank. The fallback can only
+            // ever describe today, so the range switch waits for the server.
+            const isAll = summaryRange === 'allTime'
+            const s: RangeSummary | null = summary ? summary[summaryRange] : null
+            const completedCount = s ? s.completed : collected.length
+            const activeCount = s ? s.active : active.length
+            const cancelledCount = s ? s.cancelled : cancelled.length
+            const revenue = s ? s.revenue : collected.reduce((sum, o) => sum + o.total_amount, 0)
+            const lostRevenue = s ? s.lost : cancelled.reduce((sum, o) => sum + o.total_amount, 0)
+
+            const moneyCard = (value: number, label: string, colour: string, bg: string) => (
+              <div style={{ background: bg, border: `2px solid ${colour}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: colour }}>₹{value}</div>
+                <div style={{ fontSize: 10, color: colour, fontWeight: 700, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.3 }}>{label}</div>
+              </div>
+            )
 
             const OrderRow = ({ order, borderColor, onDelete }: { order: Order; borderColor: string; onDelete?: (order: Order) => void }) => (
               <div style={{ background: 'var(--surface2)', padding: '10px 14px', borderRadius: 10, borderLeft: `3px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
@@ -683,26 +747,52 @@ export default function VendorDashboard() {
 
             return (
               <div style={{ maxWidth: 600 }}>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Today's Summary</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>
+                    {isAll ? 'All-Time Summary' : "Today's Summary"}
+                  </div>
+                  <div style={{ display: 'inline-flex', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 999, padding: 3 }}>
+                    {([['today', 'Today'], ['allTime', 'All time']] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => setSummaryRange(key)}
+                        disabled={!summary}
+                        style={{
+                          border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 700,
+                          cursor: summary ? 'pointer' : 'default',
+                          background: summaryRange === key ? 'var(--accent)' : 'transparent',
+                          color: summaryRange === key ? '#fff' : 'var(--muted)',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
+                  {isAll
+                    ? `Every order since launch — ${s?.orders ?? 0} in total.`
+                    : 'Since midnight today.'}
+                </div>
 
                 {/* Stats row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
                   <div style={{ background: 'var(--green-bg)', border: '2px solid var(--green)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--green)' }}>{collected.length}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--green)' }}>{completedCount}</div>
                     <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Completed</div>
                   </div>
                   <div style={{ background: 'rgba(212,130,26,0.08)', border: '2px solid #d4821a', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#d4821a' }}>{active.length}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#d4821a' }}>{activeCount}</div>
                     <div style={{ fontSize: 11, color: '#d4821a', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Active</div>
                   </div>
                   <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--red)' }}>{cancelled.length}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--red)' }}>{cancelledCount}</div>
                     <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Cancelled</div>
                   </div>
                 </div>
 
                 {/* Revenue */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                   <div style={{ background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>₹{revenue}</div>
                     <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Revenue Earned</div>
@@ -713,9 +803,27 @@ export default function VendorDashboard() {
                   </div>
                 </div>
 
+                {/* Money actually moved. Kept apart from the fulfilment figures
+                    above: "Revenue Earned" counts orders served, this counts
+                    rupees Razorpay took. They are not the same number and the
+                    payout is based on this one. */}
+                {s && (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      {moneyCard(s.received, 'Received (paid)', 'var(--green)', 'var(--green-bg)')}
+                      {moneyCard(s.awaiting, 'Awaiting payment', '#d4821a', 'rgba(212,130,26,0.08)')}
+                      {moneyCard(s.refunded, 'Refunded', 'var(--red)', 'var(--red-bg)')}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+                      Payouts are settled against <strong>Received</strong> — money Razorpay actually collected.
+                      Awaiting payment is not yours yet, and refunded amounts go back to the customer.
+                    </div>
+                  </div>
+                )}
+
                 {/* Completed orders */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders ({collected.length})</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders Today ({collected.length})</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                     {collected.length === 0
                       ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
@@ -727,7 +835,7 @@ export default function VendorDashboard() {
                 {/* Cancelled/denied orders */}
                 {cancelled.length > 0 && (
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders ({cancelled.length})</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                       {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
                     </div>

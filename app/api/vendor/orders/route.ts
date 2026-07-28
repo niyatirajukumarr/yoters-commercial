@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { getAdminClient, requireVendorForCafeteria, authErrorStatus } from '@/lib/auth-server'
 import { enforceRateLimit } from '@/lib/rate-limit'
+import { istDayStart } from '@/lib/day-window'
 
 const adminSupabase = getAdminClient()
 
@@ -23,9 +24,10 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Fetch ALL of today's orders (active + completed + cancelled/denied)
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  // Fetch ALL of today's orders (active + completed + cancelled/denied).
+  // "Today" is the Indian calendar day — setHours() here meant midnight in the
+  // server's zone, which on Vercel is UTC, i.e. 05:30 IST.
+  const todayStart = istDayStart()
 
   const { data, error } = await adminSupabase
     .from('orders')
