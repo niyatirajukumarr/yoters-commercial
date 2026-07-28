@@ -347,6 +347,7 @@ const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
   'Club Sandwich': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/club%20sandwich.jpg',
   'Quick Bites': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/quick%20bites.jpg',
   'Rolls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/rolls.webp',
+  'Sandwiches': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/sandwiches.jpg',
   'Wraps': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/wraps.jpg',
 }
 
