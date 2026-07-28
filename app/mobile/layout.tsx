@@ -8,8 +8,10 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
 
   // The restaurant page renders its own copy of the same nav, scoped to that
-  // restaurant (its menu / its food search / its orders).
-  const isOnCafeteriaPage = pathname.startsWith('/mobile/order')
+  // restaurant (its menu / its food search / its orders). Match the trailing
+  // slash — '/mobile/orders' also starts with '/mobile/order', which was
+  // silently hiding the nav on the Orders tab.
+  const isOnCafeteriaPage = pathname.startsWith('/mobile/order/')
 
   return (
     <>
