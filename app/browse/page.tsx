@@ -15,6 +15,7 @@ import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { AppTabBar } from '@/components/AppTabBar'
+import { focusPageSearch } from '@/lib/utils/focusPageSearch'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -25,6 +26,15 @@ export default function StudentHome() {
   const [search, setSearch] = useState('')
   const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
   const router = useRouter()
+
+  // Arriving from the Search tab on a page that has no search box of its own
+  // (?focus=search) — land here with the cursor already in the box.
+  useEffect(() => {
+    if (loading) return
+    if (new URLSearchParams(window.location.search).get('focus') !== 'search') return
+    const id = setTimeout(() => focusPageSearch(), 80)
+    return () => clearTimeout(id)
+  }, [loading])
 
   const toggleMap = (id: string) => {
     setExpandedMaps(prev => {
@@ -272,6 +282,7 @@ export default function StudentHome() {
       <div className="browse-list">
         <input
           className="search-input"
+          data-app-search
           placeholder="Search restaurant or location..."
           value={search}
           onChange={e => setSearch(e.target.value)}
