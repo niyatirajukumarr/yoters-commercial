@@ -1,0 +1,123 @@
+/* Animated bottom nav: every tab shows its icon, the active one expands to
+   reveal its label with an underline sized to that label (the --lineWidth
+   custom property the component measures and sets per item). */
+
+.menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 4px;
+  height: 68px;
+  padding: 0 8px calc(var(--mobile-safe-area-bottom, 0px));
+  background: #fff;
+  border-top: 1px solid rgba(26, 31, 46, 0.08);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.menu__item {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  color: #8a90a8;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.28s ease, background 0.28s ease, flex-grow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu__item:active {
+  transform: scale(0.94);
+}
+
+.menu__item.active {
+  /* Give the open tab room for its label without squeezing the others out */
+  flex-grow: 1.9;
+  color: var(--component-active-color, #E8334A);
+  background: color-mix(in srgb, var(--component-active-color, #E8334A) 9%, transparent);
+}
+
+.menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu__item.active .menu__icon {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.menu__icon .icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
+/* Label is laid out at all times (so its width can be measured for the
+   underline) but only takes up space once its tab is active. */
+.menu__text {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: capitalize;
+  transform: translateX(-4px);
+  transition:
+    max-width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu__text.active {
+  max-width: 120px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Underline that grows to exactly the active label's measured width */
+.menu__item::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  height: 2px;
+  width: var(--lineWidth, 0px);
+  border-radius: 2px;
+  background: var(--component-active-color, #E8334A);
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+
+.menu__item.active::after {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu__item,
+  .menu__icon,
+  .menu__text,
+  .menu__item::after {
+    transition-duration: 0.01ms;
+  }
+}

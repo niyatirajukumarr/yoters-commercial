@@ -11,10 +11,11 @@ import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import {
-  ChevronLeft, Plus, Minus, QrCode, Heart, Home, ShoppingBag, User, SlidersHorizontal,
+  ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
   Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
 } from 'lucide-react'
+import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
@@ -343,6 +344,8 @@ export default function CafeteriaPage() {
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<Tab>('home')
+  // So the nav's Search tab can jump straight into the in-restaurant food search
+  const menuSearchRef = useRef<HTMLInputElement>(null)
 
   // Orders
   const [cafeOrders, setCafeOrders] = useState<Order[]>([])
@@ -1019,6 +1022,7 @@ export default function CafeteriaPage() {
               <div className="menu-search-bar" style={{ flex: 1, margin: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
+                  ref={menuSearchRef}
                   placeholder="Search food or drink..."
                   value={menuSearch}
                   onChange={e => setMenuSearch(e.target.value)}
@@ -1599,23 +1603,30 @@ export default function CafeteriaPage() {
         />
       )}
 
-      {/* TAB NAVIGATION */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 70, background: 'white', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100 }}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => { window.location.href = '/browse' }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}
-        >
-          <Home size={22} /> Home
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setActiveTab('orders')}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'orders' ? 'var(--accent)' : 'var(--muted)', fontSize: 11, fontWeight: 600 }}
-        >
-          <ShoppingBag size={22} /> Orders
-        </motion.button>
-      </div>
+      {/* TAB NAVIGATION — same four tabs as the rest of the app, but scoped to
+          this restaurant: its menu, its food search, its orders. */}
+      <InteractiveMenu
+        activeIndex={activeTab === 'orders' ? 2 : activeTab === 'profile' ? 3 : menuSearch ? 1 : 0}
+        items={[
+          {
+            label: 'home',
+            icon: Home,
+            onSelect: () => { setActiveTab('home'); setStep('menu'); setMenuSearch('') },
+          },
+          {
+            label: 'search',
+            icon: Search,
+            onSelect: () => {
+              setActiveTab('home')
+              setStep('menu')
+              // Wait for the menu view to render before focusing its input.
+              setTimeout(() => menuSearchRef.current?.focus(), 60)
+            },
+          },
+          { label: 'orders', icon: ShoppingBag, onSelect: () => setActiveTab('orders') },
+          { label: 'profile', icon: User, onSelect: () => router.push('/profile') },
+        ]}
+      />
     </div>
   )
 }

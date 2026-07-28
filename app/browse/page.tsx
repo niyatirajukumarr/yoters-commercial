@@ -14,6 +14,7 @@ import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
+import { AppTabBar } from '@/components/AppTabBar'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -349,6 +350,8 @@ export default function StudentHome() {
           </>
         )}
       </div>
+
+      <AppTabBar />
     </div>
   )
 }
