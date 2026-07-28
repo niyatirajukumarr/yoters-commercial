@@ -16,8 +16,26 @@ const adminSupabase = createClient(
 )
 
 // Razorpay payout credentials come strictly from env — never hardcoded.
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_PAYOUT_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
+//
+// Razorpay authenticates as key_id:key_secret from ONE key pair. This used to
+// read `RAZORPAY_PAYOUT_KEY_ID || NEXT_PUBLIC_RAZORPAY_KEY_ID` and pair it with
+// RAZORPAY_KEY_SECRET unconditionally — so setting a payout key id from a
+// different pair produced a guaranteed 401, and rotating the payments secret
+// broke payouts silently. The pair is now taken whole or not at all: a payout
+// key id is only honoured when its own secret is supplied alongside it.
+const PAYOUT_KEY_ID = process.env.RAZORPAY_PAYOUT_KEY_ID
+const PAYOUT_KEY_SECRET = process.env.RAZORPAY_PAYOUT_KEY_SECRET
+const usePayoutPair = Boolean(PAYOUT_KEY_ID && PAYOUT_KEY_SECRET)
+
+if (PAYOUT_KEY_ID && !PAYOUT_KEY_SECRET) {
+  logger.error(
+    '[Payout] RAZORPAY_PAYOUT_KEY_ID is set without RAZORPAY_PAYOUT_KEY_SECRET — ' +
+    'ignoring it and using the main key pair, since mixing halves of two pairs always 401s.'
+  )
+}
+
+const RAZORPAY_KEY_ID = usePayoutPair ? PAYOUT_KEY_ID : process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+const RAZORPAY_KEY_SECRET = usePayoutPair ? PAYOUT_KEY_SECRET : process.env.RAZORPAY_KEY_SECRET
 const RAZORPAY_ACCOUNT_NUMBER = process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER
 
 /** Payout states that represent money already committed. */
@@ -87,7 +105,15 @@ export async function POST(req: NextRequest) {
 
     // 2) Config check — fail closed if payout credentials are not configured.
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || !RAZORPAY_ACCOUNT_NUMBER) {
-      logger.error('[Payout] Missing Razorpay payout configuration')
+      // Name the missing variables in the server log. "Payouts are not
+      // configured" alone left you guessing which of three it was; the names
+      // are not secret, only the values are, and none are logged.
+      const missing = [
+        !RAZORPAY_KEY_ID && (usePayoutPair ? 'RAZORPAY_PAYOUT_KEY_ID' : 'NEXT_PUBLIC_RAZORPAY_KEY_ID'),
+        !RAZORPAY_KEY_SECRET && (usePayoutPair ? 'RAZORPAY_PAYOUT_KEY_SECRET' : 'RAZORPAY_KEY_SECRET'),
+        !RAZORPAY_ACCOUNT_NUMBER && 'RAZORPAY_PAYOUT_ACCOUNT_NUMBER',
+      ].filter(Boolean)
+      logger.error('[Payout] Missing Razorpay payout configuration:', missing.join(', '))
       return NextResponse.json({ error: 'Payouts are not configured.' }, { status: 503 })
     }
 
