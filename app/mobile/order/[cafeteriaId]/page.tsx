@@ -285,7 +285,7 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Juice @59': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/juice%20@59.webp',
 
   // LETHAFI categories
-  'Fresh Juices': 'https://images.unsplash.com/photo-1622597468739-9b66fac1c1a2?w=600&h=400&fit=crop',
+  'Fresh Juices': 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=600&h=400&fit=crop',
   'Mojitos': 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&h=400&fit=crop',
   'Hot Beverages': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
   'Fruit Milkshakes': 'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=600&h=400&fit=crop',
@@ -293,7 +293,7 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Sodas': 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=600&h=400&fit=crop',
   'Coffee Shake': 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&h=400&fit=crop',
   'Special Shakes': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
-  'Ice Cream Shakes': 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68a?w=600&h=400&fit=crop',
+  'Ice Cream Shakes': 'https://images.unsplash.com/photo-1603736029103-dafad0eb0906?w=600&h=400&fit=crop',
   'Lassi': 'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=600&h=400&fit=crop',
   'Delights': 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&h=400&fit=crop',
   'Club Sandwich': 'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=600&h=400&fit=crop',
@@ -331,6 +331,9 @@ export default function CafeteriaPage() {
   const [collection, setCollection] = useState<'all' | 'previous' | 'new'>('all')
   const [menuSearch, setMenuSearch] = useState('')
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
+  // Categories whose hero image failed to load, tracked in state rather than
+  // by hiding the node — see the hero render for why.
+  const [heroImgErrors, setHeroImgErrors] = useState<Set<string>>(new Set())
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set())
   const [popularity, setPopularity] = useState<{ byName: Record<string, number>; byId: Record<string, number>; max: number }>({ byName: {}, byId: {}, max: 0 })
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
@@ -1179,14 +1182,19 @@ export default function CafeteriaPage() {
                   )
                 }
                 const catItems = applyDishFilters(visibleItems.filter(m => m.category === selectedCategory))
-                const catImg = CATEGORY_IMAGES[selectedCategory] || null
+                // Failures are tracked per category in state. The old handler
+                // set display:none straight on the parent node — but React
+                // reuses that same node when the category changes and only
+                // swaps the src, so one broken image hid the hero for every
+                // category visited afterwards.
+                const catImg = heroImgErrors.has(selectedCategory) ? null : (CATEGORY_IMAGES[selectedCategory] || null)
                 return (
                   <>
                     {/* Category hero image */}
                     {catImg && (
                       <div style={{ position: 'relative', height: 160, overflow: 'hidden' }}>
-                        <img src={catImg} alt={selectedCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={e => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = 'none' }} />
+                        <img key={selectedCategory} src={catImg} alt={selectedCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={() => setHeroImgErrors(prev => new Set(prev).add(selectedCategory))} />
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
                         <div style={{ position: 'absolute', bottom: 14, left: 16, color: 'white', fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>{selectedCategory}</div>
                         <div style={{ position: 'absolute', bottom: 14, right: 16, color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{catItems.length} items</div>
