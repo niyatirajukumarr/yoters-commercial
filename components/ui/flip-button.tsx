@@ -28,7 +28,7 @@ interface FlipButtonProps extends HTMLMotionProps<'button'> {
 }
 
 const defaultSpanClassName =
-  'absolute inset-0 flex items-center justify-center rounded-lg';
+  'absolute inset-0 flex items-center justify-center rounded-lg whitespace-nowrap';
 
 const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
   (
@@ -84,12 +84,16 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
           : { whileHover: 'hover' })}
         whileTap={{ scale: 0.95 }}
         className={cn(
-          'relative inline-block h-10 px-4 py-2 text-sm font-medium cursor-pointer perspective-[1000px] focus:outline-none',
+          'relative inline-block h-10 text-sm font-medium cursor-pointer perspective-[1000px] focus:outline-none',
           className,
         )}
-        // Belt and braces: the utility class covers it, but the 3D depth is the
-        // whole effect, so don't leave it to a Tailwind version detail.
-        style={{ perspective: 1000, ...style }}
+        // Inline rather than utility classes. This app's globals.css has an
+        // unlayered `* { margin: 0; padding: 0 }` reset, and unlayered CSS
+        // beats @layer'd CSS in the cascade whatever the specificity — so
+        // Tailwind's px-*/py-* utilities compute to 0 here. Perspective is
+        // inline for the same belt-and-braces reason: the 3D depth is the
+        // whole effect.
+        style={{ perspective: 1000, padding: '0 14px', ...style }}
         {...props}
       >
         <motion.span

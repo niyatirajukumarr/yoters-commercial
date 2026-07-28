@@ -1083,7 +1083,8 @@ export default function CafeteriaPage() {
                 flipped={vegMode === 'nonveg'}
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
                 aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                className="h-8 shrink-0 px-3.5 py-0 text-[12px] font-bold"
+                className="h-8 shrink-0 text-[12px] font-bold"
+                style={{ padding: '0 14px' }}
                 frontClassName="rounded-full border border-[#2e9e6b] bg-[#edfaf3] text-[#2e9e6b]"
                 backClassName="rounded-full border border-[#e8734a] bg-[#fff0e8] text-[#e8734a]"
               />
