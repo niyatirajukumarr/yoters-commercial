@@ -1005,10 +1005,10 @@ export default function CafeteriaPage() {
             .cat-subpills { display: flex; gap: 8px; overflow-x: auto; padding: 2px 16px 12px; scrollbar-width: none; }
             .cat-subpills::-webkit-scrollbar { display: none; }
             .cat-subpill {
-              display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-              padding: 7px 14px; border-radius: 999px; cursor: pointer;
+              display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+              padding: 9px 16px; border-radius: 999px; cursor: pointer;
               border: 1px solid rgba(26,31,46,0.12); background: #f5f5f7;
-              color: var(--text2); font-size: 12.5px; font-weight: 600;
+              color: var(--text2); font-size: 13.5px; font-weight: 600;
               font-family: var(--font-body); white-space: nowrap;
               transition: background 0.18s, color 0.18s, border-color 0.18s;
             }
@@ -1204,7 +1204,7 @@ export default function CafeteriaPage() {
                           className={`cat-subpill ${isActive ? 'active' : ''}`}
                           onClick={() => setSelectedCategory(cat)}
                         >
-                          <CategoryIcon size={16} strokeWidth={1.8} />
+                          <CategoryIcon size={18} strokeWidth={1.8} />
                           <span>{cat}</span>
                         </button>
                       )
