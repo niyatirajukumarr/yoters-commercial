@@ -13,7 +13,7 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
-  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
+  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift, Scroll,
 } from 'lucide-react'
 import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
@@ -79,7 +79,11 @@ function categoryIcon(cat: string) {
   if (c.includes('shake')) return IceCreamCone
   if (c.includes('soda') || c.includes('drink')) return CupSoda
   if (c.includes('burger')) return Hamburger
-  if (c.includes('roll') || c.includes('wrap') || c.includes('sandwich') || c.includes('club')) return Sandwich
+  // Rolls/wraps before sandwiches — they used to fall into the same branch
+  // and share the sandwich icon. Lucide has no wrap, so Scroll stands in for
+  // "rolled up", in the same spirit as Zap for Quick Bites.
+  if (c.includes('roll') || c.includes('wrap')) return Scroll
+  if (c.includes('sandwich') || c.includes('club')) return Sandwich
   if (c.includes('egg')) return Egg
   if (c.includes('strip')) return Drumstick
   if (c.includes('bun')) return Croissant
