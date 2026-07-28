@@ -566,6 +566,15 @@ export default function CafeteriaPage() {
     }
   }, [categories.join('|'), selectedCategory])
 
+  // Switching category should start you at the top of that category, not at
+  // whatever depth you'd scrolled to in the previous one. Instant rather than
+  // smooth — from deep in a long list a smooth scroll is a long slow ride.
+  const didMountCategory = useRef(false)
+  useEffect(() => {
+    if (!didMountCategory.current) { didMountCategory.current = true; return }
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [selectedCategory])
+
   // ----- Dish filters (sort / price / collections) -----
   const prevOrderedIds = new Set<string>()
   const prevOrderedNames = new Set<string>()
@@ -958,13 +967,16 @@ export default function CafeteriaPage() {
             .menu-cafe-avatar { width: 42px; height: 42px; border-radius: 14px; background: #fffdf7; border: 1px solid var(--accent-light2); display: flex; align-items: center; justify-content: center; font-size: 21px; flex-shrink: 0; overflow: hidden; padding: 4px; box-sizing: border-box; }
             .menu-search-bar { display: flex; align-items: center; gap: 10px; background: #f5f5f7; border-radius: 12px; padding: 10px 14px; margin: 10px 16px 0; }
             .menu-search-bar input { background: none; border: none; outline: none; font-size: 14px; color: var(--text); flex: 1; }
-            .cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 12px; scrollbar-width: none; }
+            .cat-pills { display: flex; align-items: flex-start; gap: 8px; overflow-x: auto; padding: 10px 16px 12px; scrollbar-width: none; }
             .cat-pills::-webkit-scrollbar { display: none; }
             .cat-pill { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; }
             .cat-pill-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; border: 2px solid transparent; transition: all 0.18s; }
             .cat-pill-icon.active { border-color: var(--accent); background: #fff0f2; }
             .cat-pill-icon.inactive { background: #f5f5f7; }
-            .cat-pill-label { font-size: 11px; font-weight: 600; color: var(--text2); max-width: 64px; text-align: center; line-height: 1.2; }
+            /* Reserve two lines for every label so a long one ("Beverages and
+               Delights") can't make its pill taller than the rest and spill
+               into the sub-row below. */
+            .cat-pill-label { font-size: 11px; font-weight: 600; color: var(--text2); width: 68px; min-height: 27px; text-align: center; line-height: 1.2; }
             .cat-pill-label.active { color: var(--accent); }
             .cat-subpills { display: flex; gap: 8px; overflow-x: auto; padding: 2px 16px 12px; scrollbar-width: none; }
             .cat-subpills::-webkit-scrollbar { display: none; }
