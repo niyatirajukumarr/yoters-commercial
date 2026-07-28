@@ -90,8 +90,16 @@ void main() {
     st = clamp(st, 0.0, 1.0);
     st = st * cellSize + cellOffset;
 
+    // vAlpha encodes how much this disc faces the camera (0.1 at the back of
+    // the sphere, 1.0 at the front). Drop the rear-facing ones entirely
+    // instead of drawing them faint — back-face culling can't be relied on
+    // here because targetTo leaves the disc winding inverted, so GL's notion
+    // of "front" is backwards. Discarding on facing is winding-independent.
+    float facing = smoothstep(0.35, 0.7, vAlpha);
+    if (facing < 0.01) discard;
+
     outColor = texture(uTex, st);
-    outColor.a *= vAlpha;
+    outColor.a *= facing;
 }
 `
 
@@ -563,11 +571,13 @@ class InfiniteGridMenu {
   }
 
   private init(onInit?: InitCallback): void {
-    // alpha:false (opaque canvas) is deliberate — the shader writes straight
-    // (non-premultiplied) alpha, so a transparent canvas makes the compositor
-    // divide it back out and wash every disc to white. The container is
-    // styled dark instead so the opaque canvas reads as intentional.
-    const gl = this.canvas.getContext('webgl2', { antialias: true, alpha: false })
+    // Transparent canvas so the sphere sits on the page background rather
+    // than a black panel. premultipliedAlpha:false is required with it — the
+    // shader writes straight (non-premultiplied) alpha, and the default
+    // premultiplied compositing divides it back out and washes discs white.
+    const gl = this.canvas.getContext('webgl2', {
+      antialias: true, alpha: true, premultipliedAlpha: false,
+    })
     if (!gl) throw new Error('No WebGL 2 context!')
     this.gl = gl
 
@@ -735,7 +745,7 @@ class InfiniteGridMenu {
     gl.disable(gl.CULL_FACE)
     gl.enable(gl.DEPTH_TEST)
 
-    gl.clearColor(0.06, 0.06, 0.08, 1)
+    gl.clearColor(0, 0, 0, 0)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     gl.uniformMatrix4fv(this.discLocations.uWorldMatrix, false, this.worldMatrix)
