@@ -75,6 +75,16 @@ export default function AdminDashboard() {
 
       if (ordersError) throw ordersError
 
+      // Payouts already sent. 'processing' counts as spent — its outcome is
+      // unconfirmed, and treating unknown money as unspent is what causes a
+      // vendor to be paid twice.
+      const { data: payoutsData, error: payoutsError } = await supabase
+        .from('payouts')
+        .select('cafeteria_id, amount, status')
+        .in('status', ['processing', 'processed'])
+
+      if (payoutsError) throw payoutsError
+
       // Calculate totals per cafeteria
       const cafePayouts: { [key: string]: Cafeteria } = {}
       let grandTotal = 0
@@ -99,9 +109,20 @@ export default function AdminDashboard() {
         }
       })
 
-      // Calculate pending payouts
+      payoutsData?.forEach(p => {
+        if (cafePayouts[p.cafeteria_id]) {
+          cafePayouts[p.cafeteria_id].total_paid += Number(p.amount) || 0
+        }
+      })
+
+      // Pending is what came in minus what has gone out. total_paid used to be
+      // hardcoded to 0, so this line always returned the full received amount —
+      // the page could never tell you a vendor had already been paid.
       Object.keys(cafePayouts).forEach(cafeId => {
-        cafePayouts[cafeId].pending_payout = cafePayouts[cafeId].total_received - cafePayouts[cafeId].total_paid
+        cafePayouts[cafeId].pending_payout = Math.max(
+          0,
+          Math.round((cafePayouts[cafeId].total_received - cafePayouts[cafeId].total_paid) * 100) / 100
+        )
       })
 
       setCafeterias(Object.values(cafePayouts))
@@ -189,9 +210,11 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
+        // Only the cafeteria and amount go over the wire. The destination UPI
+        // id is read from the database server-side — a stolen admin session
+        // must not be able to name its own payee.
         body: JSON.stringify({
-          vendorName: cafe.name,
-          upiId: cafe.upi_id,
+          cafeteriaId: cafe.id,
           amount: cafe.pending_payout
         })
       })
