@@ -338,6 +338,18 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Maggies': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/maggie.jpg',
 }
 
+// Banners used only while the non-veg toggle is on. Categories missing here
+// fall back to CATEGORY_IMAGES above; several appear in both, which is the
+// whole point — a Wraps banner full of salad over a chicken-only list reads
+// as the wrong menu.
+const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
+  'Burgers': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/burgers.jpg',
+  'Club Sandwich': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/club%20sandwich.jpg',
+  'Quick Bites': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/quick%20bites.jpg',
+  'Rolls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/rolls.webp',
+  'Wraps': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/wraps.jpg',
+}
+
 export default function CafeteriaPage() {
   const params = useParams()
   const router = useRouter()
@@ -1235,19 +1247,26 @@ export default function CafeteriaPage() {
                   )
                 }
                 const catItems = applyDishFilters(visibleItems.filter(m => m.category === selectedCategory))
-                // Failures are tracked per category in state. The old handler
-                // set display:none straight on the parent node — but React
-                // reuses that same node when the category changes and only
-                // swaps the src, so one broken image hid the hero for every
-                // category visited afterwards.
-                const catImg = heroImgErrors.has(selectedCategory) ? null : (CATEGORY_IMAGES[selectedCategory] || null)
+                // Non-veg gets its own banner where one exists, falling back to
+                // the shared image otherwise — several categories carry both,
+                // so a veg-looking banner over a non-veg list would be wrong.
+                const heroSrc =
+                  (vegMode === 'nonveg' ? CATEGORY_IMAGES_NONVEG[selectedCategory] : null)
+                  || CATEGORY_IMAGES[selectedCategory]
+                  || null
+                // Failures are tracked by URL, not category — one category can
+                // now have two banners, and a broken veg one must not blank the
+                // non-veg one. (The original handler set display:none straight
+                // on the parent node, which React reuses across categories, so
+                // a single failure hid the hero everywhere after it.)
+                const catImg = heroSrc && !heroImgErrors.has(heroSrc) ? heroSrc : null
                 return (
                   <>
                     {/* Category hero image */}
                     {catImg && (
                       <div style={{ position: 'relative', height: 160, overflow: 'hidden' }}>
-                        <img key={selectedCategory} src={catImg} alt={selectedCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={() => setHeroImgErrors(prev => new Set(prev).add(selectedCategory))} />
+                        <img key={catImg} src={catImg} alt={selectedCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={() => setHeroImgErrors(prev => new Set(prev).add(catImg))} />
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
                         <div style={{ position: 'absolute', bottom: 14, left: 16, color: 'white', fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>{selectedCategory}</div>
                         <div style={{ position: 'absolute', bottom: 14, right: 16, color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{catItems.length} items</div>
