@@ -25,10 +25,13 @@ interface FlipButtonProps extends HTMLMotionProps<'button'> {
    * it changes. Leave undefined for the original hover behaviour.
    */
   flipped?: boolean;
+  /** Optional mark shown before each label. */
+  frontIcon?: React.ReactNode;
+  backIcon?: React.ReactNode;
 }
 
 const defaultSpanClassName =
-  'absolute inset-0 flex items-center justify-center rounded-lg whitespace-nowrap';
+  'absolute inset-0 flex items-center justify-center gap-1.5 rounded-lg whitespace-nowrap';
 
 const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
   (
@@ -41,6 +44,8 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
       backClassName,
       from = 'top',
       flipped,
+      frontIcon,
+      backIcon,
       style,
       ...props
     },
@@ -105,6 +110,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
             frontClassName,
           )}
         >
+          {frontIcon}
           {frontText}
         </motion.span>
         <motion.span
@@ -116,12 +122,15 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
             backClassName,
           )}
         >
+          {backIcon}
           {backText}
         </motion.span>
         {/* Both faces are absolutely positioned, so this invisible copy is what
-            gives the button its size. Size to the longer label, or the wider
-            face gets clipped — "Veg" front / "Non-veg" back would. */}
-        <span className="invisible">
+            gives the button its size. Size to the longer label — and to a mark
+            if either face has one — or the wider face gets clipped, as "Veg"
+            front against "Non-veg" back would. */}
+        <span className="invisible inline-flex items-center gap-1.5">
+          {frontIcon ?? backIcon}
           {frontText.length >= backText.length ? frontText : backText}
         </span>
       </motion.button>

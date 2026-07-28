@@ -70,6 +70,27 @@ const BEVERAGE_CATEGORIES = [
 const BEVERAGE_SET = new Set(BEVERAGE_CATEGORIES.map(c => c.toLowerCase()))
 const isBeverageCategory = (cat: string) => BEVERAGE_SET.has(cat.toLowerCase())
 
+// The FSSAI veg/non-veg mark — square outline with a dot for veg, a triangle
+// for non-veg. Same shape and colours the dish cards use, at a size that suits
+// sitting inline next to a label.
+function VegMark({ veg = false }: { veg?: boolean }) {
+  const colour = veg ? '#2e9e6b' : '#b8321f'
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 13, height: 13, borderRadius: 3, flexShrink: 0,
+        border: `1.5px solid ${colour}`,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {veg
+        ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: colour }} />
+        : <span style={{ width: 0, height: 0, borderLeft: '3.5px solid transparent', borderRight: '3.5px solid transparent', borderBottom: `6px solid ${colour}` }} />}
+    </span>
+  )
+}
+
 // Black-and-white line icons instead of colored emoji, to match a
 // sketched/outline look rather than a full-color glyph set.
 function categoryIcon(cat: string) {
@@ -1075,18 +1096,21 @@ export default function CafeteriaPage() {
               </div>
               {/* Veg / Non-veg. Flips between the two faces on tap rather than
                   on hover — phones have no hover, and the flip is the whole
-                  point of the control. */}
+                  point of the control. The marks are the same ones the dish
+                  cards carry, so the toggle and the cards read as one system. */}
               <FlipButton
                 frontText="Veg"
                 backText="Non-veg"
+                frontIcon={<VegMark veg />}
+                backIcon={<VegMark />}
                 from="top"
                 flipped={vegMode === 'nonveg'}
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
                 aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                className="h-8 shrink-0 text-[12px] font-bold"
-                style={{ padding: '0 14px' }}
-                frontClassName="rounded-full border border-[#2e9e6b] bg-[#edfaf3] text-[#2e9e6b]"
-                backClassName="rounded-full border border-[#e8734a] bg-[#fff0e8] text-[#e8734a]"
+                className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
+                style={{ padding: '0 12px' }}
+                frontClassName="rounded-full border border-[#2e9e6b]/35 bg-[#eef9f3] text-[#217a53]"
+                backClassName="rounded-full border border-[#b8321f]/35 bg-[#fdf0ed] text-[#a32d1c]"
               />
             </div>
 
