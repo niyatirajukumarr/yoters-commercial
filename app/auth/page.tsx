@@ -31,7 +31,22 @@ export default function AuthPage() {
     if (m === 'signup' || m === 'login') setMode(m)
   }, [])
 
-  // After auth, send students straight to browse and vendors to their dashboard
+  // Where to land after auth.
+  //
+  // `next` is set by whatever stopped the user — usually the first add-to-cart
+  // on a restaurant menu — so they resume there instead of being dropped on
+  // /browse having lost their place. Only same-origin paths are honoured: a
+  // value like '//evil.com' is a protocol-relative URL, not a local path, and
+  // following it would make this an open redirect.
+  function safeNext(): string | null {
+    const raw = new URLSearchParams(window.location.search).get('next')
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null
+    return raw
+  }
+
+  // After auth, send students back where they came from (or to browse) and
+  // vendors to their dashboard. The vendor check wins: a vendor has no use for
+  // a customer's cart, whatever `next` says.
   async function goAfterAuth(userEmail?: string | null) {
     try {
       if (userEmail) {
@@ -43,7 +58,7 @@ export default function AuthPage() {
         if (cafeteria) { router.push('/vendor'); return }
       }
     } catch { /* not a vendor — fall through */ }
-    router.push('/browse')
+    router.push(safeNext() ?? '/browse')
   }
 
   async function handleLogin() {

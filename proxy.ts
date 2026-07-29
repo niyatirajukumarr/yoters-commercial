@@ -47,10 +47,26 @@ export async function proxy(req: NextRequest) {
 
   // Public pages that never require a session. Privacy/terms must be reachable
   // without login (DPDP notice must be accessible to prospective users).
-  const PUBLIC = ['/', '/auth', '/vendor', '/splash', '/privacy', '/terms']
-  const isPublic = PUBLIC.some(
-    p => req.nextUrl.pathname === p || req.nextUrl.pathname.startsWith(p + '/')
-  )
+  //
+  // Browsing is deliberately open. The funnel is landing → browse → pick a
+  // restaurant → read the menu, and the first add-to-cart is where we ask who
+  // you are. Anything tied to a particular person — their orders, their
+  // profile, order tracking, checkout — stays behind the gate.
+  //
+  // Exact and prefix lists are kept apart because the two behave differently
+  // inside /mobile: '/mobile' itself is public (it only redirects to
+  // /mobile/home) while '/mobile/profile' must not be. '/mobile/order' as a
+  // prefix matches '/mobile/order/lethafi' but NOT '/mobile/orders', because
+  // the check appends a slash — the same trap the mobile layout hit.
+  const path = req.nextUrl.pathname
+  const PUBLIC_EXACT = [
+    '/', '/splash', '/privacy', '/terms',
+    '/browse', '/mobile', '/mobile/home',
+  ]
+  const PUBLIC_PREFIX = ['/auth', '/vendor', '/mobile/order']
+  const isPublic =
+    PUBLIC_EXACT.includes(path) ||
+    PUBLIC_PREFIX.some(p => path === p || path.startsWith(p + '/'))
 
   // Manager route protection — role-based, not a hardcoded email literal.
   if (req.nextUrl.pathname.startsWith('/manager')) {
@@ -59,14 +75,22 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // Not logged in + trying to access a protected page → redirect to /auth
+  // Not logged in + trying to access a protected page → redirect to /auth,
+  // carrying where they were headed so they resume there afterwards rather
+  // than being dumped on /browse.
   if (!user && !isPublic) {
-    return NextResponse.redirect(new URL('/auth', req.url))
+    const authUrl = new URL('/auth', req.url)
+    authUrl.searchParams.set('next', path + req.nextUrl.search)
+    return NextResponse.redirect(authUrl)
   }
 
-  // Already logged in + hitting /auth → redirect to /browse
-  if (user && req.nextUrl.pathname === '/auth') {
-    return NextResponse.redirect(new URL('/browse', req.url))
+  // Already logged in + hitting /auth → onwards. `next` is only honoured when
+  // it is a path on this site: a value like '//evil.com' is a protocol-relative
+  // URL, not a local path, and would be an open redirect.
+  if (user && path === '/auth') {
+    const next = req.nextUrl.searchParams.get('next')
+    const dest = next && next.startsWith('/') && !next.startsWith('//') ? next : '/browse'
+    return NextResponse.redirect(new URL(dest, req.url))
   }
 
   return res

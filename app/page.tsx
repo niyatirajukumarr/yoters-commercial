@@ -211,8 +211,10 @@ export default function LandingPage() {
     setMenuOpen(false)
   }
 
-  // Ordering CTAs: logged-in users browse, logged-out users are sent to auth first
-  const orderHref = (user || isAuthed) ? '/browse' : '/auth?mode=login'
+  // Ordering CTAs go straight to browse for everyone. Signing in is no longer
+  // the price of admission — you can browse restaurants and read menus as a
+  // guest, and auth is asked for at the first add-to-cart instead.
+  const orderHref = '/browse'
   const goOrder = () => router.push(orderHref)
 
 

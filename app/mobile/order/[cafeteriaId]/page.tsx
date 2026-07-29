@@ -664,7 +664,25 @@ export default function CafeteriaPage() {
   const categoryDisplayMap: { [key: string]: string } = { 'Juice': 'Juice @59' }
   const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
 
-  const handleAddItem = (item: MenuItem) => {
+  // Browsing this menu is open to anyone; the first add-to-cart is where we ask
+  // who you are. `next` is this exact restaurant's URL, so signing in returns
+  // you to the menu you were reading rather than to /browse.
+  //
+  // The session is read at click time rather than held in state: getSession()
+  // reads local storage and doesn't go to the network, and checking here means
+  // there is no window early in the page's life where isAuthed is still null
+  // and a guest could slip an item in.
+  //
+  // The tapped item is deliberately not carried across. The cart is cleared
+  // when this page unmounts, so it could not survive the trip anyway, and
+  // re-tapping ADD on return is one action rather than a cart that silently
+  // filled itself.
+  const handleAddItem = async (item: MenuItem) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
     addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
   }
 
