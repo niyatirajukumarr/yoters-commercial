@@ -109,9 +109,11 @@ const MenuItemCard = React.forwardRef<HTMLDivElement, MenuItemCardProps>(
           {/* --- PRICING --- */}
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-bold text-foreground">₹{price}</span>
-            <span className="text-sm line-through text-muted-foreground">₹{originalPrice}</span>
             {savings > 0 && (
-              <span className="text-sm font-semibold text-green-500">SAVE ₹{savings}</span>
+              <>
+                <span className="text-sm line-through text-muted-foreground">₹{originalPrice}</span>
+                <span className="text-sm font-semibold text-green-500">SAVE ₹{savings}</span>
+              </>
             )}
           </div>
 
