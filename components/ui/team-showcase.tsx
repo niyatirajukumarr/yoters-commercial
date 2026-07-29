@@ -71,6 +71,21 @@ const DEFAULT_MEMBERS: TeamMember[] = [
   },
 ]
 
+// Card size per column, largest in the middle so the row reads as a wave.
+//
+// Sized to the photos' native 3:4 rather than the near-square of the original
+// demo — every portrait here is 3:4, so at this ratio object-cover crops
+// nothing and the faces come out larger for the same footprint. On a phone the
+// three columns already span the full width, so height is the only axis with
+// room; the widths below are the most that fits 375px once the gaps are paid
+// for. The real jump waits for lg, because between 768 and 1024 the name list
+// sits alongside the grid and there is no width going spare.
+const CARD_SIZE: Record<1 | 2 | 3, string> = {
+  1: 'w-[112px] h-[149px] sm:w-[140px] sm:h-[187px] md:w-[155px] md:h-[207px] lg:w-[185px] lg:h-[247px]',
+  2: 'w-[124px] h-[165px] sm:w-[155px] sm:h-[207px] md:w-[172px] md:h-[229px] lg:w-[205px] lg:h-[273px]',
+  3: 'w-[117px] h-[156px] sm:w-[146px] sm:h-[195px] md:w-[162px] md:h-[216px] lg:w-[193px] lg:h-[257px]',
+}
+
 interface TeamShowcaseProps {
   members?: TeamMember[]
 }
@@ -87,21 +102,26 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
       <style>{`
         .ts-root { padding: 32px 0; }
         .ts-photos { padding-bottom: 4px; }
-        /* The stagger. Column 1 sits flush, the other two hang lower. */
-        .ts-col2 { margin-top: 48px; }
-        .ts-col3 { margin-top: 22px; }
+        /* The stagger. Column 1 sits flush, the other two hang lower.
+           Offsets grow with the cards so the diagonal keeps its slope. */
+        .ts-col2 { margin-top: 56px; }
+        .ts-col3 { margin-top: 26px; }
         .ts-list { padding-top: 0; }
         .ts-role { margin-top: 6px; padding-left: 27px; }
         .ts-social a { padding: 4px; }
 
         @media (min-width: 640px) {
-          .ts-col2 { margin-top: 56px; }
-          .ts-col3 { margin-top: 26px; }
+          .ts-col2 { margin-top: 64px; }
+          .ts-col3 { margin-top: 30px; }
         }
         @media (min-width: 768px) {
           .ts-col2 { margin-top: 68px; }
           .ts-col3 { margin-top: 32px; }
           .ts-list { padding-top: 8px; }
+        }
+        @media (min-width: 1024px) {
+          .ts-col2 { margin-top: 80px; }
+          .ts-col3 { margin-top: 38px; }
         }
       `}</style>
 
@@ -113,7 +133,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
               <PhotoCard
                 key={member.id}
                 member={member}
-                className="w-[110px] h-[120px] sm:w-[130px] sm:h-[140px] md:w-[155px] md:h-[165px]"
+                className={CARD_SIZE[1]}
                 hoveredId={hoveredId}
                 onHover={setHoveredId}
               />
@@ -125,7 +145,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
               <PhotoCard
                 key={member.id}
                 member={member}
-                className="w-[122px] h-[132px] sm:w-[145px] sm:h-[155px] md:w-[172px] md:h-[182px]"
+                className={CARD_SIZE[2]}
                 hoveredId={hoveredId}
                 onHover={setHoveredId}
               />
@@ -137,7 +157,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
               <PhotoCard
                 key={member.id}
                 member={member}
-                className="w-[115px] h-[125px] sm:w-[136px] sm:h-[146px] md:w-[162px] md:h-[172px]"
+                className={CARD_SIZE[3]}
                 hoveredId={hoveredId}
                 onHover={setHoveredId}
               />
