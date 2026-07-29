@@ -105,10 +105,23 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
            so object-cover crops nothing. The old near-square cards were cutting
            the tops and bottoms off every portrait. */
         .ts-col { display: flex; flex-direction: column; flex-shrink: 0; }
-        .ts-col-1 { width: 30%; }
-        .ts-col-2 { width: 33.5%; margin-top: 56px; }
-        .ts-col-3 { width: 31.5%; margin-top: 26px; }
+        .ts-col-1 { width: 30.3%; }
+        .ts-col-2 { width: 33.9%; margin-top: 56px; }
+        .ts-col-3 { width: 31.8%; margin-top: 26px; }
         .ts-card { width: 100%; aspect-ratio: 3 / 4; }
+
+        /* Full-bleed on phones. .lp-section boxes the strip in with side
+           padding the photos have no use for, and on a screen this narrow that
+           padding is the only width left to take. The offsets mirror the
+           .lp-section media queries in page.tsx exactly — 14px below 481, 16px
+           above it — so a mismatch can't leave the strip hanging off the edge.
+           Columns sum to 96%, leaving the 12px of gaps to make up the rest. */
+        @media (max-width: 480px) {
+          .ts-photos { margin-left: -14px; margin-right: -14px; }
+        }
+        @media (min-width: 481px) and (max-width: 639px) {
+          .ts-photos { margin-left: -16px; margin-right: -16px; }
+        }
 
         @media (min-width: 640px) {
           .ts-col-1 { width: 140px; }
