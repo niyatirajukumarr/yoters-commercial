@@ -700,9 +700,12 @@ export default function LandingPage() {
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
               <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>The People Behind It</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 48 }}>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 14 }}>
                 Meet the<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Team.</span>
               </motion.h2>
+              <motion.p variants={fadeUp} style={{ fontSize: 15, color: '#8a90a8', lineHeight: 1.7, fontWeight: 400, marginBottom: 24 }}>
+                Click on each photo to know more.
+              </motion.p>
             </motion.div>
             <TeamShowcase />
           </div>
