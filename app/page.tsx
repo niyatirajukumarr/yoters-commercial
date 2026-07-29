@@ -215,12 +215,6 @@ export default function LandingPage() {
   const goOrder = () => router.push(orderHref)
 
 
-  const steps = [
-    { n: '01', title: 'Browse & Choose', desc: "Open Yoters, pick your restaurant, browse today's menu and add items to your cart — all before your break starts.", img: '🍽️', bg: '#fff0f2' },
-    { n: '02', title: 'Pre-order & Pay', desc: 'Place your order, pay via UPI in seconds. Your queue position is reserved instantly.', img: '📱', bg: '#fff8ec' },
-    { n: '03', title: 'Walk in. Pick up. Leave.', desc: 'Head to the counter when your order is marked ready. Skip the entire queue.', img: '🎉', bg: '#edfaf3' },
-  ]
-
   const aboutCards = [
     { icon: '📅', title: 'Pre-book Before Break', desc: "Order your meal before your break starts so it's ready the moment you walk in." },
     { icon: '⚡', title: 'Zero Queue Time', desc: 'Walk in, pick up your food, and leave — no waiting in lines, no wasted break time.' },
@@ -366,11 +360,6 @@ export default function LandingPage() {
         .rest-card-arrow { font-size: 20px; color: #E8334A; opacity: 0; transition: opacity 0.2s; }
         .rest-card:hover .rest-card-arrow { opacity: 1; }
 
-        .how-card { border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 32px 28px; position: relative; overflow: hidden; }
-        .how-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg,#E8334A,#ff8fa3); opacity:0; transition:opacity 0.3s; }
-        .how-card:hover::before { opacity:1; }
-        .how-card:hover { border-color: rgba(232,51,74,0.2); box-shadow: 0 16px 48px rgba(232,51,74,0.08); }
-
         .about-card { background: #fdf8f5; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 32px 28px; position: relative; overflow: hidden; }
         .about-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background: linear-gradient(90deg,#E8334A,#ff8fa3); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; }
         .about-card:hover::after { transform:scaleX(1); }
@@ -441,7 +430,7 @@ export default function LandingPage() {
           </div>
           <ul className="lp-nav-links">
             {[
-              { label: 'How', id: 'howitworks' },
+              { label: 'About', id: 'about' },
               { label: 'Why', id: 'why' },
               { label: 'Contact', id: 'contact' }
             ].map(item => (
@@ -479,7 +468,7 @@ export default function LandingPage() {
             <motion.div className="mobile-menu-overlay"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {[
-                { label: 'How', id: 'howitworks' },
+                { label: 'About', id: 'about' },
                 { label: 'Why', id: 'why' },
                 { label: 'Contact', id: 'contact' }
               ].map(item => (
@@ -521,10 +510,6 @@ export default function LandingPage() {
             <source src="/hero-video.mp4" type="video/mp4" />
           </video>
           <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 680, y: heroY, opacity: heroOpacity }}>
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,51,74,0.1)', border: '1px solid rgba(232,51,74,0.25)', color: '#E8334A', padding: '8px 18px', borderRadius: 20, marginBottom: 32, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', backdropFilter: 'blur(8px)' }}>
-              <span className="tag-dot" /> Now accepting early access
-            </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22,1,0.36,1] }}
               style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 700, lineHeight: 1, letterSpacing: -2, color: '#1a1f2e', marginBottom: 24 }}>
               Skip the<br /><em style={{ fontStyle: 'italic', color: '#E8334A', fontWeight: 700 }}>Restaurant Rush.</em>
@@ -536,7 +521,7 @@ export default function LandingPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
               style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
               <button className="btn-primary" onClick={goOrder} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Start Ordering →</button>
-              <button className="btn-outline" onClick={() => scrollTo('howitworks')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Learn How →</button>
+              <button className="btn-outline" onClick={() => scrollTo('about')} style={{ padding: '16px 40px', fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Learn More →</button>
             </motion.div>
           </motion.div>
         </section>
@@ -598,36 +583,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
-        <section id="howitworks" className="lp-section" style={{ padding: '100px 48px', background: '#faf9f7', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>How It Works</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
-                Three Steps to<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Zero Waiting.</span>
-              </motion.h2>
-              <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
-                Browse, order, and pick up — all before your break even starts. Simple. Fast. Fresh.
-              </motion.p>
-            </motion.div>
-            <div className="lp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }}>
-              {steps.map((step, i) => (
-                <motion.div key={i} className="how-card"
-                  style={{ background: step.bg, marginTop: i === 1 ? 24 : i === 2 ? 48 : 0, cursor: 'pointer', boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)' }}
-                  initial={{ opacity: 0, x: -100, y: 20 }}
-                  whileInView={{ opacity: 1, x: 0, y: i === 1 ? 24 : i === 2 ? 48 : 0 }}
-                  viewport={{ once: true, margin: '-100px' }}
-                  transition={{ duration: 0.8, delay: i * 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ y: (i === 1 ? 24 : i === 2 ? 48 : 0) - 16, scale: 1.06, boxShadow: '0 24px 48px rgba(232,51,74,0.15)', transition: { duration: 0.35 } }}>
-                  <span style={{ fontSize: 60, marginBottom: 24, display: 'block', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }}>{step.img}</span>
-                  <div style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#E8334A', marginBottom: 14, textTransform: 'uppercase' }}>Step {step.n}</div>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#1a1f2e', marginBottom: 12, lineHeight: 1.3 }}>{step.title}</h3>
-                  <p style={{ fontSize: 15, color: '#7a8296', lineHeight: 1.8, fontWeight: 400 }}>{step.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* ABOUT — anchor only for now; content still to be decided. Kept so the
+            nav/footer "About" links have somewhere to land instead of dead-ending. */}
+        <section id="about" />
 
         {/* FOOD TRACK */}
         <section style={{ padding: '80px 0', background: '#fdf8f5', overflow: 'hidden', borderTop: '1px solid rgba(26,31,46,0.06)', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
@@ -767,7 +725,7 @@ export default function LandingPage() {
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginBottom: 20 }}>Navigation</p>
               {[
-                { label: 'How', id: 'howitworks' },
+                { label: 'About', id: 'about' },
                 { label: 'Why', id: 'why' },
                 { label: 'Contact', id: 'contact' }
               ].map(item => (
