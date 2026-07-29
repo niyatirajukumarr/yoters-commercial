@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import TeamShowcase from '@/components/ui/team-showcase'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -694,9 +695,18 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* MEET THE TEAM — the stats strip that was here is gone. Empty for now;
-            content still to be decided. Sits between the CTA and the footer. */}
-        <section id="team" />
+        {/* MEET THE TEAM */}
+        <section id="team" className="lp-section" style={{ padding: '100px 48px', background: 'white' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
+              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>The People Behind It</motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 48 }}>
+                Meet the<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Team.</span>
+              </motion.h2>
+            </motion.div>
+            <TeamShowcase />
+          </div>
+        </section>
 
         {/* FOOTER */}
         <footer className="lp-section" style={{ background: '#1a1f2e', padding: '72px 48px 40px' }}>
