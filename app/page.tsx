@@ -15,7 +15,6 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
-  const [isAuthed, setIsAuthed] = useState(false)
   const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
   // Safety timeout: Force page to render after 15 seconds max
@@ -52,8 +51,6 @@ export default function LandingPage() {
         const { data: { session } } = await sessionPromise as any
 
         if (!isMounted) return
-
-        setIsAuthed(!!session)
 
         if (!skipSplash) {
           // First open this session → play the splash once, then never again this session
@@ -433,7 +430,7 @@ export default function LandingPage() {
           </div>
           <ul className="lp-nav-links">
             {[
-              { label: 'About', id: 'about' },
+              { label: 'About', id: 'team' },
               { label: 'Why', id: 'why' },
               { label: 'Contact', id: 'contact' }
             ].map(item => (
@@ -441,17 +438,16 @@ export default function LandingPage() {
             ))}
           </ul>
           <div className="lp-nav-right">
+            {/* No Log in / Sign up here any more. Browsing is open, so the nav
+                leads with the product rather than with a form; signing in is
+                asked for at the first add-to-cart. Signed-in visitors still get
+                their avatar. */}
             {user ? (
               <div style={{ position: 'relative' }}>
                 <div className="profile-avatar" onClick={() => router.push('/profile')}>
                   {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                 </div>
               </div>
-            ) : !isAuthed ? (
-              <>
-                <button className="lp-vendor-btn" onClick={() => router.push('/auth?mode=login')}>Log in</button>
-                <button className="lp-join-btn" onClick={() => router.push('/auth?mode=signup')}>Sign up</button>
-              </>
             ) : null}
             <button
               type="button"
@@ -471,7 +467,7 @@ export default function LandingPage() {
             <motion.div className="mobile-menu-overlay"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {[
-                { label: 'About', id: 'about' },
+                { label: 'About', id: 'team' },
                 { label: 'Why', id: 'why' },
                 { label: 'Contact', id: 'contact' }
               ].map(item => (
@@ -482,7 +478,7 @@ export default function LandingPage() {
                   {item.label}
                 </motion.a>
               ))}
-              <button className="lp-join-btn" onClick={() => { scrollTo('contact'); setMenuOpen(false) }}>Join Now!</button>
+              <button className="lp-join-btn" onClick={() => { scrollTo('cta'); setMenuOpen(false) }}>Join Now!</button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -586,9 +582,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ABOUT — anchor only for now; content still to be decided. Kept so the
-            nav/footer "About" links have somewhere to land instead of dead-ending. */}
-        <section id="about" />
 
         {/* FOOD TRACK */}
         <section style={{ padding: '80px 0', background: '#fdf8f5', overflow: 'hidden', borderTop: '1px solid rgba(26,31,46,0.06)', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
@@ -676,7 +669,10 @@ export default function LandingPage() {
         </section>
 
         {/* CTA */}
-        <section id="contact" className="lp-section" style={{ padding: '120px 48px', background: 'linear-gradient(135deg, #1a1f2e 0%, #0f1219 100%)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        {/* id is 'cta', not 'contact': the Contact nav link now goes to the
+            actual contact details in the footer, so this section keeps its own
+            name and the "Join Now!" button points here. */}
+        <section id="cta" className="lp-section" style={{ padding: '120px 48px', background: 'linear-gradient(135deg, #1a1f2e 0%, #0f1219 100%)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.15) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
           <div style={{ position: 'absolute', bottom: '-15%', left: '-8%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
           <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 700, margin: '0 auto' }}
@@ -729,7 +725,7 @@ export default function LandingPage() {
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginBottom: 20 }}>Navigation</p>
               {[
-                { label: 'About', id: 'about' },
+                { label: 'About', id: 'team' },
                 { label: 'Why', id: 'why' },
                 { label: 'Contact', id: 'contact' }
               ].map(item => (
@@ -740,7 +736,9 @@ export default function LandingPage() {
                 style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: 500, marginBottom: 12, display: 'block' }}>Browse Restaurants</Link>
               <button className="footer-back-btn" onClick={() => scrollTo('hero')}>↑ Back to Top</button>
             </div>
-            <div>
+            {/* The Contact nav link lands here — the email and address are the
+                contact details, not the CTA section that used to hold the id. */}
+            <div id="contact">
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)', marginBottom: 20 }}>Connect</p>
               <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
                 {[{ href: 'https://x.com/YotersOfficial', label: '𝕏' }, { href: 'https://www.instagram.com/yotersofficial.tech', label: 'IG' }, { href: 'https://www.linkedin.com/company/yotersofficial', label: 'in' }].map(s => (

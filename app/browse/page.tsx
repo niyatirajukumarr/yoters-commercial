@@ -21,6 +21,11 @@ interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
 export default function StudentHome() {
   const { user } = useUserInfo()
+  // Whether there is a real session, which is not the same as `user` above:
+  // useUserInfo reads a name and phone out of local storage, so a guest who
+  // once typed their name would otherwise be shown their own initial and a
+  // link to a profile page they cannot open.
+  const [isAuthed, setIsAuthed] = useState(false)
   const [cafeterias, setCafeterias] = useState<CafeteriaWithQueue[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -49,6 +54,7 @@ export default function StudentHome() {
   useEffect(() => {
     const checkVendor = async () => {
       const { data: { session } } = await supabase.auth.getSession()
+      setIsAuthed(Boolean(session))
       if (session) {
         const { data: cafeteria } = await supabase
           .from('cafeterias')
@@ -215,7 +221,9 @@ export default function StudentHome() {
             <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>Yoters</span>
           </div>
         </Link>
-        <Link href="/mobile/profile">
+        {/* Guests get the plain icon and are sent to sign in. The profile page
+            is gated, so linking a guest straight at it only bounced them. */}
+        <Link href={isAuthed ? '/mobile/profile' : '/auth?mode=login&next=/mobile/profile'}>
           <motion.button
             style={{
               width: 42,
@@ -236,7 +244,7 @@ export default function StudentHome() {
             whileHover={{ scale: 1.08, boxShadow: '0 6px 16px rgba(232,51,74,0.4), inset 0 1px 1px rgba(255,255,255,0.3)' }}
             whileTap={{ scale: 0.95 }}
           >
-            {user?.name ? user.name.charAt(0).toUpperCase() : '👤'}
+            {isAuthed && user?.name ? user.name.charAt(0).toUpperCase() : '👤'}
           </motion.button>
         </Link>
       </nav>
