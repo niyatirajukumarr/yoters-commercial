@@ -71,21 +71,6 @@ const DEFAULT_MEMBERS: TeamMember[] = [
   },
 ]
 
-// Card size per column, largest in the middle so the row reads as a wave.
-//
-// Sized to the photos' native 3:4 rather than the near-square of the original
-// demo — every portrait here is 3:4, so at this ratio object-cover crops
-// nothing and the faces come out larger for the same footprint. On a phone the
-// three columns already span the full width, so height is the only axis with
-// room; the widths below are the most that fits 375px once the gaps are paid
-// for. The real jump waits for lg, because between 768 and 1024 the name list
-// sits alongside the grid and there is no width going spare.
-const CARD_SIZE: Record<1 | 2 | 3, string> = {
-  1: 'w-[112px] h-[149px] sm:w-[140px] sm:h-[187px] md:w-[155px] md:h-[207px] lg:w-[185px] lg:h-[247px]',
-  2: 'w-[124px] h-[165px] sm:w-[155px] sm:h-[207px] md:w-[172px] md:h-[229px] lg:w-[205px] lg:h-[273px]',
-  3: 'w-[117px] h-[156px] sm:w-[146px] sm:h-[195px] md:w-[162px] md:h-[216px] lg:w-[193px] lg:h-[257px]',
-}
-
 interface TeamShowcaseProps {
   members?: TeamMember[]
 }
@@ -102,65 +87,65 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
       <style>{`
         .ts-root { padding: 32px 0; }
         .ts-photos { padding-bottom: 4px; }
-        /* The stagger. Column 1 sits flush, the other two hang lower.
-           Offsets grow with the cards so the diagonal keeps its slope. */
-        .ts-col2 { margin-top: 56px; }
-        .ts-col3 { margin-top: 26px; }
         .ts-list { padding-top: 0; }
         .ts-role { margin-top: 6px; padding-left: 27px; }
         .ts-social a { padding: 4px; }
 
+        /* Sizing lives here rather than in Tailwind w-/h- utilities so one rule
+           set governs every breakpoint.
+
+           On phones the columns are percentages. Three fixed-pixel columns
+           overflowed a 375px screen and clipped the right-hand pair off the
+           edge — the original demo widths did too, by 16px — and a 360px phone
+           would have been worse. Percentages fit any width and take everything
+           going, which is as big as these can get: at this size the row already
+           spans the full screen, so width is not a lever, only height is.
+
+           Height always comes from aspect-ratio, set to the photos' native 3:4
+           so object-cover crops nothing. The old near-square cards were cutting
+           the tops and bottoms off every portrait. */
+        .ts-col { display: flex; flex-direction: column; flex-shrink: 0; }
+        .ts-col-1 { width: 30%; }
+        .ts-col-2 { width: 33.5%; margin-top: 56px; }
+        .ts-col-3 { width: 31.5%; margin-top: 26px; }
+        .ts-card { width: 100%; aspect-ratio: 3 / 4; }
+
         @media (min-width: 640px) {
-          .ts-col2 { margin-top: 64px; }
-          .ts-col3 { margin-top: 30px; }
+          .ts-col-1 { width: 140px; }
+          .ts-col-2 { width: 155px; margin-top: 64px; }
+          .ts-col-3 { width: 146px; margin-top: 30px; }
         }
         @media (min-width: 768px) {
-          .ts-col2 { margin-top: 68px; }
-          .ts-col3 { margin-top: 32px; }
+          .ts-col-1 { width: 155px; }
+          .ts-col-2 { width: 172px; margin-top: 68px; }
+          .ts-col-3 { width: 162px; margin-top: 32px; }
           .ts-list { padding-top: 8px; }
         }
         @media (min-width: 1024px) {
-          .ts-col2 { margin-top: 80px; }
-          .ts-col3 { margin-top: 38px; }
+          .ts-col-1 { width: 185px; }
+          .ts-col-2 { width: 205px; margin-top: 80px; }
+          .ts-col-3 { width: 193px; margin-top: 38px; }
         }
       `}</style>
 
       <div className="ts-root flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full font-sans">
         {/* Photo grid */}
-        <div className="ts-photos flex gap-2 md:gap-3 flex-shrink-0 overflow-x-auto">
-          <div className="flex flex-col gap-2 md:gap-3">
+        <div className="ts-photos flex gap-1.5 md:gap-3 w-full md:w-auto">
+          <div className="ts-col ts-col-1 gap-1.5 md:gap-3">
             {col1.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className={CARD_SIZE[1]}
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col2 flex flex-col gap-2 md:gap-3">
+          <div className="ts-col ts-col-2 gap-1.5 md:gap-3">
             {col2.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className={CARD_SIZE[2]}
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col3 flex flex-col gap-2 md:gap-3">
+          <div className="ts-col ts-col-3 gap-1.5 md:gap-3">
             {col3.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className={CARD_SIZE[3]}
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
         </div>
@@ -183,12 +168,10 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
 
 function PhotoCard({
   member,
-  className,
   hoveredId,
   onHover,
 }: {
   member: TeamMember
-  className: string
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
@@ -198,8 +181,7 @@ function PhotoCard({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-500',
-        className,
+        'ts-card overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-500',
         isDimmed ? 'opacity-60' : 'opacity-100'
       )}
       onMouseEnter={() => onHover(member.id)}
