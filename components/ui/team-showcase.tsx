@@ -115,12 +115,15 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
            padding is the only width left to take. The offsets mirror the
            .lp-section media queries in page.tsx exactly — 14px below 481, 16px
            above it — so a mismatch can't leave the strip hanging off the edge.
+           The width has to grow by the same amount: negative margins move the
+           box left without widening it, so w-full alone kept resolving to the
+           padded width and the strip finished 30px short of the right edge.
            Columns sum to 96%, leaving the 12px of gaps to make up the rest. */
         @media (max-width: 480px) {
-          .ts-photos { margin-left: -14px; margin-right: -14px; }
+          .ts-photos { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
         }
         @media (min-width: 481px) and (max-width: 639px) {
-          .ts-photos { margin-left: -16px; margin-right: -16px; }
+          .ts-photos { margin-left: -16px; margin-right: -16px; width: calc(100% + 32px); }
         }
 
         @media (min-width: 640px) {
