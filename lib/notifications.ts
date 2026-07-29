@@ -1,8 +1,20 @@
-import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
 import { Notification } from './types'
 import { logger } from './logger'
 import { MANAGER_RECIPIENT_ID } from './config'
 import { normalizePhone, isValidPhone } from './validation'
+
+// This module lazily imports the Twilio SDK and reads server-only env vars,
+// so it never runs in the browser — only from API routes. Writes go through
+// the service-role client rather than the anon `supabase` singleton: anon
+// can no longer write `notifications` directly once RLS is locked down (see
+// the 20260730 migration), and this table carries student phone numbers, so
+// it should never have been client-writable in the first place.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 export async function sendNotification(
   recipientType: 'student' | 'vendor' | 'manager',
