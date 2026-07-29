@@ -79,7 +79,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/rahul%20.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3JhaHVsIC5qcGVnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4NTMyNzU1NCwiZXhwIjo0OTM4OTI3NTU0fQ.2SvIBvLBklQdEso8-1eR7PP-dXaAiqzQYdJLJrUz-ms',
     column: 3,
-    row: 2,
+    row: 1,
   },
   {
     id: 'shreyas',
@@ -88,7 +88,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/shreyas.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3NocmV5YXMuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjk3OTMsImV4cCI6NDkzODkyOTc5M30.31oQ4a05JhPy4pwDNrvtfZodrAl3Y6dBCscgxhYs9pU',
     column: 3,
-    row: 1,
+    row: 2,
   },
 ]
 
@@ -134,6 +134,25 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         .ts-col-2 { width: 33.9%; margin-top: 56px; }
         .ts-col-3 { width: 31.8%; margin-top: 26px; }
         .ts-card { width: 100%; aspect-ratio: 3 / 4; }
+
+        /* A tap should highlight the person and nothing else. Left alone, a
+           long press on a phone raises the OS image sheet — Save to Photos,
+           Copy, Share — and a right click or drag on a desktop offers the same
+           thing, which is the browser talking over the interaction.
+           -webkit-touch-callout kills the long-press sheet on iOS, and
+           pointer-events on the image means a press lands on the card rather
+           than on an <img>, so there is no image for the browser to offer in
+           the first place. Hover and tap still work: they are handled by the
+           card, which is what now receives the events. */
+        .ts-card {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+        .ts-card img {
+          pointer-events: none;
+          -webkit-user-drag: none;
+        }
 
         /* Full-bleed on phones. .lp-section boxes the strip in with side
            padding the photos have no use for, and on a screen this narrow that
@@ -228,11 +247,15 @@ function PhotoCard({
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
       onTouchStart={() => onHover(isActive ? null : member.id)}
+      // Belt and braces with the CSS above: covers the desktop right-click
+      // menu, which -webkit-touch-callout does not touch.
+      onContextMenu={e => e.preventDefault()}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={member.image}
         alt={member.name}
+        draggable={false}
         className="w-full h-full object-cover transition-[filter] duration-500"
         style={{
           filter: isActive ? 'grayscale(0) brightness(1)' : 'grayscale(1) brightness(0.77)',
