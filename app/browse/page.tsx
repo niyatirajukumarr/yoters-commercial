@@ -272,10 +272,6 @@ export default function StudentHome() {
           onError={e => (e.currentTarget.style.display = 'none')} />
 
         <div className="browse-hero" style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-light)', border: '1px solid var(--accent-light2)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '6px 14px', borderRadius: 20, marginBottom: 16 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            Live Queue Visibility
-          </div>
           <h1 className="h1-browse" style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(28px,5vw,58px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: -1, marginBottom: 10, color: 'var(--navy)' }}>
             Pre-book your meal.<br />
             <span style={{ color: 'var(--accent)' }}>Walk in. Pick up. Leave.</span>
