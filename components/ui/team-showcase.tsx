@@ -27,6 +27,12 @@ export interface TeamMember {
   image: string
   /** Photo column, left to right. Set per member so four people can be placed. */
   column: 1 | 2 | 3
+  /**
+   * Position within that column, top first. Needed separately from array
+   * order because the array drives the name list, which stays in seniority
+   * order regardless of where the photos sit.
+   */
+  row: number
   social?: {
     twitter?: string
     linkedin?: string
@@ -43,7 +49,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Executive Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/gowtham.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL2dvd3RoYW0uanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjc0OTksImV4cCI6NDkzODkyNzQ5OX0.UjMHHnbbTizHUMHRm22ug1MPzaK4jSQlASVwv8U2mn0',
-    column: 3,
+    column: 1,
+    row: 1,
   },
   {
     id: 'niyati',
@@ -51,7 +58,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Technical Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/niyati.PNG?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL25peWF0aS5QTkciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg1MzI3NTM1LCJleHAiOjQ5Mzg5Mjc1MzV9.7E8rg4hHDXjgdpGSyQ_YTHHU00woTBvKD6U15QZIDGk',
-    column: 3,
+    column: 2,
+    row: 1,
   },
   {
     id: 'rahul',
@@ -59,7 +67,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Founding Software Engineer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/rahul%20.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3JhaHVsIC5qcGVnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4NTMyNzU1NCwiZXhwIjo0OTM4OTI3NTU0fQ.2SvIBvLBklQdEso8-1eR7PP-dXaAiqzQYdJLJrUz-ms',
-    column: 2,
+    column: 3,
+    row: 2,
   },
   {
     id: 'shreyas',
@@ -67,7 +76,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Head of External Affairs',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/shreyas.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3NocmV5YXMuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjk3OTMsImV4cCI6NDkzODkyOTc5M30.31oQ4a05JhPy4pwDNrvtfZodrAl3Y6dBCscgxhYs9pU',
-    column: 1,
+    column: 3,
+    row: 1,
   },
 ]
 
@@ -78,9 +88,13 @@ interface TeamShowcaseProps {
 export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcaseProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const col1 = members.filter(m => m.column === 1)
-  const col2 = members.filter(m => m.column === 2)
-  const col3 = members.filter(m => m.column === 3)
+  // Sorted by row, not left in array order: the array order is the name list's
+  // (seniority), and the photos are arranged independently of it.
+  const inColumn = (n: 1 | 2 | 3) =>
+    members.filter(m => m.column === n).sort((a, b) => a.row - b.row)
+  const col1 = inColumn(1)
+  const col2 = inColumn(2)
+  const col3 = inColumn(3)
 
   return (
     <>
