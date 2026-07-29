@@ -694,20 +694,9 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* STATS */}
-        <section className="lp-section" style={{ padding: '80px 48px', background: 'white' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <motion.div className="lp-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'rgba(26,31,46,0.06)', borderRadius: 20, overflow: 'hidden' }}
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-              {[{ val: 'Customers', label: 'Built for' }, { val: 'Restaurants', label: 'Partnering with' }, { val: 'Zero Waste', label: 'Real demand only' }, { val: 'Soon', label: 'Launching' }].map((s, i) => (
-                <motion.div key={i} variants={fadeUp} style={{ padding: '40px 24px', textAlign: 'center', background: 'white' }}>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, fontWeight: 700, color: '#E8334A', marginBottom: 6 }}>{s.val}</h3>
-                  <p style={{ fontSize: 11, color: '#8a90a8', letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 600 }}>{s.label}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
+        {/* MEET THE TEAM — the stats strip that was here is gone. Empty for now;
+            content still to be decided. Sits between the CTA and the footer. */}
+        <section id="team" />
 
         {/* FOOTER */}
         <footer className="lp-section" style={{ background: '#1a1f2e', padding: '72px 48px 40px' }}>
