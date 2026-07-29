@@ -33,6 +33,16 @@ export interface TeamMember {
    * order regardless of where the photos sit.
    */
   row: number
+  /**
+   * Scale the photo inside its card, for one framed wider than the rest.
+   * The card clips, so this crops rather than overflowing. Omit for 1.
+   */
+  zoom?: number
+  /**
+   * Where the zoom pulls towards, as a transform-origin. Portraits want
+   * something above centre or the crop eats the head. Defaults to '50% 30%'.
+   */
+  zoomOrigin?: string
   social?: {
     twitter?: string
     linkedin?: string
@@ -51,6 +61,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/gowtham.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL2dvd3RoYW0uanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjc0OTksImV4cCI6NDkzODkyNzQ5OX0.UjMHHnbbTizHUMHRm22ug1MPzaK4jSQlASVwv8U2mn0',
     column: 1,
     row: 1,
+    zoom: 1.15,
   },
   {
     id: 'niyati',
@@ -225,6 +236,9 @@ function PhotoCard({
         className="w-full h-full object-cover transition-[filter] duration-500"
         style={{
           filter: isActive ? 'grayscale(0) brightness(1)' : 'grayscale(1) brightness(0.77)',
+          ...(member.zoom
+            ? { transform: `scale(${member.zoom})`, transformOrigin: member.zoomOrigin ?? '50% 30%' }
+            : null),
         }}
       />
     </div>
