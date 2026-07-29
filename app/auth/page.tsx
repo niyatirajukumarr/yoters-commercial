@@ -192,15 +192,6 @@ export default function AuthPage() {
         .submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
         .submit-btn:active:not(:disabled) { transform: translateY(0); }
         .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .feature-chip {
-          display: inline-flex; align-items: center; gap: 7px;
-          background: var(--surface); border: 1px solid var(--border);
-          border-radius: 20px; padding: 6px 14px 6px 11px; font-size: 12px; font-weight: 600;
-          color: var(--text2); letter-spacing: 0.2px;
-        }
-        .feature-chip-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
-        }
         @media (max-width: 480px) {
           .auth-inner { padding: 24px 20px !important; }
           .auth-hero { padding: 0 !important; margin-bottom: 28px !important; }
@@ -238,22 +229,16 @@ export default function AuthPage() {
 
           {/* Hero */}
           <div className="auth-hero" style={{ textAlign: 'center', marginBottom: 32, padding: '0 8px' }}>
-            <PenguinFace size={64} />
-            <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 30, fontWeight: 800, color: 'var(--navy)', margin: '0 0 8px' }}>
+            {/* Bigger penguin, and the heading drops away from it. The three
+                feature chips that used to sit below are gone — they were
+                selling the product to someone already at the sign-in form. */}
+            <PenguinFace size={104} />
+            <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 30, fontWeight: 800, color: 'var(--navy)', margin: '22px 0 10px' }}>
               Skip the queue.
             </h1>
             <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
               Order from your favourite restaurant and pick up when it's ready.
             </p>
-            {/* Feature chips */}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' }}>
-              {['Real-time queue', 'Pay online', 'Get notified'].map(f => (
-                <span key={f} className="feature-chip">
-                  <span className="feature-chip-dot" />
-                  {f}
-                </span>
-              ))}
-            </div>
           </div>
 
           {/* Card */}
