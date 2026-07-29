@@ -29,6 +29,12 @@ Reusable ruleset so the audit in `SECURITY_AUDIT.md` is repeatable. Rules are th
 - **R14** Rate limiting (Vercel WAF or app-level limiter) covers all `/api/*`, especially auth, payment, and notification (SMS/email cost) routes.
 - **R15** `next.config.ts` `images.remotePatterns` lists only known hosts (no `hostname: '**'`). Auth/role checks are enforced server-side, never client-email string comparisons.
 
+### RLS remediation hygiene (added 2026-07-30, after finding all four of these had actually happened)
+- **R16** An RLS fix pass must inventory **every** table's policies, not just the ones connected to the finding that prompted it. The 2026-07-18 hardening migration fixed `orders`/`payouts` but left `cafeterias`, `cafeteria_menu`, `cafeteria_queues`, `token_sequences`, and `notifications` on their original `using (true)` policies for another 12 days — nobody re-grepped the *whole* schema after the "orders" fix shipped. Run the full `using (true)` grep (§5) against **all** tables, every time.
+- **R17** When a remediation drops a policy by name (`drop policy if exists "X" on t`), the name must be copy-pasted from the `create policy` statement that actually defined it — case-sensitive, exact match. `DROP POLICY IF EXISTS` silently no-ops on a mismatch, which looks identical to success. (`manager_audit_log`'s lockdown silently failed this way for 12 days: the migration dropped `"Public read audit"` when the real policy was named `"Public read audit log"`.) After writing any such drop, grep the target migration file for the exact string to confirm it exists.
+- **R18** Every `create policy` / `create trigger` in a migration must be preceded by the matching `drop ... if exists`. Postgres has no `CREATE POLICY IF NOT EXISTS`, so a migration re-run after a partial failure will error on the first policy that already landed — treat every RLS/trigger migration as re-runnable from scratch.
+- **R19** If a trigger function writes to a table whose RLS you are about to tighten, and that trigger can fire from a caller who is *not* the newly-required owner (e.g. a guest customer's order insert updating `cafeteria_queues`'s count, or a vendor's order update assigning a `token_sequences` row), the function must be `SECURITY DEFINER` (`set search_path = public`) before the policy is tightened — otherwise the tightened policy silently breaks the trigger for that caller, not just direct client writes.
+
 ---
 
 ## 2. Re-Audit Triggers (when to re-run)
@@ -41,6 +47,7 @@ Re-run the full audit whenever **any** of these happen:
 - **T5** Changes to `next.config.ts`, CORS, headers, or `vercel.ts`/`vercel.json`.
 - **T6** Before every production deploy / launch, and after any dependency bump of `next`, `@supabase/*`, `razorpay`, `twilio`, `resend`.
 - **T7** Any secret-scanning or dependency-audit alert.
+- **T8** After *any* RLS remediation migration — re-grep `using (true)` / `for all` across **every** table in `supabase/*.sql`, not just the tables the migration touched, and diff every `drop policy` name against an actual `create policy` name in the migration history (R16/R17).
 
 **Automate T1–T5** as a pre-deploy CI gate (see §4).
 
@@ -51,7 +58,7 @@ Re-run the full audit whenever **any** of these happen:
 > Act as a senior developer + red-team pentester + QA. Perform a **read-only, non-destructive** security audit of this repo and the live site `yoters-commercial.vercel.app`.
 > 1. Scan for hardcoded secrets (service-role keys, `rzp_live/test`, Twilio `AC…`, Resend `re_…`, JWTs, private keys) across all source, docs, and SQL.
 > 2. Review every `app/api/**/route.ts` for authentication, authorization (no trusting body-supplied identity), server-side amount verification, and constant-time signature checks.
-> 3. Review `supabase/*.sql` RLS: flag any `using (true)` / missing ownership scoping / anon access to payout/audit tables.
+> 3. Review `supabase/*.sql` RLS **for every table**, not just the ones touched by the last remediation: flag any `using (true)` / `for all using (true)` / missing ownership scoping / anon access to payout/audit tables. For any prior remediation migration, confirm each `drop policy if exists "X" on t` names a policy that was actually `create policy`'d somewhere — a name mismatch means the drop silently did nothing.
 > 4. Fetch **only** public read-only headers and do GET probes of API routes (no POST/PUT/DELETE, no data mutation) to confirm which routes are reachable and unauthenticated.
 > 5. Check for rate limiting and the security-header set (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, HSTS).
 > Output: findings by severity (Critical/High/Medium), a security rating, a launch-readiness verdict, and a blocking checklist. **Do not modify any code** — auditor role only. Write results to `SECURITY_AUDIT.md`.
@@ -80,4 +87,14 @@ curl -sS -D - -o /dev/null https://yoters-commercial.vercel.app/ \
 for p in /api/vendor/orders /api/confirm-payment /api/seed-demo-item; do
   echo "$p -> $(curl -sS -o /dev/null -w '%{http_code}' https://yoters-commercial.vercel.app$p)"
 done
+
+# Whole-schema RLS grep (R16) — run this, not a grep scoped to one table.
+# Anything printed here needs a scoped policy or a documented, trigger-guarded
+# exception (see cafeteria_menu's "Menu updates" policy for the pattern).
+grep -rniE "using\s*\(\s*true\s*\)|with check\s*\(\s*true\s*\)" supabase/*.sql supabase/migrations/*.sql
+
+# Drop/create name-mismatch check (R17) — for a given migration, confirm every
+# `drop policy if exists "X" on t` name also appears in a `create policy "X"`
+# somewhere in the migration history; a name that only appears in the drop
+# line never existed and the drop was a no-op.
 ```
