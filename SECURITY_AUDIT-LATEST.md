@@ -48,10 +48,10 @@ Including SSRF, DoS, and middleware/proxy-bypass advisories, all patched in `16.
 Orders are looked up by `id` alone with no ownership check. Because RLS is `using (true)` (see C3 in main audit), anyone holding or guessing an order ID can read full order PII (name, phone, email, items, amount). UUIDs make guessing hard, but IDs leak via URLs, referrer headers, and shared links.
 - **Fix:** Scope order reads by authenticated owner / owning vendor as part of the RLS rewrite. — Confirmed live: `orders` SELECT policy is scoped to `student_phone`/`student_email` match or owning-vendor/manager/admin (`20260718_security_hardening.sql`).
 
-### M2 — Verbose error leakage to client — ⚠️ PARTIALLY FIXED (re-check `app/auth/page.tsx`)
-**Files:** `app/api/razorpay/create-order/route.ts:85-100` (serializes the entire error object), plus `delete-order`, `deny-order`, `verify-payment`, `menu-popularity` (all return `error.message`); `app/auth/page.tsx:60` surfaces `authError.message` directly.
-Leaks internal detail; the auth path can enable **user enumeration** (e.g. "user already registered").
-- **Fix:** Return generic client messages; log full detail server-side only. — Confirmed fixed in `create-order` and `verify-payment` (both now return generic messages, log detail via `logger.error`). `app/auth/page.tsx` enumeration behavior was **not re-tested** in the 07-30 pass — re-verify before considering this closed.
+### M2 — Verbose error leakage to client — ✅ FIXED (verified 2026-07-30)
+**Files:** `app/api/razorpay/create-order/route.ts:85-100` (serialized the entire error object), plus `delete-order`, `deny-order`, `verify-payment`, `menu-popularity` (all returned `error.message`); `app/auth/page.tsx:60` surfaced `authError.message` directly.
+Leaked internal detail; the auth path enabled **user enumeration** (e.g. "user already registered").
+- **Fix:** Return generic client messages; log full detail server-side only. — Confirmed: `create-order`/`verify-payment` return generic messages and log via `logger.error`. The auth path is now fully rebuilt around `lib/auth-schemas.ts`'s `AUTH_MESSAGES` — `app/api/auth/login/route.ts` and `app/api/auth/signup/route.ts` return exactly one generic string (`invalidCredentials` / `invalidInput` / `signupFailed`) regardless of whether the email is unknown, the password is wrong, the account is locked, a specific field is invalid, or the email is already registered — no field- or account-existence oracle remains. `handleForgotPassword` in `app/auth/page.tsx` also always shows the same "if that email is registered..." message.
 
 ### M3 — Dead route file still leaking the live secret — ✅ FIXED (verified 2026-07-30)
 **File:** `app/api/admin/initiate-payout.ts`
@@ -63,10 +63,10 @@ Not a valid App Router handler (must be `route.ts`), so it 404s and the admin pa
 Sets `payment_status: 'refund_successful'` right after the Razorpay call is *accepted*, not when settlement is confirmed. A refund that later fails will still show as complete to the customer.
 - **Fix:** Mark `refund_initiated` on accept; only mark successful on the `refund.processed` webhook. — Confirmed: `app/api/razorpay/webhook/route.ts` now handles `refund.processed`/`refund.failed` and only promotes to `refund_successful` on confirmed settlement.
 
-### M5 — Placeholder / bogus contact data in payment flow — ❓ NOT RE-VERIFIED
+### M5 — Placeholder / bogus contact data in payment flow — ✅ FIXED (verified 2026-07-30)
 **File:** `app/payment/page.tsx`
-Hardcodes `studentPhone: '9999999999'`; unauthenticated users get `student-${orderId}@yoters.local` as email. Razorpay records and notifications receive junk contact data → breaks refunds, receipts, and SMS delivery.
-- **Fix:** Use the authenticated user's real, validated phone/email; reject orders without valid contact info. — Not checked in the 2026-07-30 pass; status unknown.
+Hardcoded `studentPhone: '9999999999'`; unauthenticated users got `student-${orderId}@yoters.local` as email. Razorpay records and notifications received junk contact data → broke refunds, receipts, and SMS delivery.
+- **Fix:** Use the authenticated user's real, validated phone/email; reject orders without valid contact info. — Confirmed: contact info is now pulled from the order's own `student_name`/`student_email`/`student_phone` (falling back to the authenticated session's email only, never a synthetic address), validated with `isValidEmail`/`isValidPhone` before proceeding to Razorpay — an order with missing/invalid contact info now surfaces an explicit error asking the customer to re-place the order, instead of silently sending placeholder data.
 
 ### M6 — SMS notifications silently do nothing — ✅ FIXED (verified 2026-07-30)
 **File:** `lib/notifications.ts:40-50`
@@ -77,17 +77,17 @@ Hardcodes `studentPhone: '9999999999'`; unauthenticated users get `student-${ord
 
 ## Low Severity
 
-### L1 — Weak password policy — ❓ NOT RE-VERIFIED
-`app/auth/page.tsx:56` allows 6-character passwords with no complexity requirement.
-- **Fix:** Enforce a stronger minimum (length + complexity) client- and server-side.
+### L1 — Weak password policy — ✅ FIXED (verified 2026-07-30)
+`app/auth/page.tsx:56` allowed 6-character passwords with no complexity requirement.
+- **Fix:** Enforce a stronger minimum (length + complexity) client- and server-side. — Confirmed: `signupSchema` in `lib/auth-schemas.ts` requires 8-72 chars plus at least one letter and one number, enforced server-side via zod (authoritative — bypassing the client can't weaken it); `lib/validation.ts`'s `validatePassword` mirrors the same rule for instant client-side feedback.
 
 ### L2 — No input format validation — ✅ FIXED for routes checked (verified 2026-07-30)
 Email/phone are checked only for presence, not format, on signup (`app/auth/page.tsx`) and in every API route (order creation accepts arbitrary `total_amount`, `phone`, etc.).
 - **Fix:** Validate formats and numeric ranges server-side (e.g. zod) on all inputs. — Confirmed: `lib/validation.ts` (`isValidEmail`/`isValidPhone`/`isValidAmount`/`isNonEmptyString`) is used in `create-order`, `initiate-payout`, `record-payout`. Signup page (`app/auth/page.tsx`) not re-checked.
 
-### L3 — Middleware exempts all of `/api` + deprecated client — ⚠️ FILE RENAMED, NOT RE-VERIFIED
-`app/middleware.ts:11` puts `/api` in the PUBLIC allowlist, so middleware never guards API routes (each must self-protect — and most don't, per C4). Also uses `@ts-ignore` + deprecated `@supabase/auth-helpers-nextjs` while the rest of the app uses `@supabase/ssr`.
-- **Fix:** Remove the blanket `/api` exemption; standardize on `@supabase/ssr`; drop `@ts-ignore`. — `app/middleware.ts` no longer exists; there is now a root-level `proxy.ts` (Next.js 16 renamed Middleware to Proxy — see `AGENTS.md`'s breaking-changes warning). Since every `/api` route now self-authenticates (C4 is fixed), the original risk is largely moot, but the `/api` exemption behavior in `proxy.ts` itself was not re-audited this pass.
+### L3 — Middleware exempts all of `/api` + deprecated client — ✅ FIXED (verified 2026-07-30)
+`app/middleware.ts:11` put `/api` in the PUBLIC allowlist, so middleware never guarded API routes (each must self-protect — and most didn't, per C4). Also used `@ts-ignore` + deprecated `@supabase/auth-helpers-nextjs` while the rest of the app used `@supabase/ssr`.
+- **Fix:** Remove the blanket `/api` exemption; standardize on `@supabase/ssr`; drop `@ts-ignore`. — `app/middleware.ts` no longer exists; it's now `proxy.ts` at the project root (Next.js 16 renamed the Middleware file convention to Proxy — see `AGENTS.md`'s breaking-changes warning). It's built on `@supabase/ssr` with no `@ts-ignore`, and `/api` is deliberately excluded from its matcher — documented in-file as intentional, since every API route now self-protects (C4 is fixed) and redirecting an unauthenticated API request to an HTML `/auth` page would break the Razorpay webhook and guest checkout/tracking endpoints, which are correctly session-less. This is a sound design, not a gap.
 
 ### L4 — Hardcoded identity strings — ✅ FIXED (verified 2026-07-30)
 Admin email `niyati.rajukumar@gmail.com` is hardcoded in `app/admin/page.tsx:38` and `app/middleware.ts:16`; manager notifications use literal `recipient_id: 'manager'` (`lib/notifications.ts:93`). Brittle; breaks on any personnel change.
