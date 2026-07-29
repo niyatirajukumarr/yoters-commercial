@@ -686,6 +686,17 @@ export default function CafeteriaPage() {
     addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
   }
 
+  // Liking a food item also requires auth, same as add-to-cart. Send them to
+  // sign in with a redirect back to this menu.
+  const handleToggleFavourite = async (item: MenuItem) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
+    toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })
+  }
+
   const handlePlaceOrder = async () => {
     if (!formData.name || !formData.phone || !cartItem.length) {
       alert('Please fill in name and phone, and add items to cart')
@@ -949,7 +960,7 @@ export default function CafeteriaPage() {
           <div className="dish-actions2" style={{ marginTop: 10 }}>
             <button
               className="dish-icon-btn"
-              onClick={() => toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })}
+              onClick={() => handleToggleFavourite(item)}
             >
               <Heart size={16} fill={fav ? '#E8334A' : 'transparent'} color={fav ? '#E8334A' : '#999'} />
             </button>
