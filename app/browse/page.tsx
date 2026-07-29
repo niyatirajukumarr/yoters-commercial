@@ -313,13 +313,28 @@ export default function StudentHome() {
                     viewport={viewportOnce}
                     variants={idx % 2 === 1 ? slideRight : slideLeft}
                   >
-                    {/* Menu Image with Tilt Effect */}
+                    {/* Menu Image with Tilt Effect.
+                        The image opens the restaurant, same destination as the
+                        See Full Menu button below. It already had cursor:pointer
+                        and a hover lift, so it advertised being clickable while
+                        doing nothing.
+                        Only the image is wrapped, not the whole card: the card
+                        also holds the map toggle and that button, and nesting
+                        those inside an anchor would turn every click on them
+                        into a navigation. Inside the .map, so it holds for any
+                        restaurant added later. */}
                     <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`}>
-                      <img
-                        src={CAFETERIA_LOGOS[c.name] || c.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
-                        alt={c.name}
-                        loading="lazy"
-                      />
+                      <Link
+                        href={`/mobile/order/${generateSlug(c.name)}`}
+                        aria-label={`Open ${c.name}`}
+                        style={{ display: 'block', width: '100%', height: '100%' }}
+                      >
+                        <img
+                          src={CAFETERIA_LOGOS[c.name] || c.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
+                          alt={c.name}
+                          loading="lazy"
+                        />
+                      </Link>
                     </div>
 
                     {/* Restaurant Info */}
