@@ -46,3 +46,7 @@ next-env.d.ts
 
 # committed env dump (removed) — never re-add
 env.download
+.scan_current.txt
+.scan_history*.txt
+verify_*.txt
+npm_audit*.json
