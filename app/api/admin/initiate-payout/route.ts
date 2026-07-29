@@ -6,6 +6,7 @@ import { isValidUpiId, isValidAmount, isNonEmptyString } from '@/lib/validation'
 import { isAdmin } from '@/lib/config'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { toPaise, fromPaise } from '@/lib/money'
+import { getPayoutBalance } from '@/lib/payout-balance'
 
 // Service-role client for verifying the caller's token and writing the payout
 // ledger. Never exposed to the client.
@@ -37,9 +38,6 @@ if (PAYOUT_KEY_ID && !PAYOUT_KEY_SECRET) {
 const RAZORPAY_KEY_ID = usePayoutPair ? PAYOUT_KEY_ID : process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
 const RAZORPAY_KEY_SECRET = usePayoutPair ? PAYOUT_KEY_SECRET : process.env.RAZORPAY_KEY_SECRET
 const RAZORPAY_ACCOUNT_NUMBER = process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER
-
-/** Payout states that represent money already committed. */
-const SPENT_STATUSES = ['processing', 'processed']
 
 async function createRazorpayPayout(
   amountPaise: number,
@@ -147,28 +145,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 4) Work out what is actually owed, server-side. The client's figure is
-    // only ever allowed to be smaller — never the source of truth.
-    const [paidOrders, priorPayouts] = await Promise.all([
-      adminSupabase
-        .from('orders')
-        .select('total_amount')
-        .eq('cafeteria_id', cafeteriaId)
-        .eq('payment_status', 'paid'),
-      adminSupabase
-        .from('payouts')
-        .select('amount, status')
-        .eq('cafeteria_id', cafeteriaId)
-        .in('status', SPENT_STATUSES),
-    ])
-
-    if (paidOrders.error || priorPayouts.error) {
-      logger.error('[Payout] Could not compute balance:', paidOrders.error || priorPayouts.error)
+    // only ever allowed to be smaller — never the source of truth. Shared with
+    // the manual-record route so the two cannot disagree about the balance.
+    const balance = await getPayoutBalance(adminSupabase, cafeteriaId)
+    if ('error' in balance) {
+      logger.error('[Payout] Could not compute balance:', balance.error)
       return NextResponse.json({ error: 'Could not verify the payout balance.' }, { status: 500 })
     }
 
-    const receivedPaise = (paidOrders.data ?? []).reduce((s, o) => s + toPaise(o.total_amount), 0)
-    const alreadyPaidPaise = (priorPayouts.data ?? []).reduce((s, p) => s + toPaise(p.amount), 0)
-    const owedPaise = receivedPaise - alreadyPaidPaise
+    const owedPaise = balance.owedPaise
     const requestPaise = toPaise(amount)
 
     if (owedPaise <= 0) {

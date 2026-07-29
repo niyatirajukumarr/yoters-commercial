@@ -18,7 +18,17 @@ alter table payouts
   add column if not exists upi_id text,
   add column if not exists initiated_by text,
   add column if not exists failure_reason text,
+  -- How the money actually moved. Paying a vendor by hand from a UPI app is
+  -- the normal route until RazorpayX is live, and those transfers have to land
+  -- in the ledger too or "Pending" silently stays wrong.
+  add column if not exists method text not null default 'razorpay',
+  -- The UPI/UTR reference the admin copies back from their payment app.
+  add column if not exists reference text,
   add column if not exists updated_at timestamptz default now();
+
+alter table payouts drop constraint if exists payouts_method_check;
+alter table payouts add constraint payouts_method_check
+  check (method in ('razorpay', 'manual_upi'));
 
 -- processing = sent to Razorpay, outcome not yet confirmed. It counts as spent
 -- so the money cannot be sent twice while in doubt.

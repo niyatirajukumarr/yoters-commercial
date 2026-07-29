@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { isAdmin } from '@/lib/config'
+import { PayoutDialog } from '@/components/admin/PayoutDialog'
 import { stagger, staggerItem, hoverLift, hoverScale } from '@/lib/motion'
 
 interface Cafeteria {
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [processingPayout, setProcessingPayout] = useState<string | null>(null)
   const [payoutMessage, setPayoutMessage] = useState<{ [key: string]: string }>({})
+  const [payingCafe, setPayingCafe] = useState<Cafeteria | null>(null)
   const [editingUPI, setEditingUPI] = useState<{ [key: string]: string }>({})
   const [savingUPI, setSavingUPI] = useState<string | null>(null)
   const [totalReceived, setTotalReceived] = useState(0)
@@ -398,7 +400,7 @@ export default function AdminDashboard() {
               <motion.button
                 whileHover={processingPayout !== cafe.id && cafe.pending_payout > 0 && cafe.upi_id ? { scale: 1.02 } : undefined}
                 whileTap={processingPayout !== cafe.id && cafe.pending_payout > 0 && cafe.upi_id ? { scale: 0.98 } : undefined}
-                onClick={() => handleSendPayout(cafe)}
+                onClick={() => setPayingCafe(cafe)}
                 disabled={processingPayout === cafe.id || cafe.pending_payout <= 0 || !cafe.upi_id}
                 style={{
                   width: '100%',
@@ -412,7 +414,7 @@ export default function AdminDashboard() {
                   fontSize: 13
                 }}
               >
-                {processingPayout === cafe.id ? '⏳ Sending...' : `💰 Send ₹${cafe.pending_payout.toLocaleString()}`}
+                {`💰 Pay ₹${cafe.pending_payout.toLocaleString()}`}
               </motion.button>
             </motion.div>
           ))}
@@ -423,15 +425,29 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {payingCafe && (
+        <PayoutDialog
+          cafe={payingCafe}
+          onClose={() => setPayingCafe(null)}
+          onRecorded={() => {
+            setPayoutMessage(prev => ({ ...prev, [payingCafe.id]: '✅ Payout recorded' }))
+            fetchAllPayoutData()
+            setTimeout(() => setPayoutMessage(prev => ({ ...prev, [payingCafe.id]: '' })), 4000)
+          }}
+        />
+      )}
+
       {/* Info Box */}
       <div className="admin-card" style={{ background: '#fff0f2', border: '1px solid #ffd6dc', marginTop: 30 }}>
         <div style={{ fontSize: 13, color: '#C8233C', lineHeight: 1.7 }}>
           <strong>ℹ️ How to use:</strong><br/>
-          1. Add or edit UPI ID for each cafeteria<br/>
-          2. Click "Send" button to initiate payout<br/>
-          3. Money transfers via Razorpay UPI<br/>
-          4. Each cafeteria gets 100% of their revenue<br/>
-          5. Track all payouts in payout history
+          1. Add or edit the UPI ID for each cafeteria<br/>
+          2. Click <strong>Pay</strong> — it opens Google Pay / PhonePe with the amount filled in,
+             or shows a QR to scan if you&apos;re on a computer<br/>
+          3. Pay from your own UPI app, then paste the reference back in<br/>
+          4. Recording it is what reduces &ldquo;Pending&rdquo; — skip it and the same
+             money can be paid twice<br/>
+          5. Each cafeteria gets 100% of their revenue
         </div>
       </div>
     </div>
