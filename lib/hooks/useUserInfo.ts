@@ -96,6 +96,32 @@ export function useUserInfo() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user) return
 
+    // Validate email uniqueness if provided
+    if (info.email && info.email !== session.user.email) {
+      const { data: existingEmail } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', info.email)
+        .neq('id', session.user.id)
+        .single()
+      if (existingEmail) {
+        throw new Error('This email is already in use by another account')
+      }
+    }
+
+    // Validate phone uniqueness if provided
+    if (info.phone) {
+      const { data: existingPhone } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone', info.phone)
+        .neq('id', session.user.id)
+        .single()
+      if (existingPhone) {
+        throw new Error('This phone number is already in use by another account')
+      }
+    }
+
     // Save to profiles table
     await supabase.from('profiles').upsert({
       id: session.user.id,

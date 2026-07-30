@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [editEmail, setEditEmail] = useState('')
   const [editPhone, setEditPhone] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editError, setEditError] = useState('')
 
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -129,9 +130,15 @@ export default function ProfilePage() {
 
   const saveEdit = async () => {
     setSaving(true)
-    await updateUser({ name: editName, email: editEmail, phone: editPhone })
-    setSaving(false)
-    setEditOpen(false)
+    setEditError('')
+    try {
+      await updateUser({ name: editName, email: editEmail, phone: editPhone })
+      setEditOpen(false)
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Failed to save profile')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -386,7 +393,7 @@ export default function ProfilePage() {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
               <span style={{ fontSize: 18, fontWeight: 700 }}>Edit Profile</span>
-              <motion.button {...hoverScale} onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></motion.button>
+              <motion.button {...hoverScale} onClick={() => { setEditOpen(false); setEditError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></motion.button>
             </div>
             {[
               { label: 'Name', value: editName, set: setEditName, type: 'text' },
@@ -403,6 +410,11 @@ export default function ProfilePage() {
                 />
               </div>
             ))}
+            {editError && (
+              <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: 10, padding: '12px 14px', marginBottom: 12, fontSize: 13, color: '#c33', fontWeight: 500 }}>
+                {editError}
+              </div>
+            )}
             <motion.button
               {...(!saving ? hoverScale : {})}
               onClick={saveEdit}
