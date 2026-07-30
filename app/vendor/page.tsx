@@ -102,32 +102,18 @@ export default function VendorDashboard() {
             clearInterval(alertSoundIntervalRef.current)
           }
 
-          // Play repeating alert sound (VERY LOUD)
+          // Play alert sound file
           const playAlertSound = () => {
             try {
-              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-              const gain = ctx.createGain()
-              gain.gain.value = 1.0
-              gain.connect(ctx.destination)
-
-              const osc = ctx.createOscillator()
-              osc.frequency.value = 900
-              osc.connect(gain)
-              osc.start()
-              osc.stop(ctx.currentTime + 0.4)
-
-              // Add secondary high-pitched beep for extra attention
-              const osc2 = ctx.createOscillator()
-              osc2.frequency.value = 1200
-              osc2.connect(gain)
-              osc2.start(ctx.currentTime + 0.1)
-              osc2.stop(ctx.currentTime + 0.25)
+              const audio = new Audio('/sound beat.mp4')
+              audio.volume = 1.0
+              audio.play().catch(err => console.log('Audio play error:', err))
             } catch {}
           }
 
-          // Play sound immediately and repeat every 300ms (AGGRESSIVE)
+          // Play sound immediately and repeat every 2s
           playAlertSound()
-          alertSoundIntervalRef.current = setInterval(playAlertSound, 300)
+          alertSoundIntervalRef.current = setInterval(playAlertSound, 2000)
         }
         prevOrderCount[0].count = data.length
         setOrders(data as Order[])
