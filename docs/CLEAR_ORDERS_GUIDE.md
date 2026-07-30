@@ -37,11 +37,14 @@ If you need to clear orders immediately without waiting for deployment:
 -- Delete payouts first (references orders)
 DELETE FROM payouts;
 
+-- Delete notifications (references orders)
+DELETE FROM notifications;
+
 -- Delete all orders
 DELETE FROM orders;
 
--- Reset sequences
-ALTER SEQUENCE orders_id_seq RESTART WITH 1;
+-- Reset token sequences
+UPDATE token_sequences SET current_token = 0, reset_date = current_date;
 ```
 
 5. Click **Execute** (or Cmd+Enter / Ctrl+Enter)
@@ -53,7 +56,7 @@ ALTER SEQUENCE orders_id_seq RESTART WITH 1;
 If you build an API endpoint for clearing orders, it should:
 1. Require admin authentication
 2. Check authorization before executing
-3. Delete payouts first, then orders
+3. Delete in order: payouts → notifications → orders → reset token sequences
 4. Return appropriate status codes
 
 ---
