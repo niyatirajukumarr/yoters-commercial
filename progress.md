@@ -145,3 +145,22 @@ Ran a full-repo security review (not just the diff) covering all 18 API routes, 
 **Checked clean:** no hardcoded secrets, no `dangerouslySetInnerHTML` usage, no SQL injection surface (no raw/dynamic SQL), `reverse-geocode` host is hardcoded (not SSRF), service-role key never reaches client bundles, webhook signatures use `timingSafeEqual`, login/signup have lockout + no user-enumeration.
 
 **Priority:** fix #1 and #2 first (direct financial loss), then #3 and #4 (data exposure / account takeover).
+
+### 2026-07-30 — Order Reset Feature Discussion
+User asked: **"Does it make all orders to zero after midnight?"**
+
+**Current Behavior:**
+- Orders are **NOT** automatically reset at midnight
+- System uses IST timezone (`lib/day-window.ts`) for date filtering only
+- All orders persist permanently in the database
+- Vendor dashboard shows date-filtered views (today, past dates)
+- Date filtering is view-only; no automatic deletion or clearing
+
+**Clarification:**
+Orders are stored indefinitely and date-filtered for display purposes. Manual clear-all orders migration was implemented separately (`20260730_clear_all_orders.sql`) for fresh start.
+
+**Decision Pending:**
+User to decide if automatic daily reset should be implemented:
+1. Database-level cleanup job (delete orders after N days)
+2. Scheduled API endpoint at midnight IST
+3. Keep current system (permanent storage with date filtering)
