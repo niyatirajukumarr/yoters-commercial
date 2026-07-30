@@ -696,9 +696,14 @@ export default function VendorDashboard() {
                         {/* Action buttons */}
                         <div className="order-actions">
                           {order.status === 'pending' && (
-                            <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                              {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
-                            </motion.button>
+                            <>
+                              <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
+                              </motion.button>
+                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#e8734a', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                {deletingOrderId === order.id ? '...' : '🗑️ Delete'}
+                              </motion.button>
+                            </>
                           )}
                           {order.status === 'paid' && (
                             <>
