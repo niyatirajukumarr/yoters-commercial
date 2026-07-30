@@ -24,6 +24,7 @@ import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
+import { calculateDeliveryChargeInfo } from '@/lib/utils/deliveryChargeCalculator'
 
 interface MenuItem {
   id: string
@@ -42,6 +43,8 @@ interface Cafeteria {
   name: string
   image_emoji: string
   location: string
+  latitude?: number
+  longitude?: number
 }
 
 interface Order {
@@ -452,6 +455,11 @@ export default function CafeteriaPage() {
   const [showTicket, setShowTicket] = useState(false)
   const [tokenData, setTokenData] = useState<{ token: number; items: Array<{ name: string; quantity: number }>; total: number; id: string } | null>(null)
 
+  // Delivery charge tracking
+  const [deliveryCharge, setDeliveryCharge] = useState(0)
+  const [deliveryDistance, setDeliveryDistance] = useState(0)
+  const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
+
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
     if (!cafeteriaId) return
@@ -584,6 +592,31 @@ export default function CafeteriaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cafeteriaId, menuItems.length])
 
+  // Calculate delivery charge based on distance
+  useEffect(() => {
+    if (orderType !== 'delivery' || !deliveryCoords || !cafeteria?.latitude || !cafeteria?.longitude) {
+      setDeliveryCharge(0)
+      setDeliveryDistance(0)
+      setDeliveryChargeError(null)
+      return
+    }
+
+    try {
+      const chargeInfo = calculateDeliveryChargeInfo(
+        cafeteria.latitude,
+        cafeteria.longitude,
+        deliveryCoords.lat,
+        deliveryCoords.lng
+      )
+      setDeliveryDistance(chargeInfo.distance)
+      setDeliveryCharge(chargeInfo.charge)
+      setDeliveryChargeError(chargeInfo.message || null)
+    } catch (err) {
+      console.error('Error calculating delivery charge:', err)
+      setDeliveryChargeError('Error calculating delivery charge')
+    }
+  }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
+
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   const visibleItems = menuItems.filter(m => (vegMode === 'veg' ? itemIsVeg(m) : !itemIsVeg(m)))
@@ -702,6 +735,17 @@ export default function CafeteriaPage() {
       alert('Please fill in name and phone, and add items to cart')
       return
     }
+    // Validate delivery if order type is delivery
+    if (orderType === 'delivery') {
+      if (deliveryChargeError) {
+        alert(deliveryChargeError)
+        return
+      }
+      if (!deliveryCoords || !cafeteria?.latitude || !cafeteria?.longitude) {
+        alert('Please select a delivery location')
+        return
+      }
+    }
     // Contact details must be valid — Razorpay records, refunds and SMS depend
     // on a real phone/email (no placeholders reach the payment gateway).
     if (!isValidPhone(formData.phone)) {
@@ -724,16 +768,19 @@ export default function CafeteriaPage() {
         .gte('created_at', todayStart.toISOString())
       const tokenNumber = (count ?? 0) + 1
 
+      const orderTotal = orderType === 'delivery' ? total + deliveryCharge : total
+
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
         .from('orders')
         .insert([{
           cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email,
-          items: cartItem, total_amount: total, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes,
+          items: cartItem, total_amount: orderTotal, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes,
           order_type: orderType ?? 'takeaway',
           delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
+          delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
         }])
         .select()
         .single()
@@ -820,7 +867,8 @@ export default function CafeteriaPage() {
 
   // Payment modal handler
   function handleOpenUPI() {
-    const paymentUrl = `/payment?orderId=${orderId}&amount=${total}&name=${encodeURIComponent(formData.name)}`
+    const paymentAmount = orderType === 'delivery' ? total + deliveryCharge : total
+    const paymentUrl = `/payment?orderId=${orderId}&amount=${paymentAmount}&name=${encodeURIComponent(formData.name)}`
     const isMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
       const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
@@ -832,7 +880,7 @@ export default function CafeteriaPage() {
       return
     }
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
-    setConfirmedTotal(total)
+    setConfirmedTotal(paymentAmount)
     pollRef.current = setInterval(async () => {
       const { data } = await supabase.from('orders').select('status, payment_status, token_number, items, total_amount').eq('id', orderId).single()
       if (data?.status === 'paid' || data?.payment_status === 'paid') {
@@ -1403,8 +1451,18 @@ export default function CafeteriaPage() {
                     </div>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17 }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{total}</span>
+                {orderType === 'delivery' && deliveryCharge > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
+                      <span>Subtotal</span><span>₹{total}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
+                      <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}</span>
+                    </div>
+                  </>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: orderType === 'delivery' && deliveryCharge > 0 ? '1px solid var(--border)' : 'none' }}>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</span>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
@@ -1433,7 +1491,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{total}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
@@ -1652,9 +1710,21 @@ export default function CafeteriaPage() {
           </div>
 
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
+            {orderType === 'delivery' && deliveryCharge > 0 && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+                  <span>Subtotal</span>
+                  <span>₹{total}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                  <span>Delivery ({deliveryDistance} km)</span>
+                  <span>₹{deliveryCharge}</span>
+                </div>
+              </>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</span>
             </div>
           </div>
 
@@ -1673,7 +1743,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{total}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + deliveryCharge : total}</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
@@ -1747,11 +1817,21 @@ export default function CafeteriaPage() {
             </div>
             {orderType === 'delivery' && (
               <div style={{ marginTop: 16 }}>
-                {deliveryAddress ? (
-                  <div style={{ padding: '12px 14px', background: '#f0faf5', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 13, color: 'var(--navy)', marginBottom: 12 }}>
-                    📍 {deliveryAddress}
+                {deliveryChargeError ? (
+                  <div style={{ padding: '12px 14px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 12, fontSize: 13, color: '#92400e', marginBottom: 12 }}>
+                    ⚠️ {deliveryChargeError}
                   </div>
                 ) : null}
+                {deliveryAddress && !deliveryChargeError ? (
+                  <div style={{ padding: '12px 14px', background: '#f0faf5', border: '2px solid var(--accent)', borderRadius: 12, fontSize: 13, color: 'var(--navy)', marginBottom: 12 }}>
+                    <div>📍 {deliveryAddress}</div>
+                    {deliveryDistance > 0 && (
+                      <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+                        Distance: {deliveryDistance} km | Delivery: ₹{deliveryCharge}
+                      </div>
+                    )}
+                  </div>
+                ) : deliveryAddress ? null : null}
                 <motion.button
                   {...hoverScale}
                   onClick={() => setShowMapPicker(true)}
