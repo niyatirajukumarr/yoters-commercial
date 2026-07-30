@@ -847,71 +847,81 @@ export default function VendorDashboard() {
                     : `${new Date(selectedDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
                 </div>
 
-                {/* Stats row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-                  <div style={{ background: 'var(--green-bg)', border: '2px solid var(--green)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--green)' }}>{completedCount}</div>
-                    <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Completed</div>
+                {/* Check if there are any orders for the selected date */}
+                {!isAll && (collected.length + cancelled.length + active.length) === 0 ? (
+                  <div style={{ background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: 14, padding: '40px 20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--muted)', marginBottom: 8 }}>📭 No data</div>
+                    <div style={{ fontSize: 13, color: 'var(--muted)' }}>No orders for this date</div>
                   </div>
-                  <div style={{ background: 'rgba(212,130,26,0.08)', border: '2px solid #d4821a', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#d4821a' }}>{activeCount}</div>
-                    <div style={{ fontSize: 11, color: '#d4821a', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Active</div>
-                  </div>
-                  <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--red)' }}>{cancelledCount}</div>
-                    <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Cancelled</div>
-                  </div>
-                </div>
-
-                {/* Revenue */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                  <div style={{ background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>₹{revenue}</div>
-                    <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Revenue Earned</div>
-                  </div>
-                  <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--red)' }}>₹{lostRevenue}</div>
-                    <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Lost (Cancelled)</div>
-                  </div>
-                </div>
-
-                {/* Money actually moved. Kept apart from the fulfilment figures
-                    above: "Revenue Earned" counts orders served, this counts
-                    rupees Razorpay took. They are not the same number and the
-                    payout is based on this one. */}
-                {s && (
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                      {moneyCard(s.received, 'Received (paid)', 'var(--green)', 'var(--green-bg)')}
-                      {moneyCard(s.awaiting, 'Awaiting payment', '#d4821a', 'rgba(212,130,26,0.08)')}
-                      {moneyCard(s.refunded, 'Refunded', 'var(--red)', 'var(--red-bg)')}
+                ) : (
+                  <>
+                    {/* Stats row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                      <div style={{ background: 'var(--green-bg)', border: '2px solid var(--green)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--green)' }}>{completedCount}</div>
+                        <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Completed</div>
+                      </div>
+                      <div style={{ background: 'rgba(212,130,26,0.08)', border: '2px solid #d4821a', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 28, fontWeight: 800, color: '#d4821a' }}>{activeCount}</div>
+                        <div style={{ fontSize: 11, color: '#d4821a', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Active</div>
+                      </div>
+                      <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--red)' }}>{cancelledCount}</div>
+                        <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Cancelled</div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
-                      Payouts are settled against <strong>Received</strong> — money Razorpay actually collected.
-                      Awaiting payment is not yours yet, and refunded amounts go back to the customer.
-                    </div>
-                  </div>
-                )}
 
-                {/* Completed orders */}
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders Today ({collected.length})</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                    {collected.length === 0
-                      ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
-                      : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" onDelete={deleteOrder} />)
-                    }
-                  </div>
-                </div>
-
-                {/* Cancelled/denied orders */}
-                {cancelled.length > 0 && (
-                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                      {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
+                    {/* Revenue */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                      <div style={{ background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>₹{revenue}</div>
+                        <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Revenue Earned</div>
+                      </div>
+                      <div style={{ background: 'var(--red-bg)', border: '2px solid var(--red)', borderRadius: 14, padding: '16px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--red)' }}>₹{lostRevenue}</div>
+                        <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>Lost (Cancelled)</div>
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Money actually moved. Kept apart from the fulfilment figures
+                        above: "Revenue Earned" counts orders served, this counts
+                        rupees Razorpay took. They are not the same number and the
+                        payout is based on this one. */}
+                    {s && (
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                          {moneyCard(s.received, 'Received (paid)', 'var(--green)', 'var(--green-bg)')}
+                          {moneyCard(s.awaiting, 'Awaiting payment', '#d4821a', 'rgba(212,130,26,0.08)')}
+                          {moneyCard(s.refunded, 'Refunded', 'var(--red)', 'var(--red-bg)')}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+                          Payouts are settled against <strong>Received</strong> — money Razorpay actually collected.
+                          Awaiting payment is not yours yet, and refunded amounts go back to the customer.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Completed orders */}
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders Today ({collected.length})</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
+                        {collected.length === 0
+                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
+                          : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" onDelete={deleteOrder} />)
+                        }
+                      </div>
+                    </div>
+
+                    {/* Cancelled/denied orders */}
+                    {cancelled.length > 0 && (
+                      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
+                          {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )
