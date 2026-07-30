@@ -96,12 +96,36 @@ components/
 
 ## Work Log
 
-### 2026-07-30 — Delivery charge feature
-Added distance-based delivery charges for "Home Delivery" orders. Implemented Haversine distance calculation and pricing tiers: ≤3 km ₹30, ≤9 km ₹40, ≤12 km ₹50, >12 km blocked with error message. 
+### 2026-07-30 — Delivery charge feature (Progressive Pricing)
+Added **progressive distance-based delivery charges** for "Home Delivery" orders using formula: `₹10 + (km - 1) × ₹5 per km`.
 
-**Files**: Created `lib/utils/deliveryChargeCalculator.ts`, DB migration `20260730_delivery_charge.sql`, updated order page to calculate & display charges. User sees breakdown in cart, order details, and payment pages.
+**Pricing Examples:**
+- 0.5-1 km: ₹10
+- 1-2 km: ₹15
+- 2-3 km: ₹20
+- 3+ km: ₹25+ (unbounded)
 
-**Blockers**: Cafeterias must have `latitude`/`longitude` set in DB; backend order validation should re-verify delivery charge server-side to prevent tampering (addresses security audit gap #1).
+**Implementation:**
+
+*New Files:*
+- `lib/utils/deliveryChargeCalculator.ts` — Haversine distance calculation + progressive charge formula
+- `supabase/migrations/20260730_delivery_charge.sql` — DB schema (add columns to orders & cafeterias)
+- `docs/DELIVERY_CHARGES.md` — Complete feature documentation with setup & testing guide
+
+*Modified Files:*
+- `app/mobile/order/[cafeteriaId]/page.tsx` — Full delivery flow integration:
+  - Real-time charge calculation via `useEffect` when coordinates change
+  - Validates delivery location before checkout
+  - Stores `delivery_charge` in orders table
+  - UI displays charge breakdown in: cart FAB, cart sheet, order details, payment page, order type modal
+  - Prevents checkout if cafeteria missing coordinates
+
+**Setup Required:**
+1. Run migration to add `delivery_charge` column to orders, `latitude`/`longitude` to cafeterias
+2. Populate cafeteria coordinates in DB (required for feature to function)
+3. Deploy — migrations auto-apply via Vercel
+
+**Security Note:** Backend order-creation route should re-validate delivery charge server-side to prevent client tampering (same defense as validating `total_amount` — addresses audit gap #1).
 
 ### 2026-07-30 — Full-codebase security audit
 Ran a full-repo security review (not just the diff) covering all 18 API routes, `proxy.ts` middleware, all 17 Supabase migrations + base schema, and a repo-wide sweep for secrets/XSS/SSRF. Prior audits (`20260718_security_hardening.sql`, `20260730_close_open_rls_gaps.sql`) had already closed most obvious holes; this pass found 4 HIGH, 1 MEDIUM, 1 LOW gaps they missed.
