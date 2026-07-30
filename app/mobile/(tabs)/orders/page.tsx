@@ -297,7 +297,7 @@ export default function MobileOrders() {
                               padding: 0
                             }}
                           >
-                            Continue to Payment →
+                            Track Order →
                           </motion.button>
                         )}
                         {isPast && (
