@@ -81,13 +81,13 @@ export default function OrderTrackingPage() {
   }, [orderId])
 
   useEffect(() => {
-    if (!order?.prep_time_minutes || !order?.approved_at) { setTimeRemaining(null); return }
-    const end = new Date(order.approved_at).getTime() + order.prep_time_minutes * 60 * 1000
+    if (!order?.prep_time_minutes || !order?.preparing_started_at) { setTimeRemaining(null); return }
+    const end = new Date(order.preparing_started_at).getTime() + order.prep_time_minutes * 60 * 1000
     const tick = () => setTimeRemaining(Math.max(0, end - Date.now()))
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [order?.prep_time_minutes, order?.approved_at])
+  }, [order?.prep_time_minutes, order?.preparing_started_at])
 
   // Lets the customer flag "I've got it" — visible to the vendor as a nudge
   // on their dashboard. Doesn't set order.status itself; the vendor still

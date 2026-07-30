@@ -55,6 +55,7 @@ export interface Order {
   payment_status: 'unpaid' | 'paid'
   cashfree_order_id?: string
   approved_at?: string
+  preparing_started_at?: string
   denied_at?: string
   denial_reason?: string
   notes?: string

@@ -192,7 +192,15 @@ export default function VendorDashboard() {
     const update: Partial<Order> = { status }
     if (status === 'ready') update.ready_at = new Date().toISOString()
     if (status === 'collected') update.collected_at = new Date().toISOString()
+    if (status === 'preparing') update.preparing_started_at = new Date().toISOString()
     await supabase.from('orders').update(update).eq('id', orderId)
+    if (status === 'preparing') {
+      const order = orders.find(o => o.id === orderId)
+      if (order?.prep_time_minutes) {
+        setMsg(`⏱️ Timer started! You have ${order.prep_time_minutes} min to complete this order`)
+        setTimeout(() => setMsg(''), 4000)
+      }
+    }
     if (cafeteria) fetchOrders(cafeteria.id)
     setActionLoading(null)
   }
