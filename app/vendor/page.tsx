@@ -992,7 +992,7 @@ export default function VendorDashboard() {
                       onChange={e => editingItem ? setEditForm(m => ({ ...m, category: e.target.value })) : setMenuForm(m => ({ ...m, category: e.target.value }))}
                       style={inp}
                     >
-                      {['Breakfast', 'Meals', 'Snacks', 'Beverages', 'Desserts'].map(c => <option key={c}>{c}</option>)}
+                      {['Fresh Juices', 'Mojitos', 'Hot Beverages', 'Fruit Milkshakes', 'Thick Shake', 'Sodas', 'Coffee Shake', 'Special Shakes', 'Ice Cream Shakes', 'Lassi', 'Delights', 'Club Sandwich', 'Strips', 'Sandwiches', 'Egg Bites', 'Loaded Fries', 'Rolls', 'Burgers', 'Buns', 'Wraps', 'Quick Bites', 'Maggies'].map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
