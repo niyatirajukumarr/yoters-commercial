@@ -105,7 +105,7 @@ export default function VendorDashboard() {
           // Play alert sound file
           const playAlertSound = () => {
             try {
-              const audio = new Audio('/sound beat.mp4')
+              const audio = new Audio('/sound beat.mp3')
               audio.volume = 1.0
               audio.play().catch(err => console.log('Audio play error:', err))
             } catch {}
