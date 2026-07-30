@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -51,6 +51,7 @@ export default function VendorDashboard() {
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
+  const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
@@ -95,16 +96,31 @@ export default function VendorDashboard() {
         if (notify && data.length > prevOrderCount[0].count) {
           const newest = data[data.length - 1]
           setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
-          // Play a beep sound
-          try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-            const osc = ctx.createOscillator()
-            osc.connect(ctx.destination)
-            osc.frequency.value = 880
-            osc.start()
-            osc.stop(ctx.currentTime + 0.3)
-          } catch {}
-          setTimeout(() => setNewOrderAlert(null), 5000)
+
+          // Stop any existing alert sound
+          if (alertSoundIntervalRef.current) {
+            clearInterval(alertSoundIntervalRef.current)
+          }
+
+          // Play repeating alert sound
+          const playAlertSound = () => {
+            try {
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const gain = ctx.createGain()
+              gain.gain.value = 0.5
+              gain.connect(ctx.destination)
+
+              const osc = ctx.createOscillator()
+              osc.frequency.value = 880
+              osc.connect(gain)
+              osc.start()
+              osc.stop(ctx.currentTime + 0.2)
+            } catch {}
+          }
+
+          // Play sound immediately and repeat every 500ms
+          playAlertSound()
+          alertSoundIntervalRef.current = setInterval(playAlertSound, 500)
         }
         prevOrderCount[0].count = data.length
         setOrders(data as Order[])
@@ -154,7 +170,11 @@ export default function VendorDashboard() {
       }
     }
     init()
-    return () => { channel?.unsubscribe(); if (poll) clearInterval(poll) }
+    return () => {
+      channel?.unsubscribe()
+      if (poll) clearInterval(poll)
+      if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
+    }
   }, [router, fetchOrders])
 
   // Refresh the totals when an order's money or fulfilment state actually
@@ -303,6 +323,11 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
+        // Stop alert sound when order is approved
+        if (alertSoundIntervalRef.current) {
+          clearInterval(alertSoundIntervalRef.current)
+          alertSoundIntervalRef.current = null
+        }
         setMsg('✅ Order approved! Student notified of prep time.')
         setApprovalModal(null)
         setPrepTime('10')
