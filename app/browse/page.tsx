@@ -201,7 +201,7 @@ export default function StudentHome() {
           .cafe-menu-image { height:280px; }
           .cafe-menu-image-logo img { padding: 12px; }
           .cafe-name { font-size:48px; }
-          .browse-list { padding:20px 20px 90px; }
+          .browse-list { padding:20px 20px calc(90px + env(safe-area-inset-bottom)); }
         }
         @media (max-width: 480px) {
           .newspaper-grid { gap:40px; }
