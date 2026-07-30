@@ -57,6 +57,7 @@ export default function VendorDashboard() {
   // figures can't be derived from it.
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
 
   const fetchSummary = useCallback(async (cafId: string) => {
     try {
@@ -717,9 +718,17 @@ export default function VendorDashboard() {
 
           {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
-            const collected = orders.filter(o => o.status === 'collected')
-            const cancelled = orders.filter(o => o.status === 'cancelled')
-            const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
+            // Filter orders by selected date
+            const isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
+            const filterByDate = (order: Order) => {
+              if (summaryRange === 'allTime') return true
+              const orderDate = new Date(order.created_at).toISOString().split('T')[0]
+              return orderDate === selectedDate
+            }
+
+            const collected = orders.filter(o => o.status === 'collected' && filterByDate(o))
+            const cancelled = orders.filter(o => o.status === 'cancelled' && filterByDate(o))
+            const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status) && filterByDate(o))
 
             // Server figures once they land; until then fall back to today's
             // loaded orders so the tab is never blank. The fallback can only
@@ -768,34 +777,74 @@ export default function VendorDashboard() {
               </div>
             )
 
+            // Generate date options (today + 30 days back)
+            const dateOptions = []
+            const today = new Date()
+            for (let i = 0; i < 31; i++) {
+              const d = new Date(today)
+              d.setDate(d.getDate() - i)
+              const dateStr = d.toISOString().split('T')[0]
+              const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : ''
+              const dateLabel = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              dateOptions.push({
+                value: dateStr,
+                label: dayLabel ? `${dayLabel} ${dateLabel}` : dateLabel
+              })
+            }
+
             return (
               <div style={{ maxWidth: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>
                     {isAll ? 'All-Time Summary' : "Today's Summary"}
                   </div>
-                  <div style={{ display: 'inline-flex', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 999, padding: 3 }}>
-                    {([['today', 'Today'], ['allTime', 'All time']] as const).map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => setSummaryRange(key)}
-                        disabled={!summary}
+                  <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                    {!isAll && (
+                      <select
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
                         style={{
-                          border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 700,
-                          cursor: summary ? 'pointer' : 'default',
-                          background: summaryRange === key ? 'var(--accent)' : 'transparent',
-                          color: summaryRange === key ? '#fff' : 'var(--muted)',
+                          padding: '6px 12px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          background: 'var(--surface)',
+                          color: 'var(--text)',
+                          cursor: 'pointer',
+                          minWidth: '160px'
                         }}
                       >
-                        {label}
-                      </button>
-                    ))}
+                        {dateOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <div style={{ display: 'inline-flex', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 999, padding: 3 }}>
+                      {([['today', 'Today'], ['allTime', 'All time']] as const).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSummaryRange(key)}
+                          disabled={!summary}
+                          style={{
+                            border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 700,
+                            cursor: summary ? 'pointer' : 'default',
+                            background: summaryRange === key ? 'var(--accent)' : 'transparent',
+                            color: summaryRange === key ? '#fff' : 'var(--muted)',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
                   {isAll
                     ? `Every order since launch — ${s?.orders ?? 0} in total.`
-                    : 'Since midnight today.'}
+                    : `${new Date(selectedDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
                 </div>
 
                 {/* Stats row */}
