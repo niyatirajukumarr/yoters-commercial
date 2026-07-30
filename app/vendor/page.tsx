@@ -551,22 +551,45 @@ export default function VendorDashboard() {
                         className="order-card"
                         style={{ borderLeft: `4px solid ${cfg?.border ?? 'var(--border)'}` }}
                       >
-                        {/* Top row: token + name + amount */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap' }}>
-                            <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 900, color: cfg?.color, background: cfg?.bg, border: `1px solid ${cfg?.border}`, borderRadius: 8, padding: '2px 12px', flexShrink: 0 }}>
+                        {/* Top row: order token + customer name + amount */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                            <div style={{
+                              fontFamily: 'var(--font-head)',
+                              fontSize: 20,
+                              fontWeight: 900,
+                              color: cfg?.color,
+                              background: cfg?.bg,
+                              border: `1.5px solid ${cfg?.border}`,
+                              borderRadius: 8,
+                              padding: '3px 12px',
+                              flexShrink: 0,
+                              minWidth: 50,
+                              textAlign: 'center'
+                            }}>
                               #{order.queue_position}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 700, fontSize: 15 }}>{order.student_name}</div>
-                              <div style={{ fontSize: 12, color: 'var(--muted)' }}>📱 {order.student_phone}</div>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{order.student_name}</div>
+                              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>📱 {order.student_phone}</div>
                             </div>
                           </div>
                           <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
                         </div>
 
                         {/* Status badge */}
-                        <div style={{ fontSize: 12, fontWeight: 700, color: cfg?.color, marginBottom: 8 }}>{cfg?.label}</div>
+                        <div style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: cfg?.color,
+                          background: cfg?.bg,
+                          display: 'inline-block',
+                          padding: '4px 10px',
+                          borderRadius: 16,
+                          marginBottom: 10
+                        }}>
+                          {cfg?.label}
+                        </div>
 
                         {/* Items */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>

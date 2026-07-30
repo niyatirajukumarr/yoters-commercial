@@ -17,6 +17,11 @@ interface CafeteriaInfo {
   image_emoji: string
 }
 
+interface CafeteriaOrders {
+  cafeteria: CafeteriaInfo
+  orders: Order[]
+}
+
 export default function MobileOrders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [cafeterias, setCafeterias] = useState<Record<string, CafeteriaInfo>>({})
@@ -105,14 +110,28 @@ export default function MobileOrders() {
 
   const displayOrders = tab === 'active' ? activeOrders : pastOrders
 
-  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    pending:   { label: '⏳ Awaiting Payment',   color: '#d4821a', bg: '#fff8ec' },
-    paid:      { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
-    approved:  { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
-    preparing: { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
-    ready:     { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3' },
-    collected: { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
-    cancelled: { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
+  // Group orders by cafeteria
+  const groupedOrders: CafeteriaOrders[] = displayOrders.reduce((acc, order) => {
+    const cafe = cafeterias[order.cafeteria_id]
+    if (!cafe) return acc
+
+    const existing = acc.find(g => g.cafeteria.id === order.cafeteria_id)
+    if (existing) {
+      existing.orders.push(order)
+    } else {
+      acc.push({ cafeteria: cafe, orders: [order] })
+    }
+    return acc
+  }, [] as CafeteriaOrders[])
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string; borderColor: string }> = {
+    pending:   { label: '⏳ Awaiting Payment',   color: '#d4821a', bg: '#fff8ec', borderColor: '#d4821a' },
+    paid:      { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff', borderColor: '#2563eb' },
+    approved:  { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff', borderColor: '#2563eb' },
+    preparing: { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff', borderColor: '#7c5cfc' },
+    ready:     { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3', borderColor: '#2e9e6b' },
+    collected: { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5', borderColor: '#8a90a8' },
+    cancelled: { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2', borderColor: '#E8334A' },
   }
 
   if (!user?.phone) {
@@ -174,71 +193,149 @@ export default function MobileOrders() {
           No {tab} orders yet
         </div>
       ) : (
-        <motion.div initial="hidden" animate="visible" variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {displayOrders.map((order) => {
-            const cafe = cafeterias[order.cafeteria_id]
-            const cfg = statusConfig[order.status] ?? statusConfig.pending
-            const isPast = ['collected', 'cancelled'].includes(order.status)
+        <motion.div initial="hidden" animate="visible" variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {groupedOrders.map((group) => (
+            <div key={group.cafeteria.id}>
+              {/* Cafeteria heading */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 24 }}>{group.cafeteria.image_emoji}</span>
+                <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                  Your Orders from {group.cafeteria.name}
+                </h2>
+              </div>
 
-            return (
-              <motion.div
-                key={order.id}
-                variants={staggerItem}
-                {...hoverLift}
-                onClick={() => router.push(`/mobile/track/${order.id}`)}
-                style={{ background: 'white', border: '1px solid rgba(26,31,46,0.08)', borderRadius: 16, padding: 16, cursor: 'pointer', borderLeft: `4px solid ${cfg.color}` }}
-              >
-                {/* Top row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ fontSize: 28 }}>{cafe?.image_emoji || '🍱'}</div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>{cafe?.name || 'Restaurant'}</div>
-                      <div style={{ fontSize: 11, color: '#8a90a8' }}>
-                        🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
-                      </div>
-                    </div>
-                  </div>
-                  {order.queue_position && (
-                    <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 900, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.color}`, borderRadius: 8, padding: '2px 10px' }}>
-                      #{order.queue_position}
-                    </div>
-                  )}
-                </div>
+              {/* Orders in this cafeteria */}
+              <motion.div variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {group.orders.map((order) => {
+                  const cfg = statusConfig[order.status] ?? statusConfig.pending
+                  const isPast = ['collected', 'cancelled'].includes(order.status)
 
-                {/* Status */}
-                <div style={{ fontSize: 12, fontWeight: 700, color: cfg.color, background: cfg.bg, display: 'inline-block', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>
-                  {cfg.label}
-                </div>
-
-                {/* Items + total */}
-                <div style={{ fontSize: 13, color: '#444', marginBottom: 8 }}>
-                  {(order.items as { name: string; quantity: number }[]).map(i => `${i.quantity}× ${i.name}`).join(', ')}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1f2e' }}>₹{order.total_amount}</span>
-                  {!isPast && <span style={{ fontSize: 12, color: '#E8334A', fontWeight: 600 }}>Track order →</span>}
-                  {isPast && (
-                    <motion.button
-                      {...(deleting !== order.id ? hoverScale : {})}
-                      disabled={deleting === order.id}
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        if (!confirm('Delete this order?')) return
-                        setDeleting(order.id)
-                        const res = await fetch('/api/delete-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone }) })
-                        if (res.ok) setOrders(prev => prev.filter(o => o.id !== order.id))
-                        setDeleting(null)
+                  return (
+                    <motion.div
+                      key={order.id}
+                      variants={staggerItem}
+                      {...hoverLift}
+                      onClick={() => router.push(`/mobile/track/${order.id}`)}
+                      style={{
+                        background: 'white',
+                        border: '1px solid rgba(26,31,46,0.08)',
+                        borderLeft: `4px solid ${cfg.borderColor}`,
+                        borderRadius: 12,
+                        padding: 14,
+                        cursor: 'pointer',
                       }}
-                      style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                     >
-                      {deleting === order.id ? 'Deleting...' : '🗑️ Delete'}
-                    </motion.button>
-                  )}
-                </div>
+                      {/* Top row: timestamp + order number */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, color: '#8a90a8', fontWeight: 500 }}>
+                          🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </div>
+                        {order.queue_position && (
+                          <div style={{
+                            fontFamily: 'var(--font-head)',
+                            fontSize: 18,
+                            fontWeight: 900,
+                            color: cfg.color,
+                            background: cfg.bg,
+                            border: `1.5px solid ${cfg.borderColor}`,
+                            borderRadius: 6,
+                            padding: '2px 10px',
+                            minWidth: 45,
+                            textAlign: 'center'
+                          }}>
+                            #{order.queue_position}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Status badge */}
+                      <div style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: cfg.color,
+                        background: cfg.bg,
+                        display: 'inline-block',
+                        padding: '4px 10px',
+                        borderRadius: 16,
+                        marginBottom: 10
+                      }}>
+                        {cfg.label}
+                      </div>
+
+                      {/* Items list */}
+                      <div style={{ marginBottom: 10 }}>
+                        {(order.items as { name: string; quantity: number }[]).map((item, idx) => (
+                          <div key={idx} style={{ fontSize: 13, color: '#444', marginBottom: 4 }}>
+                            {item.quantity}× {item.name}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Price row */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingTop: 10,
+                        borderTop: '1px solid rgba(26,31,46,0.08)'
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1f2e' }}>₹{order.total_amount}</span>
+                        {!isPast && (
+                          <motion.button
+                            whileHover={{ x: 2 }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/mobile/track/${order.id}`)
+                            }}
+                            style={{
+                              fontSize: 12,
+                              color: '#E8334A',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                              padding: 0
+                            }}
+                          >
+                            Continue to Payment →
+                          </motion.button>
+                        )}
+                        {isPast && (
+                          <motion.button
+                            {...(deleting !== order.id ? hoverScale : {})}
+                            disabled={deleting === order.id}
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              if (!confirm('Delete this order?')) return
+                              setDeleting(order.id)
+                              const res = await fetch('/api/delete-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone })
+                              })
+                              if (res.ok) setOrders(prev => prev.filter(o => o.id !== order.id))
+                              setDeleting(null)
+                            }}
+                            style={{
+                              fontSize: 12,
+                              color: '#E8334A',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                              padding: 0
+                            }}
+                          >
+                            {deleting === order.id ? 'Deleting...' : '🗑️ Delete'}
+                          </motion.button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </motion.div>
-            )
-          })}
+            </div>
+          ))}
         </motion.div>
       )}
     </div>
