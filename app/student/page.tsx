@@ -107,6 +107,11 @@ function StudentPageInner() {
     }
   }, [profile])
 
+  // Reset scroll when filter changes
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [showVeg, showNonVeg])
+
   // Listen for payment result from popup window
   useEffect(() => {
     const handler = (e: MessageEvent) => {
