@@ -357,7 +357,7 @@ function StudentPageInner() {
               </div>
               <motion.button
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                style={{ perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                style={{ perspective: '1000px', position: 'relative', width: '110px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
                 <motion.div
                   animate={{ rotateX: vegMode === 'veg' ? 0 : 180 }}
                   transition={{ type: 'spring', stiffness: 280, damping: 20 }}
