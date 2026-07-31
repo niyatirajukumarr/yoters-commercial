@@ -1286,8 +1286,7 @@ export default function VendorDashboard() {
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
                   onClick={() => {
-                    setDenialReason('')
-                    if (denialReason) {
+                    if (denialReason && denialReason !== 'temp') {
                       denyOrder(approvalModal)
                     } else {
                       setDenialReason('temp')
