@@ -62,12 +62,15 @@ export default function VendorDashboard() {
   const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
   const [loadingDate, setLoadingDate] = useState(false)
 
-  const fetchSummary = useCallback(async (cafId: string) => {
+  const fetchSummary = useCallback(async (cafId: string, date?: string) => {
     try {
       const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
       if (!session?.access_token) return
+      const url = date
+        ? `/api/vendor/summary?cafeteriaId=${cafId}&date=${date}`
+        : `/api/vendor/summary?cafeteriaId=${cafId}`
       const res = await withTimeout(
-        fetch(`/api/vendor/summary?cafeteriaId=${cafId}`, {
+        fetch(url, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         }),
         8000,
@@ -180,7 +183,7 @@ export default function VendorDashboard() {
     }
   }, [router, fetchOrders])
 
-  // Fetch orders for selected date when in "today" tab or date changes
+  // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
     if (tab !== 'today' || !cafeteria) return
     const isToday = selectedDate === new Date().toISOString().split('T')[0]
@@ -191,7 +194,10 @@ export default function VendorDashboard() {
       setLoadingDate(true)
       fetchOrders(cafeteria.id, false, selectedDate).finally(() => setLoadingDate(false))
     }
-  }, [selectedDate, tab, cafeteria, ordersCache, fetchOrders])
+
+    // Fetch summary for selected date
+    fetchSummary(cafeteria.id, selectedDate)
+  }, [selectedDate, tab, cafeteria, ordersCache, fetchOrders, fetchSummary])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll

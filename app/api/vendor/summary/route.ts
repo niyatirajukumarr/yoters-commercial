@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
   if (limited) return limited
 
   const cafId = req.nextUrl.searchParams.get('cafeteriaId')
+  const dateParam = req.nextUrl.searchParams.get('date')
   if (!cafId) return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
 
   // Same gate as the orders list — identity comes from the verified session
@@ -114,11 +115,24 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = (data ?? []) as SummaryRow[]
-  const dayStart = istDayStart()
-  const todayRows = rows.filter(o => o.created_at && new Date(o.created_at) >= dayStart)
+  let dayStart = istDayStart()
+
+  // If a specific date is provided, calculate summary for that date
+  if (dateParam) {
+    const parsed = new Date(dateParam + 'T00:00:00Z')
+    if (isNaN(parsed.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 })
+    }
+    dayStart = new Date(parsed.getTime() + (5.5 * 60 * 60 * 1000))
+    dayStart.setUTCHours(0, 0, 0, 0)
+    dayStart = new Date(dayStart.getTime() - (5.5 * 60 * 60 * 1000))
+  }
+
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
+  const selectedDateRows = rows.filter(o => o.created_at && new Date(o.created_at) >= dayStart && new Date(o.created_at) < dayEnd)
 
   return NextResponse.json({
-    today: summarise(todayRows),
+    today: dateParam ? summarise(selectedDateRows) : summarise(selectedDateRows),
     allTime: summarise(rows),
     dayStart: dayStart.toISOString(),
   })
