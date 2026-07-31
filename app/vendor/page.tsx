@@ -727,7 +727,7 @@ export default function VendorDashboard() {
                           {order.status === 'pending_approval' && (
                             <>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</motion.button>
-                              <motion.button {...hoverScale} onClick={() => { setApprovalModal(order); setDenialReason('temp') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>
+                              <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>
                             </>
                           )}
                           {order.status === 'approved' && (
@@ -1298,55 +1298,48 @@ export default function VendorDashboard() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text2)' }}>Do you want to approve this order?</div>
 
-              {/* Deny Section */}
-              {denialReason && (
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
-                  <textarea
-                    value={denialReason}
-                    onChange={e => setDenialReason(e.target.value)}
-                    placeholder="e.g., Out of stock, Unexpected issue..."
-                    style={{
-                      width: '100%',
-                      minHeight: 80,
-                      padding: 12,
-                      border: '1px solid var(--border)',
-                      borderRadius: 10,
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 13,
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              )}
+              {/* Deny Section - Always show textarea */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
+                <textarea
+                  value={denialReason}
+                  onChange={e => setDenialReason(e.target.value)}
+                  placeholder="e.g., Out of stock, Unexpected issue..."
+                  style={{
+                    width: '100%',
+                    minHeight: 80,
+                    padding: 12,
+                    border: denialReason.trim() ? '1px solid var(--red)' : '1px solid var(--border)',
+                    borderRadius: 10,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                    background: denialReason.trim() ? 'rgba(232,51,74,0.05)' : 'transparent',
+                  }}
+                />
+              </div>
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
-                  onClick={() => {
-                    if (denialReason && denialReason !== 'temp') {
-                      denyOrder(approvalModal)
-                    } else {
-                      setDenialReason('temp')
-                    }
-                  }}
-                  disabled={approveLoading}
+                  onClick={() => denyOrder(approvalModal)}
+                  disabled={approveLoading || !denialReason.trim()}
                   style={{
                     flex: 1,
                     padding: 14,
                     borderRadius: 10,
                     border: 'none',
-                    background: denialReason ? 'var(--red)' : '#ffc0c7',
+                    background: denialReason.trim() ? 'var(--red)' : '#ccc',
                     color: 'white',
                     fontSize: 14,
                     fontWeight: 700,
-                    cursor: approveLoading ? 'default' : 'pointer',
-                    opacity: approveLoading ? 0.6 : 1,
+                    cursor: (approveLoading || !denialReason.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (approveLoading || !denialReason.trim()) ? 0.6 : 1,
                   }}
                 >
-                  {denialReason && denialReason !== 'temp' ? '✕ DENY' : '✕ DENY'}
+                  ✕ DENY
                 </motion.button>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
