@@ -1096,6 +1096,7 @@ export default function CafeteriaPage() {
     <div style={{
       minHeight: '100vh',
       paddingBottom: 80,
+      background: !showVegFront ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)' : 'transparent',
     }}>
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
