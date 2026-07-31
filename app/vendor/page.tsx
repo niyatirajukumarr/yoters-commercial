@@ -763,6 +763,11 @@ export default function VendorDashboard() {
 
                         {/* Action buttons */}
                         <div className="order-actions">
+                          {order.status === 'pending' && (
+                            <div style={{ width: '100%', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '3px solid #f59e0b', borderRadius: 12, padding: '20px 16px', textAlign: 'center', fontSize: 16, fontWeight: 800, color: '#92400e', lineHeight: 1.6 }}>
+                              ⏳ THE USER IS STILL PROCESSING THE PAYMENT<br/>WILL BE NOTIFIED ONCE PAYMENT COMPLETED.
+                            </div>
+                          )}
                           {order.status === 'payment_pending' && order.payment_status === 'unpaid' && (new Date().getTime() - new Date(order.created_at).getTime() >= 60000) && (
                             <>
                               <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
