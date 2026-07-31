@@ -1192,30 +1192,32 @@ export default function CafeteriaPage() {
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
               {/* Veg / Non-veg flip buttons */}
-              <FlipButton
-                frontText="🟢 Veg"
-                backText="✓"
-                from="top"
-                flipped={vegMode === 'nonveg'}
-                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
-                style={{ padding: '0 12px' }}
-                frontClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
-                backClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
-              />
-              <FlipButton
-                frontText="🔴 Non-veg"
-                backText="✓"
-                from="top"
-                flipped={vegMode === 'nonveg'}
-                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
-                style={{ padding: '0 12px' }}
-                frontClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
-                backClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
-              />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <FlipButton
+                  frontText="🟢 Veg"
+                  backText="✓"
+                  from="top"
+                  flipped={vegMode === 'nonveg'}
+                  onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                  aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
+                  className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
+                  style={{ padding: '0 12px' }}
+                  frontClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
+                  backClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
+                />
+                <FlipButton
+                  frontText="🔴 Non-veg"
+                  backText="✓"
+                  from="top"
+                  flipped={vegMode === 'nonveg'}
+                  onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                  aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
+                  className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
+                  style={{ padding: '0 12px' }}
+                  frontClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
+                  backClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
+                />
+              </div>
             </div>
 
             {/* Filter + Search */}
