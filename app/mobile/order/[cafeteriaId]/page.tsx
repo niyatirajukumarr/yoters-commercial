@@ -1349,7 +1349,7 @@ export default function CafeteriaPage() {
                 if (visibleItems.length === 0) {
                   return (
                     <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
-                      No {vegMode === 'veg' ? 'veg' : 'non-veg'} items available here.
+                      No items available with selected filters.
                     </div>
                   )
                 }
