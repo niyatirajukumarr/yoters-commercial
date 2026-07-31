@@ -211,13 +211,11 @@ export default function VendorDashboard() {
     .map(o => `${o.id}:${o.status}:${(o as { payment_status?: string }).payment_status ?? ''}:${o.total_amount}`)
     .join('|')
   useEffect(() => {
-    if (!cafeteria) return
-    const isToday = selectedDate === new Date().toISOString().split('T')[0]
-    // Only refresh summary automatically if in orders tab or viewing today's orders
-    if (tab === 'orders' || (tab === 'today' && isToday)) {
-      fetchSummary(cafeteria.id, tab === 'today' && !isToday ? selectedDate : undefined)
-    }
-  }, [cafeteria, orderStateSignature, fetchSummary, tab, selectedDate])
+    if (!cafeteria || tab !== 'orders') return
+    // Only auto-refresh summary in orders tab (real-time updates)
+    // In today tab, the date-based effect handles summary fetching
+    fetchSummary(cafeteria.id)
+  }, [cafeteria, orderStateSignature, fetchSummary, tab])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
