@@ -349,6 +349,7 @@ function StudentPageInner() {
               <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 700, marginBottom: 6 }}>
                 {cafeteria?.name ?? 'Loading...'}
               </h1>
+              {/* v2: flip animation filter */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
                 <span>📍 {cafeteria?.location}</span>
               </div>
