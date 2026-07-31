@@ -1191,32 +1191,46 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg flip buttons */}
-              <div style={{ display: 'flex', gap: 6 }}>
-                <FlipButton
-                  frontText="🟢 Veg"
-                  backText="✓"
-                  from="top"
-                  flipped={vegMode === 'nonveg'}
-                  onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                  aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                  className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
-                  style={{ padding: '0 12px' }}
-                  frontClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
-                  backClassName="rounded-full border border-[#2e9e6b]/50 bg-[#eef9f3] text-[#217a53]"
-                />
-                <FlipButton
-                  frontText="🔴 Non-veg"
-                  backText="✓"
-                  from="top"
-                  flipped={vegMode === 'nonveg'}
-                  onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                  aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                  className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
-                  style={{ padding: '0 12px' }}
-                  frontClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
-                  backClassName="rounded-full border border-[#b8321f]/50 bg-[#fdf0ed] text-[#a32d1c]"
-                />
+              {/* Veg / Non-veg flip buttons - independent toggles */}
+              <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                <motion.button
+                  onClick={() => setVegMode(vegMode === 'veg' ? 'both' : 'veg')}
+                  initial="initial"
+                  animate={vegMode !== 'both' ? 'hover' : 'initial'}
+                  whileTap={{ scale: 0.95 }}
+                  style={{ perspective: '1000px', position: 'relative', width: '70px', height: '32px', padding: 0, borderRadius: 20, border: vegMode !== 'both' ? '2px solid #22c55e' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
+                  <motion.span
+                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegMode !== 'both' ? 'rgba(34,197,94,0.1)' : 'white', borderRadius: 20, color: vegMode !== 'both' ? '#22c55e' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+                    🟢 Veg
+                  </motion.span>
+                  <motion.span
+                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegMode !== 'both' ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: vegMode !== 'both' ? '#22c55e' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+                    ✓
+                  </motion.span>
+                </motion.button>
+                <motion.button
+                  onClick={() => setVegMode(vegMode === 'nonveg' ? 'both' : 'nonveg')}
+                  initial="initial"
+                  animate={vegMode !== 'both' ? 'hover' : 'initial'}
+                  whileTap={{ scale: 0.95 }}
+                  style={{ perspective: '1000px', position: 'relative', width: '85px', height: '32px', padding: 0, borderRadius: 20, border: vegMode !== 'both' ? '2px solid #ef4444' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
+                  <motion.span
+                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegMode !== 'both' ? 'rgba(239,68,68,0.1)' : 'white', borderRadius: 20, color: vegMode !== 'both' ? '#ef4444' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+                    🔴 Non-veg
+                  </motion.span>
+                  <motion.span
+                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegMode !== 'both' ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: vegMode !== 'both' ? '#ef4444' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+                    ✓
+                  </motion.span>
+                </motion.button>
               </div>
             </div>
 
