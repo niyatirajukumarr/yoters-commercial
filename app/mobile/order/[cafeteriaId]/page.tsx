@@ -777,7 +777,7 @@ export default function CafeteriaPage() {
         .from('orders')
         .insert([{
           cafeteria_id: cafeteriaId, student_name: formData.name, student_phone: formData.phone, student_email: formData.email,
-          items: cartItem, total_amount: orderTotal, queue_position: tokenNumber, status: 'pending', payment_status: 'unpaid', notes: formData.notes,
+          items: cartItem, total_amount: orderTotal, queue_position: tokenNumber, status: 'pending_payment', payment_status: 'unpaid', notes: formData.notes,
           order_type: orderType ?? 'takeaway',
           delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
@@ -822,8 +822,8 @@ export default function CafeteriaPage() {
     // Find the order to check its status
     const order = cafeOrders.find(o => o.id === orderId)
 
-    // Only allow deletion for pending and cancelled orders
-    if (order && order.status !== 'pending' && order.status !== 'cancelled') {
+    // Only allow deletion for pending_payment, payment_pending, and cancelled orders
+    if (order && order.status !== 'pending_payment' && order.status !== 'payment_pending' && order.status !== 'cancelled') {
       alert(`Cannot delete ${order.status} orders. Vendor has already ${order.status === 'approved' ? 'accepted' : 'started preparing'} your order.`)
       return
     }
@@ -887,7 +887,7 @@ export default function CafeteriaPage() {
     setConfirmedTotal(paymentAmount)
     pollRef.current = setInterval(async () => {
       const { data } = await supabase.from('orders').select('status, payment_status, token_number, items, total_amount').eq('id', orderId).single()
-      if (data?.status === 'paid' || data?.payment_status === 'paid') {
+      if (data?.status === 'pending_approval' || data?.payment_status === 'paid') {
         clearInterval(pollRef.current)
         setConfirmedTotal(data.total_amount)
         setPaymentState('confirmed')
@@ -1526,17 +1526,20 @@ export default function CafeteriaPage() {
               <motion.div initial="hidden" animate="visible" variants={stagger}>
                 {cafeOrders.map(order => {
                   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-                    pending:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
-                    paid:      { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
-                    approved:  { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
-                    preparing: { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
-                    ready:     { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3' },
-                    collected: { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
-                    cancelled: { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
+                    pending_payment:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
+                    payment_pending:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
+                    pending_approval:  { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
+                    pending:           { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
+                    paid:              { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
+                    approved:          { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
+                    preparing:         { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
+                    ready:             { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3' },
+                    collected:         { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
+                    cancelled:         { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
                   }
                   const cfg = statusConfig[order.status] ?? statusConfig.pending
                   const isPast = ['collected', 'cancelled'].includes(order.status)
-                  const isPending = order.status === 'pending'
+                  const isPending = order.status === 'pending_payment' || order.status === 'payment_pending'
 
                   return (
                     <motion.div

@@ -137,8 +137,6 @@ export default function VendorDashboard() {
   }, [])
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null
-    let poll: ReturnType<typeof setInterval> | null = null
     async function init() {
       try {
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
@@ -157,24 +155,6 @@ export default function VendorDashboard() {
           'Menu fetch timed out'
         ) as any
         if (menu) setMenuItems(menu)
-
-        const fetchMenuItems = async (cafId: string) => {
-          const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
-          if (data) setMenuItems(data)
-        }
-        channel = supabase.channel('vendor-realtime-' + caf.id)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchOrders(caf.id, true))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
-          .subscribe()
-
-        // Fallback poll every 5s, but only fetch today's orders to avoid overwriting filtered date views
-        poll = setInterval(() => {
-          const today = new Date().toISOString().split('T')[0]
-          // Only poll today's orders in the orders tab
-          if (tab === 'orders') {
-            fetchOrders(caf.id)
-          }
-        }, 5_000)
       } catch (error) {
         console.error('Vendor dashboard init error:', error)
       } finally {
@@ -183,11 +163,29 @@ export default function VendorDashboard() {
     }
     init()
     return () => {
-      channel?.unsubscribe()
-      if (poll) clearInterval(poll)
       if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
     }
-  }, [router, fetchOrders, tab])
+  }, [router, fetchOrders])
+
+  // Separate effect for real-time subscriptions — only depends on cafeteria ID
+  useEffect(() => {
+    if (!cafeteria) return
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
+    const fetchMenuItems = async (cafId: string) => {
+      const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
+      if (data) setMenuItems(data)
+    }
+
+    channel = supabase.channel('vendor-realtime-' + cafeteria.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrders(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
+      .subscribe()
+
+    return () => {
+      channel?.unsubscribe()
+    }
+  }, [cafeteria])
 
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
@@ -469,7 +467,7 @@ export default function VendorDashboard() {
   const inp = { width: '100%', padding: '10px 14px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 14, color: 'var(--text)' }
   const lbl = { fontSize: 11, color: 'var(--text2)', marginBottom: 5, display: 'block' as const, fontWeight: 600 as const, textTransform: 'uppercase' as const, letterSpacing: 1 }
 
-  const pendingCount = orders.filter(o => o.status === 'paid').length
+  const pendingCount = orders.filter(o => o.status === 'pending_approval').length
   const preparingCount = orders.filter(o => o.status === 'preparing').length
   const readyCount = orders.filter(o => o.status === 'ready').length
   const todayRevenue = orders.filter(o => o.status === 'collected').reduce((s, o) => s + o.total_amount, 0)
@@ -709,7 +707,7 @@ export default function VendorDashboard() {
                         )}
 
                         {/* Prep time if set */}
-                        {order.prep_time_minutes && order.status !== 'paid' && (
+                        {order.prep_time_minutes && order.status === 'pending_approval' && (
                           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
                         )}
 
@@ -722,7 +720,7 @@ export default function VendorDashboard() {
 
                         {/* Action buttons */}
                         <div className="order-actions">
-                          {order.status === 'pending' && (
+                          {order.status === 'payment_pending' && (
                             <>
                               <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                                 {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
@@ -732,10 +730,13 @@ export default function VendorDashboard() {
                               </motion.button>
                             </>
                           )}
-                          {order.status === 'paid' && (
+                          {order.status === 'pending_approval' && (
                             <>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</motion.button>
-                              <motion.button {...hoverScale} onClick={() => { setApprovalModal(order); setDenialReason('temp') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>
+                              <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>
+                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 0.8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#e8734a', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                {deletingOrderId === order.id ? '...' : '🗑️'}
+                              </motion.button>
                             </>
                           )}
                           {order.status === 'approved' && (
@@ -849,10 +850,10 @@ export default function VendorDashboard() {
               </div>
             )
 
-            // Generate date options (today + 30 days back)
+            // Generate date options (today + yesterday only)
             const dateOptions = []
             const today = new Date()
-            for (let i = 0; i < 31; i++) {
+            for (let i = 0; i < 2; i++) {
               const d = new Date(today)
               d.setDate(d.getDate() - i)
               const dateStr = d.toISOString().split('T')[0]
@@ -1306,56 +1307,48 @@ export default function VendorDashboard() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text2)' }}>Do you want to approve this order?</div>
 
-              {/* Deny Section */}
-              {denialReason && (
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
-                  <textarea
-                    value={denialReason}
-                    onChange={e => setDenialReason(e.target.value)}
-                    placeholder="e.g., Out of stock, Unexpected issue..."
-                    style={{
-                      width: '100%',
-                      minHeight: 80,
-                      padding: 12,
-                      border: '1px solid var(--border)',
-                      borderRadius: 10,
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 13,
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              )}
+              {/* Deny Section - Always show textarea */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
+                <textarea
+                  value={denialReason}
+                  onChange={e => setDenialReason(e.target.value)}
+                  placeholder="e.g., Out of stock, Unexpected issue..."
+                  style={{
+                    width: '100%',
+                    minHeight: 80,
+                    padding: 12,
+                    border: denialReason.trim() ? '1px solid var(--red)' : '1px solid var(--border)',
+                    borderRadius: 10,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                    background: denialReason.trim() ? 'rgba(232,51,74,0.05)' : 'transparent',
+                  }}
+                />
+              </div>
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
-                  onClick={() => {
-                    setDenialReason('')
-                    if (denialReason) {
-                      denyOrder(approvalModal)
-                    } else {
-                      setDenialReason('temp')
-                    }
-                  }}
-                  disabled={approveLoading}
+                  onClick={() => denyOrder(approvalModal)}
+                  disabled={approveLoading || !denialReason.trim()}
                   style={{
                     flex: 1,
                     padding: 14,
                     borderRadius: 10,
                     border: 'none',
-                    background: denialReason ? 'var(--red)' : '#ffc0c7',
+                    background: denialReason.trim() ? 'var(--red)' : '#ccc',
                     color: 'white',
                     fontSize: 14,
                     fontWeight: 700,
-                    cursor: approveLoading ? 'default' : 'pointer',
-                    opacity: approveLoading ? 0.6 : 1,
+                    cursor: (approveLoading || !denialReason.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (approveLoading || !denialReason.trim()) ? 0.6 : 1,
                   }}
                 >
-                  {denialReason && denialReason !== 'temp' ? '✕ DENY' : '✕ DENY'}
+                  ✕ DENY
                 </motion.button>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}

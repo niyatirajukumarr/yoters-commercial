@@ -51,7 +51,7 @@ export interface Order {
   total_amount: number
   queue_position: number
   token_number?: number | null
-  status: 'pending' | 'paid' | 'approved' | 'preparing' | 'ready' | 'collected' | 'cancelled'
+  status: 'pending_payment' | 'payment_pending' | 'pending_approval' | 'approved' | 'preparing' | 'ready' | 'collected' | 'cancelled'
   payment_status: 'unpaid' | 'paid'
   cashfree_order_id?: string
   approved_at?: string

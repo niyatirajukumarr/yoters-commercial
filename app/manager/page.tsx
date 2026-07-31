@@ -112,7 +112,7 @@ export default function ManagerDashboard() {
       .filter(o => new Date(o.created_at) >= today)
       .reduce((sum, o) => sum + o.total_amount, 0)
 
-    const pendingApprovals = orders.filter(o => o.status === 'paid').length
+    const pendingApprovals = orders.filter(o => o.status === 'pending_approval').length
     const successRate = orders.length > 0 ? Math.round((paidOrders.length / orders.length) * 100) : 0
 
     setStats({ totalRevenue, todayRevenue, pendingApprovals, successRate })
@@ -138,7 +138,7 @@ export default function ManagerDashboard() {
       return caf?.vendor_email === vendorEmail
     })
     return {
-      pending: vendorOrders.filter(o => o.status === 'paid').length,
+      pending: vendorOrders.filter(o => o.status === 'pending_approval').length,
       paid: vendorOrders.filter(o => o.payment_status === 'paid').length,
       revenue: vendorOrders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + o.total_amount, 0),
     }

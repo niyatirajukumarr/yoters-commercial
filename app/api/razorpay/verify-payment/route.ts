@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Signature confirmed genuine -> safe to mark the order as paid
+    // Signature confirmed genuine -> safe to mark the order as pending approval
     const { error: updateError } = await adminSupabase
       .from('orders')
       .update({
         payment_status: 'paid',
-        status: 'paid',
+        status: 'pending_approval',
         razorpay_order_id,
         razorpay_payment_id,
       })

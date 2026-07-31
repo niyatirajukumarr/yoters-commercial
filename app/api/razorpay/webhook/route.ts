@@ -58,12 +58,12 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Update order status to 'paid'
+      // Update order status to pending approval (payment confirmed, awaiting vendor approval)
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
-          status: 'paid',
+          status: 'pending_approval',
           razorpay_payment_id: payment_id,
         })
         .eq('id', order.id)

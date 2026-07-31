@@ -112,7 +112,7 @@ function StudentPageInner() {
         clearInterval(pollRef.current)
         if (myOrder) {
           setConfirmedOrderId(myOrder.id)
-          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'pending_approval' } : null)
         }
         setPaymentState('confirmed')
         setStep('tracking')
@@ -188,13 +188,13 @@ function StudentPageInner() {
       return
     }
     setSubmitting(true)
-    const { data: existing } = await supabase.from('orders').select('queue_position').eq('cafeteria_id', cafeteria.id).in('status', ['pending', 'paid', 'preparing']).order('queue_position', { ascending: false }).limit(1)
+    const { data: existing } = await supabase.from('orders').select('queue_position').eq('cafeteria_id', cafeteria.id).in('status', ['pending_approval', 'approved', 'preparing']).order('queue_position', { ascending: false }).limit(1)
     const nextPos = existing && existing.length > 0 ? existing[0].queue_position + 1 : 1
     const total = cart.reduce((s, i) => s + i.price * i.quantity, 0)
     const { data, error } = await supabase.from('orders').insert({
       cafeteria_id: cafeteria.id, student_name: form.name, student_phone: form.phone,
       student_email: form.email || null, items: cart, total_amount: total,
-      queue_position: nextPos, notes: form.notes || null, status: 'pending', payment_status: 'unpaid'
+      queue_position: nextPos, notes: form.notes || null, status: 'pending_payment', payment_status: 'unpaid'
     }).select().single()
     if (error) { alert('Failed to place order. Try again.'); setSubmitting(false); return }
 
@@ -214,7 +214,7 @@ function StudentPageInner() {
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
     // Go straight to tracking — no waiting screen
     setConfirmedOrderId(myOrder.id)
-    setMyOrder(prev => prev ? { ...prev, payment_status: 'unpaid', status: 'pending' } : null)
+    setMyOrder(prev => prev ? { ...prev, payment_status: 'unpaid', status: 'pending_payment' } : null)
     setStep('tracking')
 
     // Poll every 2s for payment confirmation
@@ -225,11 +225,11 @@ function StudentPageInner() {
         .eq('id', myOrder.id)
         .single()
 
-      if (data?.status === 'paid' || data?.payment_status === 'paid') {
+      if (data?.status === 'pending_approval' || data?.payment_status === 'paid') {
         clearInterval(pollRef.current)
         setPaymentState('confirmed')
         setConfirmedOrderId(myOrder.id)
-        setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+        setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'pending_approval' } : null)
         // Show token ticket immediately
         if (data) {
           setTokenData({
@@ -579,8 +579,8 @@ function StudentPageInner() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
               <div style={{ fontWeight: 600, marginBottom: 14, fontSize: 15 }}>Order Progress</div>
               <motion.div initial="hidden" animate="visible" variants={stagger}>
-                {(['pending', 'paid', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
-                  const statuses = ['pending', 'paid', 'preparing', 'ready', 'collected']
+                {(['pending_payment', 'pending_approval', 'approved', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
+                  const statuses = ['pending_payment', 'pending_approval', 'approved', 'preparing', 'ready', 'collected']
                   const isDone = i <= statuses.indexOf(myOrder.status)
                   return (
                     <motion.div key={s} variants={staggerItem} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: i < 4 ? 14 : 0 }}>
