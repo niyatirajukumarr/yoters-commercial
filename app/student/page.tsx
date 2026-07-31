@@ -357,16 +357,16 @@ function StudentPageInner() {
               </div>
               <motion.button
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                style={{ perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 20, border: '2px solid #ddd', background: 'transparent', cursor: 'pointer' }}>
+                style={{ perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
                 <motion.div
                   animate={{ rotateY: vegMode === 'veg' ? 0 : 180 }}
                   transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 20, transformStyle: 'preserve-3d' }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.1)', borderRadius: 20, color: '#22c55e', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden' }}>
-                    🟢 Veg
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
+                    Veg
                   </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.1)', borderRadius: 20, color: '#ef4444', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                    🔴 Non-veg
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
+                    Non-veg
                   </div>
                 </motion.div>
               </motion.button>
