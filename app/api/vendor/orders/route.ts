@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   if (limited) return limited
 
   const cafId = req.nextUrl.searchParams.get('cafeteriaId')
+  const dateParam = req.nextUrl.searchParams.get('date')
   if (!cafId) return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
 
   // Orders carry customer PII — only the owning vendor (or a manager/admin) may
@@ -24,16 +25,29 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Fetch ALL of today's orders (active + completed + cancelled/denied).
-  // "Today" is the Indian calendar day — setHours() here meant midnight in the
-  // server's zone, which on Vercel is UTC, i.e. 05:30 IST.
-  const todayStart = istDayStart()
+  // Fetch orders for a specific date or today if no date provided.
+  // Date format: YYYY-MM-DD (e.g., 2026-07-31)
+  let dayStart: Date
+  if (dateParam) {
+    const parsed = new Date(dateParam + 'T00:00:00Z')
+    if (isNaN(parsed.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 })
+    }
+    dayStart = new Date(parsed.getTime() + (5.5 * 60 * 60 * 1000))
+    dayStart.setUTCHours(0, 0, 0, 0)
+    dayStart = new Date(dayStart.getTime() - (5.5 * 60 * 60 * 1000))
+  } else {
+    dayStart = istDayStart()
+  }
+
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
 
   const { data, error } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('cafeteria_id', cafId)
-    .gte('created_at', todayStart.toISOString())
+    .gte('created_at', dayStart.toISOString())
+    .lt('created_at', dayEnd.toISOString())
     .order('created_at', { ascending: false })
 
   if (error) {
