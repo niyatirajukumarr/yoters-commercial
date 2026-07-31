@@ -728,6 +728,9 @@ export default function VendorDashboard() {
                             <>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</motion.button>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>
+                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 0.8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#e8734a', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                {deletingOrderId === order.id ? '...' : '🗑️'}
+                              </motion.button>
                             </>
                           )}
                           {order.status === 'approved' && (
