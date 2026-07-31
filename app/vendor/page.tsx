@@ -463,7 +463,7 @@ export default function VendorDashboard() {
   const inp = { width: '100%', padding: '10px 14px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 14, color: 'var(--text)' }
   const lbl = { fontSize: 11, color: 'var(--text2)', marginBottom: 5, display: 'block' as const, fontWeight: 600 as const, textTransform: 'uppercase' as const, letterSpacing: 1 }
 
-  const pendingCount = orders.filter(o => o.status === 'paid').length
+  const pendingCount = orders.filter(o => o.status === 'pending_approval').length
   const preparingCount = orders.filter(o => o.status === 'preparing').length
   const readyCount = orders.filter(o => o.status === 'ready').length
   const todayRevenue = orders.filter(o => o.status === 'collected').reduce((s, o) => s + o.total_amount, 0)
