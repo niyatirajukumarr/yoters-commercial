@@ -359,14 +359,14 @@ function StudentPageInner() {
                 onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
                 style={{ perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
                 <motion.div
-                  animate={{ rotateY: vegMode === 'veg' ? 0 : 180 }}
+                  animate={{ rotateX: vegMode === 'veg' ? 0 : 180 }}
                   transition={{ type: 'spring', stiffness: 280, damping: 20 }}
                   style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
                     <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
                     Veg
                   </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateX(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
                     <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '11px solid #fff', flexShrink: 0 }} />
                     Non-veg
                   </div>
