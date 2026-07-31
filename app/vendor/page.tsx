@@ -167,8 +167,14 @@ export default function VendorDashboard() {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
           .subscribe()
 
-        // Fallback poll every 5s
-        poll = setInterval(() => fetchOrders(caf.id), 5_000)
+        // Fallback poll every 5s, but only fetch today's orders to avoid overwriting filtered date views
+        poll = setInterval(() => {
+          const today = new Date().toISOString().split('T')[0]
+          // Only poll today's orders in the orders tab
+          if (tab === 'orders') {
+            fetchOrders(caf.id)
+          }
+        }, 5_000)
       } catch (error) {
         console.error('Vendor dashboard init error:', error)
       } finally {
@@ -181,7 +187,7 @@ export default function VendorDashboard() {
       if (poll) clearInterval(poll)
       if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
     }
-  }, [router, fetchOrders])
+  }, [router, fetchOrders, tab])
 
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
