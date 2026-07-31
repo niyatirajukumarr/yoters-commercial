@@ -188,7 +188,7 @@ function StudentPageInner() {
       return
     }
     setSubmitting(true)
-    const { data: existing } = await supabase.from('orders').select('queue_position').eq('cafeteria_id', cafeteria.id).in('status', ['pending', 'paid', 'preparing']).order('queue_position', { ascending: false }).limit(1)
+    const { data: existing } = await supabase.from('orders').select('queue_position').eq('cafeteria_id', cafeteria.id).in('status', ['pending_approval', 'approved', 'preparing']).order('queue_position', { ascending: false }).limit(1)
     const nextPos = existing && existing.length > 0 ? existing[0].queue_position + 1 : 1
     const total = cart.reduce((s, i) => s + i.price * i.quantity, 0)
     const { data, error } = await supabase.from('orders').insert({
@@ -579,8 +579,8 @@ function StudentPageInner() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
               <div style={{ fontWeight: 600, marginBottom: 14, fontSize: 15 }}>Order Progress</div>
               <motion.div initial="hidden" animate="visible" variants={stagger}>
-                {(['pending', 'paid', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
-                  const statuses = ['pending', 'paid', 'preparing', 'ready', 'collected']
+                {(['pending_payment', 'pending_approval', 'approved', 'preparing', 'ready', 'collected'] as Order['status'][]).map((s, i) => {
+                  const statuses = ['pending_payment', 'pending_approval', 'approved', 'preparing', 'ready', 'collected']
                   const isDone = i <= statuses.indexOf(myOrder.status)
                   return (
                     <motion.div key={s} variants={staggerItem} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: i < 4 ? 14 : 0 }}>

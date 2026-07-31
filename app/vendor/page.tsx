@@ -703,7 +703,7 @@ export default function VendorDashboard() {
                         )}
 
                         {/* Prep time if set */}
-                        {order.prep_time_minutes && order.status !== 'paid' && (
+                        {order.prep_time_minutes && order.status === 'pending_approval' && (
                           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
                         )}
 
