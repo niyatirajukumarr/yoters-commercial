@@ -27,15 +27,17 @@ export async function GET(req: NextRequest) {
 
   // Fetch orders for a specific date or today if no date provided.
   // Date format: YYYY-MM-DD (e.g., 2026-07-31)
+  const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
   let dayStart: Date
   if (dateParam) {
     const parsed = new Date(dateParam + 'T00:00:00Z')
     if (isNaN(parsed.getTime())) {
       return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 })
     }
-    dayStart = new Date(parsed.getTime() + (5.5 * 60 * 60 * 1000))
-    dayStart.setUTCHours(0, 0, 0, 0)
-    dayStart = new Date(dayStart.getTime() - (5.5 * 60 * 60 * 1000))
+    // dateParam "2026-07-30" represents IST calendar day
+    // UTC midnight of that day is 18:30 IST the previous day
+    // So subtract IST offset to get IST midnight
+    dayStart = new Date(parsed.getTime() - IST_OFFSET_MS)
   } else {
     dayStart = istDayStart()
   }

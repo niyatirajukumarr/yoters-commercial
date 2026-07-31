@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = (data ?? []) as SummaryRow[]
+  const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
   let dayStart = istDayStart()
 
   // If a specific date is provided, calculate summary for that date
@@ -123,9 +124,10 @@ export async function GET(req: NextRequest) {
     if (isNaN(parsed.getTime())) {
       return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 })
     }
-    dayStart = new Date(parsed.getTime() + (5.5 * 60 * 60 * 1000))
-    dayStart.setUTCHours(0, 0, 0, 0)
-    dayStart = new Date(dayStart.getTime() - (5.5 * 60 * 60 * 1000))
+    // dateParam "2026-07-30" represents IST calendar day
+    // UTC midnight of that day is 18:30 IST the previous day
+    // So subtract IST offset to get IST midnight
+    dayStart = new Date(parsed.getTime() - IST_OFFSET_MS)
   }
 
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
