@@ -49,6 +49,7 @@ export default function VendorDashboard() {
   const [prepTime, setPrepTime] = useState('10')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
+  const [timerSeconds, setTimerSeconds] = useState<Record<string, number>>({})
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
@@ -217,6 +218,24 @@ export default function VendorDashboard() {
     // In today tab, the date-based effect handles summary fetching
     fetchSummary(cafeteria.id)
   }, [cafeteria, orderStateSignature, fetchSummary, tab])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimerSeconds(prev => {
+        const updated = { ...prev }
+        orders.forEach(order => {
+          if ((order.status === 'preparing' || order.status === 'ready') && order.prep_time_minutes) {
+            const startTime = order.preparing_started_at ? new Date(order.preparing_started_at).getTime() : new Date(order.approved_at || order.created_at).getTime()
+            const elapsedSecs = Math.floor((Date.now() - startTime) / 1000)
+            const remainingSecs = Math.max(0, order.prep_time_minutes * 60 - elapsedSecs)
+            updated[order.id] = remainingSecs
+          }
+        })
+        return updated
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [orders])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
@@ -707,9 +726,32 @@ export default function VendorDashboard() {
                           </div>
                         )}
 
-                        {/* Prep time if set */}
-                        {order.prep_time_minutes && order.status === 'pending_approval' && (
-                          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
+                        {/* Prep time / Timer */}
+                        {order.prep_time_minutes && (
+                          order.status === 'pending_approval' ? (
+                            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>⏱️ Prep time: {order.prep_time_minutes} min</div>
+                          ) : order.status === 'preparing' || order.status === 'ready' ? (
+                            (() => {
+                              const seconds = timerSeconds[order.id] ?? (order.prep_time_minutes * 60)
+                              const mins = Math.floor(seconds / 60)
+                              const secs = seconds % 60
+                              const isExpired = seconds <= 0
+                              return (
+                                <div style={{
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: isExpired ? 'var(--red)' : mins <= 2 ? 'var(--red)' : mins <= 5 ? '#ff9800' : 'var(--green)',
+                                  background: isExpired ? 'rgba(239, 68, 68, 0.1)' : mins <= 2 ? 'rgba(239, 68, 68, 0.1)' : mins <= 5 ? 'rgba(255, 152, 0, 0.1)' : 'rgba(46, 158, 107, 0.1)',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  marginBottom: 10,
+                                  display: 'inline-block'
+                                }}>
+                                  {isExpired ? '🏁' : '⏱️'} {mins}:{String(secs).padStart(2, '0')} {isExpired ? 'Time\'s up!' : 'remaining'}
+                                </div>
+                              )
+                            })()
+                          ) : null
                         )}
 
                         {/* Customer says they've already collected it — nudge to close it out */}
