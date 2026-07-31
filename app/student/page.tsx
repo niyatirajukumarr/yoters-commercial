@@ -27,7 +27,8 @@ function StudentPageInner() {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', altPhone: '', email: '', notes: '' })
   const [showCart, setShowCart] = useState(false)
-  const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'non-veg'>('all')
+  const [showVeg, setShowVeg] = useState(true)
+  const [showNonVeg, setShowNonVeg] = useState(true)
 
   // FIX 3: Payment polling state
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
@@ -109,7 +110,7 @@ function StudentPageInner() {
   // Reset scroll when filter changes
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [vegFilter])
+  }, [showVeg, showNonVeg])
 
   // Listen for payment result from popup window
   useEffect(() => {
@@ -265,7 +266,7 @@ function StudentPageInner() {
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
-  const filteredMenuItems = vegFilter === 'all' ? menuItems : vegFilter === 'veg' ? menuItems.filter(i => i.is_veg) : menuItems.filter(i => !i.is_veg)
+  const filteredMenuItems = menuItems.filter(i => (showVeg && i.is_veg) || (showNonVeg && !i.is_veg))
   const categories = [...new Set(filteredMenuItems.map(i => i.category))]
 
   const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -353,60 +354,41 @@ function StudentPageInner() {
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
                 <motion.button
-                  onClick={() => setVegFilter('all')}
+                  onClick={() => setShowVeg(!showVeg)}
                   initial="initial"
                   whileHover="hover"
                   whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '80px', height: '36px', padding: 0, borderRadius: 20, border: vegFilter === 'all' ? '2px solid var(--accent)' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
+                  style={{ perspective: '1000px', position: 'relative', width: '100px', height: '36px', padding: 0, borderRadius: 20, border: showVeg ? '2px solid #22c55e' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
                   <motion.span
                     variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
                     transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'all' ? 'rgba(232,51,74,0.1)' : 'white', borderRadius: 20, color: vegFilter === 'all' ? 'var(--accent)' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
-                    All
-                  </motion.span>
-                  <motion.span
-                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'all' ? 'rgba(232,51,74,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: vegFilter === 'all' ? 'var(--accent)' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                    ✓
-                  </motion.span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setVegFilter('veg')}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '100px', height: '36px', padding: 0, borderRadius: 20, border: vegFilter === 'veg' ? '2px solid #22c55e' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
-                  <motion.span
-                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'veg' ? 'rgba(34,197,94,0.1)' : 'white', borderRadius: 20, color: vegFilter === 'veg' ? '#22c55e' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.1)' : 'white', borderRadius: 20, color: showVeg ? '#22c55e' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
                     🟢 Veg
                   </motion.span>
                   <motion.span
                     variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
                     transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'veg' ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: vegFilter === 'veg' ? '#22c55e' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                    ✓ Selected
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showVeg ? '#22c55e' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
+                    ✓
                   </motion.span>
                 </motion.button>
                 <motion.button
-                  onClick={() => setVegFilter('non-veg')}
+                  onClick={() => setShowNonVeg(!showNonVeg)}
                   initial="initial"
                   whileHover="hover"
                   whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '120px', height: '36px', padding: 0, borderRadius: 20, border: vegFilter === 'non-veg' ? '2px solid #ef4444' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
+                  style={{ perspective: '1000px', position: 'relative', width: '120px', height: '36px', padding: 0, borderRadius: 20, border: showNonVeg ? '2px solid #ef4444' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
                   <motion.span
                     variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
                     transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'non-veg' ? 'rgba(239,68,68,0.1)' : 'white', borderRadius: 20, color: vegFilter === 'non-veg' ? '#ef4444' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.1)' : 'white', borderRadius: 20, color: showNonVeg ? '#ef4444' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
                     🔴 Non-veg
                   </motion.span>
                   <motion.span
                     variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
                     transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: vegFilter === 'non-veg' ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: vegFilter === 'non-veg' ? '#ef4444' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                    ✓ Selected
+                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showNonVeg ? '#ef4444' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
+                    ✓
                   </motion.span>
                 </motion.button>
               </div>
