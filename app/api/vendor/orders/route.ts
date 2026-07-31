@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // Auto-mark pending_payment orders as payment_pending if 60+ seconds old
   const { error: autoMarkError } = await adminSupabase.rpc('auto_mark_payment_pending')
   if (autoMarkError) {
-    logger.warn('Failed to auto-mark payment pending:', autoMarkError)
+    logger.error('Failed to auto-mark payment pending:', autoMarkError)
   }
 
   const { data, error } = await adminSupabase
