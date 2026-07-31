@@ -459,6 +459,7 @@ export default function CafeteriaPage() {
   const [deliveryCharge, setDeliveryCharge] = useState(0)
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
+  const PARCEL_CHARGE = 5
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -768,7 +769,8 @@ export default function CafeteriaPage() {
         .gte('created_at', todayStart.toISOString())
       const tokenNumber = (count ?? 0) + 1
 
-      const orderTotal = orderType === 'delivery' ? total + deliveryCharge : total
+      const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
+      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
 
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
@@ -781,6 +783,7 @@ export default function CafeteriaPage() {
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
           delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
+          parcel_charge: orderType !== 'dine_in' ? PARCEL_CHARGE : 0,
         }])
         .select()
         .single()
@@ -867,7 +870,8 @@ export default function CafeteriaPage() {
 
   // Payment modal handler
   function handleOpenUPI() {
-    const paymentAmount = orderType === 'delivery' ? total + deliveryCharge : total
+    const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
+    const paymentAmount = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
     const paymentUrl = `/payment?orderId=${orderId}&amount=${paymentAmount}&name=${encodeURIComponent(formData.name)}`
     const isMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
@@ -1451,18 +1455,25 @@ export default function CafeteriaPage() {
                     </div>
                   </div>
                 ))}
-                {orderType === 'delivery' && deliveryCharge > 0 && (
+                {(orderType === 'delivery' || orderType === 'takeaway' || orderType !== null) && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
                       <span>Subtotal</span><span>₹{total}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                      <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}</span>
-                    </div>
+                    {orderType !== 'dine_in' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
+                        <span>Parcel Charge</span><span>₹{PARCEL_CHARGE}</span>
+                      </div>
+                    )}
+                    {orderType === 'delivery' && deliveryCharge > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
+                        <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}</span>
+                      </div>
+                    )}
                   </>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: orderType === 'delivery' && deliveryCharge > 0 ? '1px solid var(--border)' : 'none' }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: (orderType === 'delivery' && deliveryCharge > 0) || orderType === 'takeaway' ? '1px solid var(--border)' : 'none' }}>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
@@ -1491,7 +1502,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
@@ -1710,21 +1721,32 @@ export default function CafeteriaPage() {
           </div>
 
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            {orderType === 'delivery' && deliveryCharge > 0 && (
+            {(orderType === 'delivery' || orderType === 'takeaway' || orderType !== null) && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
                   <span>Subtotal</span>
                   <span>₹{total}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                  <span>Delivery ({deliveryDistance} km)</span>
-                  <span>₹{deliveryCharge}</span>
-                </div>
+                {orderType !== 'dine_in' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+                    <span>Parcel Charge</span>
+                    <span>₹{PARCEL_CHARGE}</span>
+                  </div>
+                )}
+                {orderType === 'delivery' && deliveryCharge > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                    <span>Delivery ({deliveryDistance} km)</span>
+                    <span>₹{deliveryCharge}</span>
+                  </div>
+                )}
+                {orderType !== 'delivery' && orderType !== 'dine_in' && (
+                  <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 12, paddingBottom: 12 }} />
+                )}
               </>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + deliveryCharge : total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
             </div>
           </div>
 
@@ -1743,7 +1765,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + deliveryCharge : total}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
@@ -1800,18 +1822,18 @@ export default function CafeteriaPage() {
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>Choose your preferred order type</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', emoji: '🍽️' },
-                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', emoji: '🥡' },
-                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', emoji: '🛵' },
+                { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
+                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: PARCEL_CHARGE, emoji: '🥡' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: PARCEL_CHARGE, emoji: '🛵' },
               ].map(opt => (
                 <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'; setOrderType(t); if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') } }}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left' }}>
                   <span style={{ fontSize: 32 }}>{opt.emoji}</span>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}{opt.charge > 0 ? ` • +₹${opt.charge}` : ''}</div>
                   </div>
-                  {orderType === opt.key && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 18 }}>✓</span>}
+                  {orderType === opt.key && <span style={{ color: 'var(--accent)', fontSize: 18 }}>✓</span>}
                 </motion.button>
               ))}
             </div>

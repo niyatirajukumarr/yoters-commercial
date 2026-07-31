@@ -91,10 +91,55 @@ components/
 
 ---
 
+## Conversation Summary
+
+### Key Discussions & Decisions
+1. **Delivery Charges Feature** — Progressive distance-based pricing implemented
+   - Formula: ₹10 + (km - 1) × ₹5 per km
+   - Database migrations and UI integration completed
+   - Server-side validation needed (audit finding #1)
+
+2. **Security Audit Findings** — Full codebase review identified 6 gaps
+   - **HIGH:** Forged order amounts, payment bypass, vendor PII leak, order takeover via unverified phone
+   - **MEDIUM:** Vendor can modify order payment_status directly
+   - **LOW:** Admin route lacks explicit check
+   - Prioritized fixes: #1-2 first (financial), then #3-4 (data/account security)
+
+3. **Order Reset Feature** — Currently NOT auto-reset daily
+   - Orders persist permanently with date-filtered views
+   - Clarified behavior with user; decision pending on automation approach
+
+### Technical Debt & Next Steps
+- Implement server-side delivery charge validation
+- Add phone OTP verification for identity verification in RLS policies
+- Restrict vendor `UPDATE` permissions to status fields only
+- Implement `BEFORE INSERT` trigger for order amount validation
+- Create `cafeterias_public` view to prevent PII leakage
+
+---
+
 ## Important Guidelines
 ⚠️ **Browser Navigation:** If using browser navigator tools, navigate to **yoters.site** website only.
 
 ## Work Log
+
+### 2026-07-30 — Parcel charge feature
+Added **fixed parcel charge** (₹5) for takeaway and delivery orders:
+- **Dine-in orders:** No parcel charge (₹0)
+- **Takeaway orders:** Food cost + ₹5 parcel charge
+- **Delivery orders:** Food cost + ₹5 parcel charge + delivery fee
+
+**Implementation:**
+- `PARCEL_CHARGE = 5` constant in `app/mobile/order/[cafeteriaId]/page.tsx`
+- Added `parcel_charge` column to orders table via `supabase/migrations/20260730_parcel_charge.sql`
+- Updated order type modal to show "+₹5" for takeaway and delivery options
+- Order total calculations updated in all UI sections:
+  - Cart sheet breakdown
+  - Cart FAB (floating action button)
+  - Payment details page
+  - Payment confirmation screen
+- Parcel charge included in `total_amount` stored in database during order creation
+- UI displays clear breakdown: Subtotal → Parcel Charge → (Delivery fee for delivery orders) → Total
 
 ### 2026-07-30 — Delivery charge feature (Progressive Pricing)
 Added **progressive distance-based delivery charges** for "Home Delivery" orders using formula: `₹10 + (km - 1) × ₹5 per km`.
