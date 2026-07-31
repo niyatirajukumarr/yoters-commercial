@@ -1194,7 +1194,7 @@ export default function CafeteriaPage() {
                 <motion.button
                   onClick={() => setShowVeg(!showVeg)}
                   initial="initial"
-                  animate={showVeg ? 'hover' : 'initial'}
+                  whileHover="hover"
                   whileTap={{ scale: 0.95 }}
                   style={{ perspective: '1000px', position: 'relative', width: '70px', height: '32px', padding: 0, borderRadius: 20, border: showVeg ? '2px solid #22c55e' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
                   <motion.span
@@ -1213,7 +1213,7 @@ export default function CafeteriaPage() {
                 <motion.button
                   onClick={() => setShowNonVeg(!showNonVeg)}
                   initial="initial"
-                  animate={showNonVeg ? 'hover' : 'initial'}
+                  whileHover="hover"
                   whileTap={{ scale: 0.95 }}
                   style={{ perspective: '1000px', position: 'relative', width: '85px', height: '32px', padding: 0, borderRadius: 20, border: showNonVeg ? '2px solid #ef4444' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
                   <motion.span
