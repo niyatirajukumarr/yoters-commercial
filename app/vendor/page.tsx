@@ -979,7 +979,7 @@ export default function VendorDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                         {collected.length === 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
-                          : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" onDelete={deleteOrder} />)
+                          : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
                         }
                       </div>
                     </div>
@@ -989,7 +989,7 @@ export default function VendorDashboard() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                          {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
+                          {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
                         </div>
                       </div>
                     )}
