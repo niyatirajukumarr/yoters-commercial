@@ -59,13 +59,18 @@ export default function VendorDashboard() {
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
+  const [loadingDate, setLoadingDate] = useState(false)
 
-  const fetchSummary = useCallback(async (cafId: string) => {
+  const fetchSummary = useCallback(async (cafId: string, date?: string) => {
     try {
       const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
       if (!session?.access_token) return
+      const url = date
+        ? `/api/vendor/summary?cafeteriaId=${cafId}&date=${date}`
+        : `/api/vendor/summary?cafeteriaId=${cafId}`
       const res = await withTimeout(
-        fetch(`/api/vendor/summary?cafeteriaId=${cafId}`, {
+        fetch(url, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         }),
         8000,
@@ -78,12 +83,15 @@ export default function VendorDashboard() {
     }
   }, [])
 
-  const fetchOrders = useCallback(async (cafId: string, notify = false) => {
+  const fetchOrders = useCallback(async (cafId: string, notify = false, date?: string) => {
     try {
       const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
       if (!session?.access_token) return
+      const url = date
+        ? `/api/vendor/orders?cafeteriaId=${cafId}&date=${date}`
+        : `/api/vendor/orders?cafeteriaId=${cafId}`
       const res = await withTimeout(
-        fetch(`/api/vendor/orders?cafeteriaId=${cafId}`, {
+        fetch(url, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         }),
         8000,
@@ -117,6 +125,11 @@ export default function VendorDashboard() {
         }
         prevOrderCount[0].count = data.length
         setOrders(data as Order[])
+
+        // Cache the orders by date if a date was specified
+        if (date) {
+          setOrdersCache(prev => ({ ...prev, [date]: data as Order[] }))
+        }
       }
     } catch (error) {
       console.error('Vendor orders fetch error:', error)
@@ -154,8 +167,14 @@ export default function VendorDashboard() {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
           .subscribe()
 
-        // Fallback poll every 5s
-        poll = setInterval(() => fetchOrders(caf.id), 5_000)
+        // Fallback poll every 5s, but only fetch today's orders to avoid overwriting filtered date views
+        poll = setInterval(() => {
+          const today = new Date().toISOString().split('T')[0]
+          // Only poll today's orders in the orders tab
+          if (tab === 'orders') {
+            fetchOrders(caf.id)
+          }
+        }, 5_000)
       } catch (error) {
         console.error('Vendor dashboard init error:', error)
       } finally {
@@ -168,7 +187,23 @@ export default function VendorDashboard() {
       if (poll) clearInterval(poll)
       if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
     }
-  }, [router, fetchOrders])
+  }, [router, fetchOrders, tab])
+
+  // Fetch orders and summary for selected date when in "today" tab or date changes
+  useEffect(() => {
+    if (tab !== 'today' || !cafeteria) return
+    const isToday = selectedDate === new Date().toISOString().split('T')[0]
+
+    if (ordersCache[selectedDate]) {
+      setOrders(ordersCache[selectedDate])
+    } else {
+      setLoadingDate(true)
+      fetchOrders(cafeteria.id, false, selectedDate).finally(() => setLoadingDate(false))
+    }
+
+    // Fetch summary for selected date
+    fetchSummary(cafeteria.id, selectedDate)
+  }, [selectedDate, tab, cafeteria, ordersCache, fetchOrders, fetchSummary])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
@@ -831,27 +866,34 @@ export default function VendorDashboard() {
                   </div>
                   <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                     {!isAll && (
-                      <select
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          background: 'var(--surface)',
-                          color: 'var(--text)',
-                          cursor: 'pointer',
-                          minWidth: '160px'
-                        }}
-                      >
-                        {dateOptions.map(opt => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      <>
+                        <select
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          disabled={loadingDate}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            background: 'var(--surface)',
+                            color: 'var(--text)',
+                            cursor: loadingDate ? 'not-allowed' : 'pointer',
+                            minWidth: '160px',
+                            opacity: loadingDate ? 0.6 : 1
+                          }}
+                        >
+                          {dateOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        {loadingDate && (
+                          <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Loading...</div>
+                        )}
+                      </>
                     )}
                     <div style={{ display: 'inline-flex', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 999, padding: 3 }}>
                       {([['today', 'Today'], ['allTime', 'All time']] as const).map(([key, label]) => (

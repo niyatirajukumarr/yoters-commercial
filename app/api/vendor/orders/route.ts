@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   if (limited) return limited
 
   const cafId = req.nextUrl.searchParams.get('cafeteriaId')
+  const dateParam = req.nextUrl.searchParams.get('date')
   if (!cafId) return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
 
   // Orders carry customer PII — only the owning vendor (or a manager/admin) may
@@ -24,10 +25,24 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Fetch ALL of today's orders (active + completed + cancelled/denied).
-  // "Today" is the Indian calendar day — setHours() here meant midnight in the
-  // server's zone, which on Vercel is UTC, i.e. 05:30 IST.
-  const todayStart = istDayStart()
+  // Fetch orders for a specific date or today if no date provided.
+  // Date format: YYYY-MM-DD (e.g., 2026-07-31)
+  const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+  let dayStart: Date
+  if (dateParam) {
+    const parsed = new Date(dateParam + 'T00:00:00Z')
+    if (isNaN(parsed.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 })
+    }
+    // dateParam "2026-07-30" represents IST calendar day
+    // UTC midnight of that day is 18:30 IST the previous day
+    // So subtract IST offset to get IST midnight
+    dayStart = new Date(parsed.getTime() - IST_OFFSET_MS)
+  } else {
+    dayStart = istDayStart()
+  }
+
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
 
   // Auto-mark pending_payment orders as payment_pending if 60+ seconds old
   const { error: autoMarkError } = await adminSupabase.rpc('auto_mark_payment_pending')
@@ -39,7 +54,8 @@ export async function GET(req: NextRequest) {
     .from('orders')
     .select('*')
     .eq('cafeteria_id', cafId)
-    .gte('created_at', todayStart.toISOString())
+    .gte('created_at', dayStart.toISOString())
+    .lt('created_at', dayEnd.toISOString())
     .order('created_at', { ascending: false })
 
   if (error) {
