@@ -843,10 +843,10 @@ export default function VendorDashboard() {
               </div>
             )
 
-            // Generate date options (today + 30 days back)
+            // Generate date options (today + yesterday only)
             const dateOptions = []
             const today = new Date()
-            for (let i = 0; i < 31; i++) {
+            for (let i = 0; i < 2; i++) {
               const d = new Date(today)
               d.setDate(d.getDate() - i)
               const dateStr = d.toISOString().split('T')[0]
