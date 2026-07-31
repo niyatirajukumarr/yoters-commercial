@@ -27,7 +27,8 @@ function StudentPageInner() {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', altPhone: '', email: '', notes: '' })
   const [showCart, setShowCart] = useState(false)
-  const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'non-veg'>('all')
+  const [showVeg, setShowVeg] = useState(true)
+  const [showNonVeg, setShowNonVeg] = useState(true)
 
   // FIX 3: Payment polling state
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
@@ -260,7 +261,7 @@ function StudentPageInner() {
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
-  const filteredMenuItems = vegFilter === 'all' ? menuItems : vegFilter === 'veg' ? menuItems.filter(i => i.is_veg) : menuItems.filter(i => !i.is_veg)
+  const filteredMenuItems = menuItems.filter(i => (showVeg && i.is_veg) || (showNonVeg && !i.is_veg))
   const categories = [...new Set(filteredMenuItems.map(i => i.category))]
 
   const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -339,17 +340,22 @@ function StudentPageInner() {
         {/* MENU STEP */}
         {step === 'menu' && (
           <>
-            <div style={{ marginBottom: 20 }}>
-              <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 700, marginBottom: 6 }}>
-                {cafeteria?.name ?? 'Loading...'}
-              </h1>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
-                <span>📍 {cafeteria?.location}</span>
+            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20 }}>
+              <div>
+                <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 700, marginBottom: 6 }}>
+                  {cafeteria?.name ?? 'Loading...'}
+                </h1>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)' }}>
+                  <span>📍 {cafeteria?.location}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                <button onClick={() => setVegFilter('all')} style={{ padding: '8px 16px', borderRadius: 20, border: vegFilter === 'all' ? '2px solid var(--accent)' : '1px solid var(--border)', background: vegFilter === 'all' ? 'rgba(232,51,74,0.1)' : 'white', color: vegFilter === 'all' ? 'var(--accent)' : 'var(--text2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>All</button>
-                <button onClick={() => setVegFilter('veg')} style={{ padding: '8px 16px', borderRadius: 20, border: vegFilter === 'veg' ? '2px solid #22c55e' : '1px solid var(--border)', background: vegFilter === 'veg' ? 'rgba(34,197,94,0.1)' : 'white', color: vegFilter === 'veg' ? '#22c55e' : 'var(--text2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🟢 Veg</button>
-                <button onClick={() => setVegFilter('non-veg')} style={{ padding: '8px 16px', borderRadius: 20, border: vegFilter === 'non-veg' ? '2px solid #ef4444' : '1px solid var(--border)', background: vegFilter === 'non-veg' ? 'rgba(239,68,68,0.1)' : 'white', color: vegFilter === 'non-veg' ? '#ef4444' : 'var(--text2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🔴 Non-veg</button>
+              <div style={{ display: 'flex', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', flexShrink: 0 }}>
+                <button onClick={() => setShowVeg(!showVeg)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: showVeg ? '2px solid #22c55e' : '1px solid var(--border)', background: showVeg ? 'rgba(34,197,94,0.1)' : 'white', color: '#22c55e', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  {showVeg ? '✓' : '○'} Veg
+                </button>
+                <button onClick={() => setShowNonVeg(!showNonVeg)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: showNonVeg ? '2px solid #ef4444' : '1px solid var(--border)', background: showNonVeg ? 'rgba(239,68,68,0.1)' : 'white', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  {showNonVeg ? '✓' : '○'} Non-veg
+                </button>
               </div>
             </div>
 
