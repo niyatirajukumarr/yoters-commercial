@@ -1195,6 +1195,7 @@ export default function CafeteriaPage() {
                   on hover — phones have no hover, and the flip is the whole
                   point of the control. The marks are the same ones the dish
                   cards carry, so the toggle and the cards read as one system. */}
+              <div style={{ fontSize: 8, color: '#ccc' }}>v2.1-flip</div>
               <FlipButton
                 frontText="Veg"
                 backText="Non-veg"
