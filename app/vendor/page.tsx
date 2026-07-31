@@ -1230,14 +1230,16 @@ export default function VendorDashboard() {
           <motion.div initial="hidden" animate="visible" exit="hidden" variants={scaleIn} style={{
             background: 'white',
             borderRadius: 20,
-            padding: 28,
-            maxWidth: 500,
+            padding: 16,
+            maxWidth: 380,
             width: '100%',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            maxHeight: '85vh',
+            overflow: 'auto',
           }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>New Order</div>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, marginBottom: 2 }}>New Order</div>
               <div style={{ fontSize: 13, color: 'var(--muted)' }}>Order #{approvalModal.id.slice(0, 8)}</div>
             </div>
 
