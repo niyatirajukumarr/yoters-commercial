@@ -1172,7 +1172,7 @@ export default function CafeteriaPage() {
           `}</style>
 
           {/* Sticky top: header + search + category pills */}
-          <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : { background: '#ffff00' }}>
+          <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
             <div className="menu-header">
               <motion.button {...hoverScale} className="menu-back-btn" onClick={() => { window.location.href = '/browse' }} style={{ border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={22} color='var(--text)' />
