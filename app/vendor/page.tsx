@@ -137,7 +137,6 @@ export default function VendorDashboard() {
   }, [])
 
   useEffect(() => {
-    let poll: ReturnType<typeof setInterval> | null = null
     async function init() {
       try {
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
@@ -156,15 +155,6 @@ export default function VendorDashboard() {
           'Menu fetch timed out'
         ) as any
         if (menu) setMenuItems(menu)
-
-        // Fallback poll every 5s, but only fetch today's orders to avoid overwriting filtered date views
-        poll = setInterval(() => {
-          const today = new Date().toISOString().split('T')[0]
-          // Only poll today's orders in the orders tab
-          if (tab === 'orders') {
-            fetchOrders(caf.id)
-          }
-        }, 5_000)
       } catch (error) {
         console.error('Vendor dashboard init error:', error)
       } finally {
@@ -173,10 +163,9 @@ export default function VendorDashboard() {
     }
     init()
     return () => {
-      if (poll) clearInterval(poll)
       if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
     }
-  }, [router, fetchOrders, tab])
+  }, [router, fetchOrders])
 
   // Separate effect for real-time subscriptions — only depends on cafeteria ID
   useEffect(() => {
