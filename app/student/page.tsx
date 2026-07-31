@@ -27,8 +27,7 @@ function StudentPageInner() {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', altPhone: '', email: '', notes: '' })
   const [showCart, setShowCart] = useState(false)
-  const [showVeg, setShowVeg] = useState(true)
-  const [showNonVeg, setShowNonVeg] = useState(true)
+  const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
 
   // FIX 3: Payment polling state
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
@@ -110,7 +109,7 @@ function StudentPageInner() {
   // Reset scroll when filter changes
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [showVeg, showNonVeg])
+  }, [vegMode])
 
   // Listen for payment result from popup window
   useEffect(() => {
@@ -266,7 +265,10 @@ function StudentPageInner() {
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
-  const filteredMenuItems = menuItems.filter(i => (showVeg && i.is_veg) || (showNonVeg && !i.is_veg))
+  const itemIsVeg = (m: MenuItem) => m.is_veg !== false
+  const filteredMenuItems = menuItems.filter(i =>
+    vegMode === 'veg' ? itemIsVeg(i) : !itemIsVeg(i)
+  )
   const categories = [...new Set(filteredMenuItems.map(i => i.category))]
 
   const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
@@ -289,7 +291,7 @@ function StudentPageInner() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: vegMode === 'nonveg' ? 'linear-gradient(135deg, rgba(255,200,150,0.08) 0%, rgba(255,150,100,0.05) 100%)' : 'var(--bg)', paddingBottom: 80, transition: 'background 0.3s ease' }}>
       <style>{`
         .s-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); z-index:100; }
         .s-steps { display:flex; gap:4px; align-items:center; }
@@ -353,46 +355,21 @@ function StudentPageInner() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
                 <span>📍 {cafeteria?.location}</span>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                <motion.button
-                  onClick={() => setShowVeg(!showVeg)}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '100px', height: '36px', padding: 0, borderRadius: 20, border: showVeg ? '2px solid #22c55e' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
-                  <motion.span
-                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.1)' : 'white', borderRadius: 20, color: showVeg ? '#22c55e' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
+              <motion.button
+                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                style={{ perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 20, border: '2px solid #ddd', background: 'transparent', cursor: 'pointer' }}>
+                <motion.div
+                  animate={{ rotateY: vegMode === 'veg' ? 0 : 180 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 20, transformStyle: 'preserve-3d' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.1)', borderRadius: 20, color: '#22c55e', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden' }}>
                     🟢 Veg
-                  </motion.span>
-                  <motion.span
-                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showVeg ? '#22c55e' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                    ✓
-                  </motion.span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setShowNonVeg(!showNonVeg)}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '120px', height: '36px', padding: 0, borderRadius: 20, border: showNonVeg ? '2px solid #ef4444' : '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
-                  <motion.span
-                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.1)' : 'white', borderRadius: 20, color: showNonVeg ? '#ef4444' : 'var(--text2)', fontSize: 12, fontWeight: 600 }}>
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.1)', borderRadius: 20, color: '#ef4444', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                     🔴 Non-veg
-                  </motion.span>
-                  <motion.span
-                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showNonVeg ? '#ef4444' : 'var(--text)', fontSize: 12, fontWeight: 600 }}>
-                    ✓
-                  </motion.span>
-                </motion.button>
-              </div>
+                  </div>
+                </motion.div>
+              </motion.button>
             </div>
 
             <div className="menu-grid">

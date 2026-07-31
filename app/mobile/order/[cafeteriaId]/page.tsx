@@ -371,8 +371,7 @@ export default function CafeteriaPage() {
   const [selectedCategory, setSelectedCategory] = useState('')
   // Whether the non-beverage pills are showing while the group is open.
   const [othersOpen, setOthersOpen] = useState(false)
-  const [showVeg, setShowVeg] = useState(true)
-  const [showNonVeg, setShowNonVeg] = useState(true)
+  const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
   const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
   const [priceRange, setPriceRange] = useState<'all' | 'under200' | 'mid' | 'above400'>('all')
@@ -623,7 +622,7 @@ export default function CafeteriaPage() {
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   // Combos show in both veg and non-veg modes (mixed category)
   const visibleItems = menuItems.filter(m =>
-    m.category === 'Combos' || (showVeg && itemIsVeg(m)) || (showNonVeg && !itemIsVeg(m))
+    m.category === 'Combos' || (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m))
   )
   // Alphabetical so the pill row has a predictable order, rather than
   // whatever order the rows happen to come back from the DB in.
@@ -1189,47 +1188,22 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg flip buttons - independent toggles */}
-              <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-                <motion.button
-                  onClick={() => setShowVeg(!showVeg)}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '70px', height: '32px', padding: 0, borderRadius: 20, border: showVeg ? '2px solid #22c55e' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
-                  <motion.span
-                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.1)' : 'white', borderRadius: 20, color: showVeg ? '#22c55e' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+              {/* Veg / Non-veg flip card */}
+              <motion.button
+                onClick={() => setShowVegFront(!showVegFront)}
+                style={{ marginLeft: 'auto', perspective: '1000px', position: 'relative', width: '140px', height: '36px', padding: 0, borderRadius: 20, border: '2px solid #ddd', background: 'transparent', cursor: 'pointer' }}>
+                <motion.div
+                  animate={{ rotateY: showVegFront ? 0 : 180 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 20, transformStyle: 'preserve-3d' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.1)', borderRadius: 20, color: '#22c55e', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden' }}>
                     🟢 Veg
-                  </motion.span>
-                  <motion.span
-                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showVeg ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showVeg ? '#22c55e' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
-                    ✓
-                  </motion.span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setShowNonVeg(!showNonVeg)}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap={{ scale: 0.95 }}
-                  style={{ perspective: '1000px', position: 'relative', width: '85px', height: '32px', padding: 0, borderRadius: 20, border: showNonVeg ? '2px solid #ef4444' : '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer' }}>
-                  <motion.span
-                    variants={{ initial: { opacity: 1, rotateY: 0 }, hover: { opacity: 0, rotateY: 90 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.1)' : 'white', borderRadius: 20, color: showNonVeg ? '#ef4444' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.1)', borderRadius: 20, color: '#ef4444', fontSize: 12, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                     🔴 Non-veg
-                  </motion.span>
-                  <motion.span
-                    variants={{ initial: { opacity: 0, rotateY: -90 }, hover: { opacity: 1, rotateY: 0 } }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: showNonVeg ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 20, color: showNonVeg ? '#ef4444' : '#6b7280', fontSize: 11, fontWeight: 600 }}>
-                    ✓
-                  </motion.span>
-                </motion.button>
-              </div>
+                  </div>
+                </motion.div>
+              </motion.button>
             </div>
 
             {/* Filter + Search */}
@@ -1358,7 +1332,7 @@ export default function CafeteriaPage() {
                 // the shared image otherwise — several categories carry both,
                 // so a veg-looking banner over a non-veg list would be wrong.
                 const heroSrc =
-                  (vegMode === 'nonveg' ? CATEGORY_IMAGES_NONVEG[selectedCategory] : null)
+                  (!showVegFront ? CATEGORY_IMAGES_NONVEG[selectedCategory] : null)
                   || CATEGORY_IMAGES[selectedCategory]
                   || null
                 // Failures are tracked by URL, not category — one category can
