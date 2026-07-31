@@ -45,6 +45,7 @@ export default function VendorDashboard() {
   const [approvalModal, setApprovalModal] = useState<Order | null>(null)
   const [denialReason, setDenialReason] = useState('')
   const [approveLoading, setApproveLoading] = useState(false)
+  const [isDenying, setIsDenying] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
@@ -368,6 +369,7 @@ export default function VendorDashboard() {
         }
         setMsg('✅ Order approved! Student notified of prep time.')
         setApprovalModal(null)
+        setIsDenying(false)
         setPrepTime('10')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
@@ -406,6 +408,7 @@ export default function VendorDashboard() {
         setMsg('❌ Order denied. Student has been notified and refund initiated.')
         setApprovalModal(null)
         setDenialReason('')
+        setIsDenying(false)
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
         setMsg(`Error: ${result.error}`)
@@ -977,7 +980,7 @@ export default function VendorDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                         {collected.length === 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
-                          : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" onDelete={deleteOrder} />)
+                          : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
                         }
                       </div>
                     </div>
@@ -987,7 +990,7 @@ export default function VendorDashboard() {
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                          {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" onDelete={deleteOrder} />)}
+                          {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
                         </div>
                       </div>
                     )}
@@ -1230,14 +1233,16 @@ export default function VendorDashboard() {
           <motion.div initial="hidden" animate="visible" exit="hidden" variants={scaleIn} style={{
             background: 'white',
             borderRadius: 20,
-            padding: 28,
-            maxWidth: 500,
+            padding: 16,
+            maxWidth: 380,
             width: '100%',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            maxHeight: '85vh',
+            overflow: 'auto',
           }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>New Order</div>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+              <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, marginBottom: 2 }}>New Order</div>
               <div style={{ fontSize: 13, color: 'var(--muted)' }}>Order #{approvalModal.id.slice(0, 8)}</div>
             </div>
 
@@ -1297,53 +1302,62 @@ export default function VendorDashboard() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text2)' }}>Do you want to approve this order?</div>
 
-              {/* Deny Section - Always show textarea */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
-                <textarea
-                  value={denialReason}
-                  onChange={e => setDenialReason(e.target.value)}
-                  placeholder="e.g., Out of stock, Unexpected issue..."
-                  style={{
-                    width: '100%',
-                    minHeight: 80,
-                    padding: 12,
-                    border: denialReason.trim() ? '1px solid var(--red)' : '1px solid var(--border)',
-                    borderRadius: 10,
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 13,
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                    background: denialReason.trim() ? 'rgba(232,51,74,0.05)' : 'transparent',
-                  }}
-                />
-              </div>
+              {/* Deny Section - Only show textarea when denying */}
+              {isDenying && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, display: 'block', fontWeight: 600 }}>REASON FOR DENIAL *</label>
+                  <textarea
+                    value={denialReason}
+                    onChange={e => setDenialReason(e.target.value)}
+                    placeholder="e.g., Out of stock, Unexpected issue..."
+                    style={{
+                      width: '100%',
+                      minHeight: 80,
+                      padding: 12,
+                      border: denialReason.trim() ? '1px solid var(--red)' : '1px solid var(--border)',
+                      borderRadius: 10,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 13,
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                      background: denialReason.trim() ? 'rgba(232,51,74,0.05)' : 'transparent',
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
-                  onClick={() => denyOrder(approvalModal)}
-                  disabled={approveLoading || !denialReason.trim()}
+                  onClick={() => {
+                    if (isDenying) {
+                      if (denialReason.trim()) denyOrder(approvalModal)
+                    } else {
+                      setIsDenying(true)
+                    }
+                  }}
+                  disabled={approveLoading || (isDenying && !denialReason.trim())}
                   style={{
                     flex: 1,
                     padding: 14,
                     borderRadius: 10,
                     border: 'none',
-                    background: denialReason.trim() ? 'var(--red)' : '#ccc',
+                    background: isDenying ? (denialReason.trim() ? 'var(--red)' : '#ccc') : '#999',
                     color: 'white',
                     fontSize: 14,
                     fontWeight: 700,
-                    cursor: (approveLoading || !denialReason.trim()) ? 'not-allowed' : 'pointer',
-                    opacity: (approveLoading || !denialReason.trim()) ? 0.6 : 1,
+                    cursor: (approveLoading || (isDenying && !denialReason.trim())) ? 'not-allowed' : 'pointer',
+                    opacity: (approveLoading || (isDenying && !denialReason.trim())) ? 0.6 : 1,
                   }}
                 >
-                  ✕ DENY
+                  {isDenying ? '✕ DENY' : '✕ DENY'}
                 </motion.button>
                 <motion.button
                   {...(!approveLoading ? hoverScale : {})}
                   onClick={() => {
                     setDenialReason('')
+                    setIsDenying(false)
                     approveOrder(approvalModal)
                   }}
                   disabled={approveLoading}
@@ -1363,6 +1377,32 @@ export default function VendorDashboard() {
                   ✓ APPROVE
                 </motion.button>
               </div>
+
+              {isDenying && (
+                <motion.button
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  {...hoverScale}
+                  onClick={() => {
+                    setDenialReason('')
+                    setIsDenying(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    marginTop: 10,
+                    padding: 10,
+                    borderRadius: 10,
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    color: 'var(--text2)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </motion.button>
+              )}
             </div>
           </motion.div>
         </motion.div>
