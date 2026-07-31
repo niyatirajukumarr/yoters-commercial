@@ -64,6 +64,7 @@ $$;
 -- Remove the permissive policies that allowed anyone to read/update any order.
 drop policy if exists "Public read orders" on orders;
 drop policy if exists "Update orders" on orders;
+drop policy if exists "Owner or vendor read orders" on orders;
 
 -- Owners (authenticated) may read their own orders, matched by phone (always
 -- set at checkout) or by the email they placed the order with (if any).
@@ -87,6 +88,7 @@ create policy "Owner or vendor read orders" on orders
 -- Only the owning vendor (or manager/admin) may update an order from the client.
 -- All privileged state changes (payment/refund) already run server-side with the
 -- service-role key.
+drop policy if exists "Vendor update orders" on orders;
 create policy "Vendor update orders" on orders
   for update
   using (
