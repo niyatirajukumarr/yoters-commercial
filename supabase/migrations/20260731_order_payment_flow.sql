@@ -5,13 +5,25 @@
 -- pending_approval: Payment confirmed, vendor can accept/deny
 -- approved/preparing/ready/collected: Rest of the flow
 
+-- Add created_at if not exists (needed to calculate timeout)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+
+-- Migrate existing orders to new status values
+-- pending -> pending_payment (unpaid orders)
+-- pending -> pending_approval (paid orders)
+UPDATE orders
+SET status = CASE
+  WHEN status = 'pending' AND payment_status = 'paid' THEN 'pending_approval'
+  WHEN status = 'pending' AND payment_status = 'unpaid' THEN 'pending_payment'
+  WHEN status = 'paid' THEN 'pending_approval'
+  ELSE status
+END
+WHERE status IN ('pending', 'paid');
+
 -- Update the orders_status_check constraint to include new statuses
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
 ALTER TABLE orders ADD CONSTRAINT orders_status_check
   CHECK (status IN ('pending_payment','payment_pending','pending_approval','approved','preparing','ready','collected','cancelled'));
-
--- Add created_at if not exists (needed to calculate timeout)
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 
 -- Create a function to auto-mark orders as payment_pending after 60 seconds if still unpaid
 CREATE OR REPLACE FUNCTION auto_mark_payment_pending()
