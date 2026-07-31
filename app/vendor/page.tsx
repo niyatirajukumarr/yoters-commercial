@@ -206,12 +206,18 @@ export default function VendorDashboard() {
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
   // replaces `orders` with a new array every tick even when nothing moved.
+  // Only run this in the orders tab or when viewing today's orders
   const orderStateSignature = orders
     .map(o => `${o.id}:${o.status}:${(o as { payment_status?: string }).payment_status ?? ''}:${o.total_amount}`)
     .join('|')
   useEffect(() => {
-    if (cafeteria) fetchSummary(cafeteria.id)
-  }, [cafeteria, orderStateSignature, fetchSummary])
+    if (!cafeteria) return
+    const isToday = selectedDate === new Date().toISOString().split('T')[0]
+    // Only refresh summary automatically if in orders tab or viewing today's orders
+    if (tab === 'orders' || (tab === 'today' && isToday)) {
+      fetchSummary(cafeteria.id, tab === 'today' && !isToday ? selectedDate : undefined)
+    }
+  }, [cafeteria, orderStateSignature, fetchSummary, tab, selectedDate])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
