@@ -112,7 +112,7 @@ function StudentPageInner() {
         clearInterval(pollRef.current)
         if (myOrder) {
           setConfirmedOrderId(myOrder.id)
-          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+          setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'pending_approval' } : null)
         }
         setPaymentState('confirmed')
         setStep('tracking')
@@ -194,7 +194,7 @@ function StudentPageInner() {
     const { data, error } = await supabase.from('orders').insert({
       cafeteria_id: cafeteria.id, student_name: form.name, student_phone: form.phone,
       student_email: form.email || null, items: cart, total_amount: total,
-      queue_position: nextPos, notes: form.notes || null, status: 'pending', payment_status: 'unpaid'
+      queue_position: nextPos, notes: form.notes || null, status: 'pending_payment', payment_status: 'unpaid'
     }).select().single()
     if (error) { alert('Failed to place order. Try again.'); setSubmitting(false); return }
 
@@ -214,7 +214,7 @@ function StudentPageInner() {
     window.open(paymentUrl, 'payment_window', 'width=500,height=600')
     // Go straight to tracking — no waiting screen
     setConfirmedOrderId(myOrder.id)
-    setMyOrder(prev => prev ? { ...prev, payment_status: 'unpaid', status: 'pending' } : null)
+    setMyOrder(prev => prev ? { ...prev, payment_status: 'unpaid', status: 'pending_payment' } : null)
     setStep('tracking')
 
     // Poll every 2s for payment confirmation
@@ -225,11 +225,11 @@ function StudentPageInner() {
         .eq('id', myOrder.id)
         .single()
 
-      if (data?.status === 'paid' || data?.payment_status === 'paid') {
+      if (data?.status === 'pending_approval' || data?.payment_status === 'paid') {
         clearInterval(pollRef.current)
         setPaymentState('confirmed')
         setConfirmedOrderId(myOrder.id)
-        setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'paid' } : null)
+        setMyOrder(prev => prev ? { ...prev, payment_status: 'paid', status: 'pending_approval' } : null)
         // Show token ticket immediately
         if (data) {
           setTokenData({

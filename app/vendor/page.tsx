@@ -681,7 +681,7 @@ export default function VendorDashboard() {
 
                         {/* Action buttons */}
                         <div className="order-actions">
-                          {order.status === 'pending' && (
+                          {order.status === 'payment_pending' && (
                             <>
                               <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                                 {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
@@ -691,7 +691,7 @@ export default function VendorDashboard() {
                               </motion.button>
                             </>
                           )}
-                          {order.status === 'paid' && (
+                          {order.status === 'pending_approval' && (
                             <>
                               <motion.button {...hoverScale} onClick={() => setApprovalModal(order)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--green)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Accept</motion.button>
                               <motion.button {...hoverScale} onClick={() => { setApprovalModal(order); setDenialReason('temp') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Deny</motion.button>

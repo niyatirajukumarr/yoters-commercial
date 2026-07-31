@@ -29,6 +29,12 @@ export async function GET(req: NextRequest) {
   // server's zone, which on Vercel is UTC, i.e. 05:30 IST.
   const todayStart = istDayStart()
 
+  // Auto-mark pending_payment orders as payment_pending if 60+ seconds old
+  const { error: autoMarkError } = await adminSupabase.rpc('auto_mark_payment_pending')
+  if (autoMarkError) {
+    logger.warn('Failed to auto-mark payment pending:', autoMarkError)
+  }
+
   const { data, error } = await adminSupabase
     .from('orders')
     .select('*')
