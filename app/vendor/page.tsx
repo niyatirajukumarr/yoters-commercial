@@ -137,7 +137,6 @@ export default function VendorDashboard() {
   }, [])
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null
     let poll: ReturnType<typeof setInterval> | null = null
     async function init() {
       try {
@@ -158,15 +157,6 @@ export default function VendorDashboard() {
         ) as any
         if (menu) setMenuItems(menu)
 
-        const fetchMenuItems = async (cafId: string) => {
-          const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
-          if (data) setMenuItems(data)
-        }
-        channel = supabase.channel('vendor-realtime-' + caf.id)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchOrders(caf.id, true))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${caf.id}` }, () => fetchMenuItems(caf.id))
-          .subscribe()
-
         // Fallback poll every 5s, but only fetch today's orders to avoid overwriting filtered date views
         poll = setInterval(() => {
           const today = new Date().toISOString().split('T')[0]
@@ -183,11 +173,30 @@ export default function VendorDashboard() {
     }
     init()
     return () => {
-      channel?.unsubscribe()
       if (poll) clearInterval(poll)
       if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
     }
   }, [router, fetchOrders, tab])
+
+  // Separate effect for real-time subscriptions — only depends on cafeteria ID
+  useEffect(() => {
+    if (!cafeteria) return
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
+    const fetchMenuItems = async (cafId: string) => {
+      const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafId).order('category')
+      if (data) setMenuItems(data)
+    }
+
+    channel = supabase.channel('vendor-realtime-' + cafeteria.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrders(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
+      .subscribe()
+
+    return () => {
+      channel?.unsubscribe()
+    }
+  }, [cafeteria])
 
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
