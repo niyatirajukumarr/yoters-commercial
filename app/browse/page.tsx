@@ -336,7 +336,7 @@ export default function StudentHome() {
                         those inside an anchor would turn every click on them
                         into a navigation. Inside the .map, so it holds for any
                         restaurant added later. */}
-                    <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`} style={{ filter: c.is_closed ? 'grayscale(100%)' : 'none', opacity: c.is_closed ? 0.6 : 1, transition: 'all 0.2s' }}>
+                    <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`} style={{ filter: c.is_closed ? 'grayscale(100%) brightness(0.7)' : 'none', opacity: c.is_closed ? 0.5 : 1, transition: 'all 0.2s' }}>
                       <Link
                         href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`}
                         aria-label={`Open ${c.name}`}
