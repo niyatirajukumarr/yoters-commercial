@@ -652,10 +652,10 @@ export default function CafeteriaPage() {
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
-    if (topLevelCategories.length > 0 && !topLevelCategories.includes(selectedCategory)) {
-      setSelectedCategory(topLevelCategories[0])
+    if (categories.length > 0 && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
+      setSelectedCategory(categories[0])
     }
-  }, [topLevelCategories.join('|'), selectedCategory])
+  }, [categories.join('|'), selectedCategory])
 
   // Leaving the group puts every pill back on screen, so the row can't come
   // back collapsed the next time the group is opened.
