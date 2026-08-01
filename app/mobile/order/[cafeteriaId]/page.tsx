@@ -633,7 +633,8 @@ export default function CafeteriaPage() {
   // drink/dessert categories; picking it reveals them as a second row.
   const beverageCats = categories.filter(isBeverageCategory)
   const topLevelCategories = [
-    ...categories.filter(c => !isBeverageCategory(c)),
+    'Combos',
+    ...categories.filter(c => !isBeverageCategory(c) && c !== 'Combos'),
     ...(beverageCats.length ? [BEVERAGE_GROUP] : []),
   ].sort((a, b) => a.localeCompare(b))
   // Derived rather than its own state, so the sub-row can never disagree with
