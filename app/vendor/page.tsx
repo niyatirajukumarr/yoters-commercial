@@ -226,7 +226,7 @@ export default function VendorDashboard() {
   }, [cafeteria, orderStateSignature, fetchSummary, tab])
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timerInterval = setInterval(() => {
       setTimerSeconds(prev => {
         const updated = { ...prev }
         orders.forEach(order => {
@@ -240,8 +240,17 @@ export default function VendorDashboard() {
         return updated
       })
     }, 1000)
-    return () => clearInterval(interval)
+    return () => clearInterval(timerInterval)
   }, [orders])
+
+  // Polling fallback: fetch orders every 5 seconds when in orders tab to catch payment updates
+  useEffect(() => {
+    if (!cafeteria || tab !== 'orders') return
+    const pollInterval = setInterval(() => {
+      fetchOrdersRef.current?.(cafeteria.id, false)
+    }, 5000)
+    return () => clearInterval(pollInterval)
+  }, [cafeteria, tab])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
