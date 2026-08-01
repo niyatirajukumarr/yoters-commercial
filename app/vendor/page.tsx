@@ -669,11 +669,14 @@ export default function VendorDashboard() {
             const activeOrders = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
 
             const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-              pending:   { label: '💳 Payment Pending',   color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
-              paid:      { label: '⏳ Awaiting Approval', color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
-              approved:  { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
-              preparing: { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
-              ready:     { label: '🔔 Ready for Pickup',  color: 'var(--green)', bg: 'var(--green-bg)',   border: 'var(--green)' },
+              pending_payment:  { label: '⏳ Processing Payment', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: '#f59e0b' },
+              payment_pending:  { label: '💳 Payment Pending',    color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
+              pending_approval: { label: '⏳ Awaiting Approval',  color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
+              pending:          { label: '💳 Payment Pending',    color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
+              paid:             { label: '⏳ Awaiting Approval',  color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
+              approved:         { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
+              preparing:        { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
+              ready:            { label: '🔔 Ready for Pickup',  color: 'var(--green)', bg: 'var(--green-bg)',   border: 'var(--green)' },
             }
 
             if (activeOrders.length === 0) return (
