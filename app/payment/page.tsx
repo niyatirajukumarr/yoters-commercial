@@ -28,6 +28,7 @@ function PaymentPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const [sdkLoaded, setSdkLoaded] = useState(false)
+  const [orderDetails, setOrderDetails] = useState<any>(null)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const razorpayOrderIdRef = useRef<string | null>(null)
   const cafeSlugRef = useRef<string | null>(null)
@@ -79,10 +80,12 @@ function PaymentPageContent() {
         // These are validated below — no placeholder phone/email is ever sent to
         // Razorpay, so refunds, receipts and SMS reach the actual customer.
         const { data: order } = await withTimeout(
-          supabase.from('orders').select('student_name, student_email, student_phone').eq('id', orderId).single(),
+          supabase.from('orders').select('student_name, student_email, student_phone, items, total_amount, order_type').eq('id', orderId).single(),
           8000,
           'Order fetch timed out'
         ) as any
+
+        setOrderDetails(order)
 
         // Fall back to the authenticated session email if the order has none.
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
@@ -376,16 +379,39 @@ function PaymentPageContent() {
                 </motion.button>
               </motion.div>
             ) : processing ? (
-              <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ textAlign: 'center' }}>
+              <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                {orderDetails && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1f2e', margin: '0 0 12px' }}>Order Summary</h3>
+
+                    {orderDetails.items && orderDetails.items.length > 0 && (
+                      <div style={{ fontSize: 13, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #eee' }}>
+                        {orderDetails.items.map((item: any, idx: number) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, color: '#555' }}>
+                            <span>{item.name} x{item.quantity}</span>
+                            <span>₹{item.price * item.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+
+                    <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', justifyContent: 'space-between', color: '#1a1f2e', paddingTop: 8 }}>
+                      <span>Total Amount</span>
+                      <span>₹{orderDetails.total_amount}</span>
+                    </div>
+                  </div>
+                )}
+
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                  style={{ fontSize: 48, marginBottom: 12 }}
+                  style={{ fontSize: 48, marginBottom: 12, textAlign: 'center' }}
                 >🔄</motion.div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1f2e', margin: '0 0 8px', textAlign: 'center' }}>
                   Waiting for UPI Payment
                 </h2>
-                <p style={{ fontSize: 13, color: '#666', margin: 0 }}>
+                <p style={{ fontSize: 13, color: '#666', margin: 0, textAlign: 'center' }}>
                   Please complete payment in your UPI app (PhonePe, Google Pay, Paytm, etc.)
                 </p>
               </motion.div>

@@ -282,3 +282,33 @@ User to decide if automatic daily reset should be implemented:
 
 **Commit:** `c1ed75b` "Restore 3-column team member photo layout"
 **Status:** ✅ Fixed locally, verified working, ready for deployment
+
+### 2026-08-01 — Team Showcase Component Restoration & Fix
+
+**Issue:** Team showcase component broke after working version at commit `214c68e`. Photos were displaying massively enlarged, taking full screen width, and names list was hidden off-screen.
+
+**Root Causes Identified:**
+1. Component was rewritten multiple times with different approaches (Tailwind arbitrary widths, inline styles, flex-1 expansion)
+2. Photo grid container missing `flex-shrink-0`, causing it to expand and hide the names list
+3. Layout logic changed from explicit `column` property to modulo-based distribution (broke 4-member layout)
+
+**Fix Applied:**
+1. Restored working version from commit `a785869` which had:
+   - Explicit `column` (1-2-3) and `row` placement properties per member
+   - CSS-based staggering with `.ts-col-2` and `.ts-col-3` classes and media queries
+   - Proper Tailwind arbitrary width/height sizing
+   - Names list alongside photo grid
+
+2. Added `flex-shrink-0` to `.ts-photos` div to prevent expansion and keep names visible
+
+**Layout (Restored):**
+- Column 1: Gowtham (top)
+- Column 2: Niyati (center/top) 
+- Column 3: Shreyas (top), Rahul (bottom)
+- Names list displays on right side with hover highlighting
+
+**Commits:**
+- `9ee634b` "Restore team showcase from a785869 - precise column and row placement"
+- `c39faf9` "Fix: add flex-shrink-0 to photo grid so names don't get hidden"
+
+**Status:** ✅ Deployed to main, names now visible, photos properly sized, exact 21st.dev layout restored
