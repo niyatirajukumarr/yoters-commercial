@@ -110,40 +110,18 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   return (
     <>
       <style>{`
-        .ts-root { padding: 32px 0; }
-        .ts-photos { padding-bottom: 4px; }
-        .ts-list { padding-top: 0; }
+        .ts-root { padding: 32px 0; display: flex; flex-wrap: wrap; width: 100%; }
+        .ts-photos { padding-bottom: 4px; display: flex; gap: 12px; flex-wrap: wrap; width: 100%; margin-bottom: 32px; }
+        .ts-list { padding-top: 0; width: 100%; }
         .ts-role { margin-top: 6px; padding-left: 27px; }
         .ts-social a { padding: 4px; }
 
-        /* Sizing lives here rather than in Tailwind w-/h- utilities so one rule
-           set governs every breakpoint.
-
-           On phones the columns are percentages. Three fixed-pixel columns
-           overflowed a 375px screen and clipped the right-hand pair off the
-           edge — the original demo widths did too, by 16px — and a 360px phone
-           would have been worse. Percentages fit any width and take everything
-           going, which is as big as these can get: at this size the row already
-           spans the full screen, so width is not a lever, only height is.
-
-           Height always comes from aspect-ratio, set to the photos' native 3:4
-           so object-cover crops nothing. The old near-square cards were cutting
-           the tops and bottoms off every portrait. */
         .ts-col { display: flex; flex-direction: column; flex-shrink: 0; }
-        .ts-col-1 { width: 30.3%; }
-        .ts-col-2 { width: 33.9%; margin-top: 56px; }
-        .ts-col-3 { width: 31.8%; margin-top: 26px; }
+        .ts-col-1 { width: calc(33.333% - 9px); }
+        .ts-col-2 { width: calc(33.333% - 9px); }
+        .ts-col-3 { width: calc(33.333% - 9px); }
         .ts-card { width: 100%; aspect-ratio: 3 / 4; }
 
-        /* A tap should highlight the person and nothing else. Left alone, a
-           long press on a phone raises the OS image sheet — Save to Photos,
-           Copy, Share — and a right click or drag on a desktop offers the same
-           thing, which is the browser talking over the interaction.
-           -webkit-touch-callout kills the long-press sheet on iOS, and
-           pointer-events on the image means a press lands on the card rather
-           than on an <img>, so there is no image for the browser to offer in
-           the first place. Hover and tap still work: they are handled by the
-           card, which is what now receives the events. */
         .ts-card {
           -webkit-touch-callout: none;
           -webkit-user-select: none;
@@ -154,56 +132,46 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
           -webkit-user-drag: none;
         }
 
-        /* Full-bleed on phones. .lp-section boxes the strip in with side
-           padding the photos have no use for, and on a screen this narrow that
-           padding is the only width left to take. The offsets mirror the
-           .lp-section media queries in page.tsx exactly — 14px below 481, 16px
-           above it — so a mismatch can't leave the strip hanging off the edge.
-           The width has to grow by the same amount: negative margins move the
-           box left without widening it, so w-full alone kept resolving to the
-           padded width and the strip finished 30px short of the right edge.
-           Columns sum to 96%, leaving the 12px of gaps to make up the rest. */
-        @media (max-width: 480px) {
-          .ts-photos { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
-        }
-        @media (min-width: 481px) and (max-width: 639px) {
-          .ts-photos { margin-left: -16px; margin-right: -16px; width: calc(100% + 32px); }
+        @media (max-width: 768px) {
+          .ts-photos { gap: 8px; margin-bottom: 24px; }
+          .ts-col-1 { width: calc(33.333% - 6px); }
+          .ts-col-2 { width: calc(33.333% - 6px); }
+          .ts-col-3 { width: calc(33.333% - 6px); }
         }
 
-        @media (min-width: 640px) {
-          .ts-col-1 { width: 140px; }
-          .ts-col-2 { width: 155px; margin-top: 64px; }
-          .ts-col-3 { width: 146px; margin-top: 30px; }
+        @media (max-width: 640px) {
+          .ts-photos { gap: 6px; margin-bottom: 20px; }
+          .ts-col-1 { width: calc(33.333% - 4px); }
+          .ts-col-2 { width: calc(33.333% - 4px); }
+          .ts-col-3 { width: calc(33.333% - 4px); }
         }
-        @media (min-width: 768px) {
-          .ts-col-1 { width: 155px; }
-          .ts-col-2 { width: 172px; margin-top: 68px; }
-          .ts-col-3 { width: 162px; margin-top: 32px; }
-          .ts-list { padding-top: 8px; }
-        }
-        @media (min-width: 1024px) {
-          .ts-col-1 { width: 185px; }
-          .ts-col-2 { width: 205px; margin-top: 80px; }
-          .ts-col-3 { width: 193px; margin-top: 38px; }
+
+        @media (max-width: 480px) {
+          .ts-root { flex-direction: column; }
+          .ts-photos { width: 100%; margin-left: 0; margin-right: 0; gap: 4px; }
+          .ts-col-1 { width: calc(33.333% - 3px); }
+          .ts-col-2 { width: calc(33.333% - 3px); }
+          .ts-col-3 { width: calc(33.333% - 3px); }
+          .ts-list { width: 100%; }
         }
       `}</style>
 
-      <div className="ts-root flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full font-sans">
-        {/* Photo grid */}
-        <div className="ts-photos flex gap-1.5 md:gap-3 w-full md:w-auto">
-          <div className="ts-col ts-col-1 gap-1.5 md:gap-3">
+      <div className="ts-root" style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
+        {/* Photo grid - 3 columns */}
+        <div className="ts-photos">
+          <div className="ts-col ts-col-1" style={{ gap: '12px' }}>
             {col1.map(member => (
               <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col ts-col-2 gap-1.5 md:gap-3">
+          <div className="ts-col ts-col-2" style={{ gap: '12px' }}>
             {col2.map(member => (
               <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col ts-col-3 gap-1.5 md:gap-3">
+          <div className="ts-col ts-col-3" style={{ gap: '12px' }}>
             {col3.map(member => (
               <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
@@ -211,7 +179,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         </div>
 
         {/* Name list */}
-        <div className="ts-list flex flex-col sm:grid sm:grid-cols-2 md:flex md:flex-col gap-4 md:gap-5 flex-1 w-full">
+        <div className="ts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', marginTop: '32px' }}>
           {members.map(member => (
             <MemberRow
               key={member.id}
