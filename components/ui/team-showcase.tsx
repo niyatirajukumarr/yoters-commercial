@@ -63,9 +63,9 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   const col3 = members.slice(2, 4)
 
   return (
-    <div className="flex gap-12 w-full max-w-6xl mx-auto py-12 px-6 select-none">
+    <div className="flex gap-12 w-full max-w-6xl mx-auto py-12 px-6 select-none items-start">
       {/* Photo Grid */}
-      <div className="flex gap-4 flex-shrink-0 flex-1">
+      <div className="flex gap-4 flex-shrink-0">
         {/* Column 1: 1 photo */}
         <div className="flex flex-col gap-4">
           {col1.map((member) => (
