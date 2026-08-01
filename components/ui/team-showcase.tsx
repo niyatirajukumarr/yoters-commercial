@@ -27,6 +27,12 @@ export interface TeamMember {
   image: string
   /** Photo column, left to right. Set per member so four people can be placed. */
   column: 1 | 2 | 3
+  /**
+   * Position within that column, top first. Needed separately from array
+   * order because the array drives the name list, which stays in seniority
+   * order regardless of where the photos sit.
+   */
+  row: number
   social?: {
     twitter?: string
     linkedin?: string
@@ -43,7 +49,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Executive Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/gowtham.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL2dvd3RoYW0uanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjc0OTksImV4cCI6NDkzODkyNzQ5OX0.UjMHHnbbTizHUMHRm22ug1MPzaK4jSQlASVwv8U2mn0',
-    column: 3,
+    column: 1,
+    row: 1,
   },
   {
     id: 'niyati',
@@ -51,7 +58,8 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Technical Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/niyati.PNG?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL25peWF0aS5QTkciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg1MzI3NTM1LCJleHAiOjQ5Mzg5Mjc1MzV9.7E8rg4hHDXjgdpGSyQ_YTHHU00woTBvKD6U15QZIDGk',
-    column: 3,
+    column: 2,
+    row: 1,
   },
   {
     id: 'rahul',
@@ -59,15 +67,17 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Founding Software Engineer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/rahul%20.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3JhaHVsIC5qcGVnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4NTMyNzU1NCwiZXhwIjo0OTM4OTI3NTU0fQ.2SvIBvLBklQdEso8-1eR7PP-dXaAiqzQYdJLJrUz-ms',
-    column: 2,
+    column: 3,
+    row: 2,
   },
   {
     id: 'shreyas',
     name: 'Shreyas D J',
     role: 'Head of External Affairs',
     image:
-      'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/shreyas.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3NocmV5YXMuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjc1NzAsImV4cCI6NDkzODkyNzU3MH0.0-NRvVjEBROS0tMFpKOVtMdky42X0q1JrrQhSGbtBZc',
-    column: 1,
+      'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/shreyas.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3NocmV5YXMuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjk3OTMsImV4cCI6NDkzODkyOTc5M30.31oQ4a05JhPy4pwDNrvtfZodrAl3Y6dBCscgxhYs9pU',
+    column: 3,
+    row: 1,
   },
 ]
 
@@ -78,69 +88,94 @@ interface TeamShowcaseProps {
 export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcaseProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const col1 = members.filter(m => m.column === 1)
-  const col2 = members.filter(m => m.column === 2)
-  const col3 = members.filter(m => m.column === 3)
+  // Sorted by row, not left in array order: the array order is the name list's
+  // (seniority), and the photos are arranged independently of it.
+  const inColumn = (n: 1 | 2 | 3) =>
+    members.filter(m => m.column === n).sort((a, b) => a.row - b.row)
+  const col1 = inColumn(1)
+  const col2 = inColumn(2)
+  const col3 = inColumn(3)
 
   return (
     <>
       <style>{`
         .ts-root { padding: 32px 0; }
         .ts-photos { padding-bottom: 4px; }
-        /* The stagger. Column 1 sits flush, the other two hang lower. */
-        .ts-col2 { margin-top: 48px; }
-        .ts-col3 { margin-top: 22px; }
         .ts-list { padding-top: 0; }
         .ts-role { margin-top: 6px; padding-left: 27px; }
         .ts-social a { padding: 4px; }
 
+        /* Sizing lives here rather than in Tailwind w-/h- utilities so one rule
+           set governs every breakpoint.
+
+           On phones the columns are percentages. Three fixed-pixel columns
+           overflowed a 375px screen and clipped the right-hand pair off the
+           edge — the original demo widths did too, by 16px — and a 360px phone
+           would have been worse. Percentages fit any width and take everything
+           going, which is as big as these can get: at this size the row already
+           spans the full screen, so width is not a lever, only height is.
+
+           Height always comes from aspect-ratio, set to the photos' native 3:4
+           so object-cover crops nothing. The old near-square cards were cutting
+           the tops and bottoms off every portrait. */
+        .ts-col { display: flex; flex-direction: column; flex-shrink: 0; }
+        .ts-col-1 { width: 30.3%; }
+        .ts-col-2 { width: 33.9%; margin-top: 56px; }
+        .ts-col-3 { width: 31.8%; margin-top: 26px; }
+        .ts-card { width: 100%; aspect-ratio: 3 / 4; }
+
+        /* Full-bleed on phones. .lp-section boxes the strip in with side
+           padding the photos have no use for, and on a screen this narrow that
+           padding is the only width left to take. The offsets mirror the
+           .lp-section media queries in page.tsx exactly — 14px below 481, 16px
+           above it — so a mismatch can't leave the strip hanging off the edge.
+           The width has to grow by the same amount: negative margins move the
+           box left without widening it, so w-full alone kept resolving to the
+           padded width and the strip finished 30px short of the right edge.
+           Columns sum to 96%, leaving the 12px of gaps to make up the rest. */
+        @media (max-width: 480px) {
+          .ts-photos { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
+        }
+        @media (min-width: 481px) and (max-width: 639px) {
+          .ts-photos { margin-left: -16px; margin-right: -16px; width: calc(100% + 32px); }
+        }
+
         @media (min-width: 640px) {
-          .ts-col2 { margin-top: 56px; }
-          .ts-col3 { margin-top: 26px; }
+          .ts-col-1 { width: 140px; }
+          .ts-col-2 { width: 155px; margin-top: 64px; }
+          .ts-col-3 { width: 146px; margin-top: 30px; }
         }
         @media (min-width: 768px) {
-          .ts-col2 { margin-top: 68px; }
-          .ts-col3 { margin-top: 32px; }
+          .ts-col-1 { width: 155px; }
+          .ts-col-2 { width: 172px; margin-top: 68px; }
+          .ts-col-3 { width: 162px; margin-top: 32px; }
           .ts-list { padding-top: 8px; }
+        }
+        @media (min-width: 1024px) {
+          .ts-col-1 { width: 185px; }
+          .ts-col-2 { width: 205px; margin-top: 80px; }
+          .ts-col-3 { width: 193px; margin-top: 38px; }
         }
       `}</style>
 
       <div className="ts-root flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full font-sans">
         {/* Photo grid */}
-        <div className="ts-photos flex gap-2 md:gap-3 flex-shrink-0 overflow-x-auto">
-          <div className="flex flex-col gap-2 md:gap-3">
+        <div className="ts-photos flex gap-1.5 md:gap-3 w-full md:w-auto flex-shrink-0">
+          <div className="ts-col ts-col-1 gap-1.5 md:gap-3">
             {col1.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className="w-[110px] h-[120px] sm:w-[130px] sm:h-[140px] md:w-[155px] md:h-[165px]"
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col2 flex flex-col gap-2 md:gap-3">
+          <div className="ts-col ts-col-2 gap-1.5 md:gap-3">
             {col2.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className="w-[122px] h-[132px] sm:w-[145px] sm:h-[155px] md:w-[172px] md:h-[182px]"
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
 
-          <div className="ts-col3 flex flex-col gap-2 md:gap-3">
+          <div className="ts-col ts-col-3 gap-1.5 md:gap-3">
             {col3.map(member => (
-              <PhotoCard
-                key={member.id}
-                member={member}
-                className="w-[115px] h-[125px] sm:w-[136px] sm:h-[146px] md:w-[162px] md:h-[172px]"
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-              />
+              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
             ))}
           </div>
         </div>
@@ -163,12 +198,10 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
 
 function PhotoCard({
   member,
-  className,
   hoveredId,
   onHover,
 }: {
   member: TeamMember
-  className: string
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
@@ -178,8 +211,7 @@ function PhotoCard({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-500',
-        className,
+        'ts-card overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-500',
         isDimmed ? 'opacity-60' : 'opacity-100'
       )}
       onMouseEnter={() => onHover(member.id)}
