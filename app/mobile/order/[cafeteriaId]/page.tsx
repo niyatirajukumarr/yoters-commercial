@@ -1843,7 +1843,18 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{
+            (() => {
+              let paymentTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+              Object.entries(selectedExtras).forEach(([name, quantity]) => {
+                if (quantity > 0) {
+                  const extra = EXTRAS.find(e => e.name === name)
+                  if (extra) paymentTotal += extra.price * quantity
+                }
+              })
+              return paymentTotal
+            })()
+          }</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
