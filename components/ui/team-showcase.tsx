@@ -99,6 +99,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   return (
     <>
       <style>{`
+        /* DEPLOYMENT TEST - This should show the fix is deployed */
         .ts-root { padding: 32px 0; }
         .ts-photos { padding-bottom: 4px; }
         .ts-list { padding-top: 0; }
