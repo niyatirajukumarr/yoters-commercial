@@ -54,6 +54,7 @@ export default function VendorDashboard() {
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
   const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const fetchOrdersRef = useRef<(cafId: string, notify?: boolean, date?: string) => Promise<void>>()
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
@@ -138,6 +139,11 @@ export default function VendorDashboard() {
     }
   }, [])
 
+  // Keep fetchOrders ref updated so real-time subscriptions always use the latest version
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders
+  }, [fetchOrders])
+
   useEffect(() => {
     async function init() {
       try {
@@ -180,7 +186,7 @@ export default function VendorDashboard() {
     }
 
     channel = supabase.channel('vendor-realtime-' + cafeteria.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrders(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrdersRef.current?.(cafeteria.id, true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
       .subscribe()
 
