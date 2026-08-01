@@ -63,16 +63,17 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   const col3 = members.slice(2, 4)
 
   return (
-    <div className="flex gap-12 w-full max-w-6xl mx-auto py-12 px-6 select-none items-start">
+    <div style={{ display: 'flex', gap: '48px', maxWidth: '1100px', margin: '0 auto', padding: '48px 24px', alignItems: 'flex-start' }}>
       {/* Photo Grid */}
-      <div className="flex gap-4 flex-shrink-0">
+      <div style={{ display: 'flex', gap: '16px', flexShrink: 0 }}>
         {/* Column 1: 1 photo */}
-        <div className="flex flex-col gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {col1.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-32 h-40"
+              width={128}
+              height={160}
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
@@ -80,12 +81,13 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         </div>
 
         {/* Column 2: 1 photo */}
-        <div className="flex flex-col gap-4 mt-8">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px' }}>
           {col2.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-40 h-56"
+              width={160}
+              height={224}
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
@@ -93,12 +95,13 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         </div>
 
         {/* Column 3: 2 photos stacked */}
-        <div className="flex flex-col gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {col3.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-36 h-48"
+              width={144}
+              height={192}
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
@@ -107,7 +110,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
       </div>
 
       {/* Names List */}
-      <div className="flex flex-col gap-6 flex-shrink-0">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flexShrink: 0 }}>
         {members.map((member) => (
           <MemberRow key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
         ))}
@@ -118,12 +121,14 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
 
 function PhotoCard({
   member,
-  className,
+  width,
+  height,
   hoveredId,
   onHover,
 }: {
   member: TeamMember
-  className: string
+  width: number
+  height: number
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
@@ -132,20 +137,28 @@ function PhotoCard({
 
   return (
     <div
-      className={cn(
-        'overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-400',
-        className,
-        isDimmed ? 'opacity-60' : 'opacity-100',
-      )}
+      style={{
+        overflow: 'hidden',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        width: `${width}px`,
+        height: `${height}px`,
+        opacity: isDimmed ? 0.6 : 1,
+        transition: 'opacity 0.4s',
+        flexShrink: 0,
+      }}
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
     >
       <img
         src={member.image}
         alt={member.name}
-        className="w-full h-full object-cover transition-[filter] duration-500"
         style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
           filter: isActive ? 'grayscale(0) brightness(1)' : 'grayscale(1) brightness(0.77)',
+          transition: 'filter 0.5s',
         }}
       />
     </div>
