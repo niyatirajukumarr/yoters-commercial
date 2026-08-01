@@ -80,7 +80,7 @@ function PaymentPageContent() {
         // These are validated below — no placeholder phone/email is ever sent to
         // Razorpay, so refunds, receipts and SMS reach the actual customer.
         const { data: order } = await withTimeout(
-          supabase.from('orders').select('student_name, student_email, student_phone, items, total_amount, extras, order_type').eq('id', orderId).single(),
+          supabase.from('orders').select('student_name, student_email, student_phone, items, total_amount, order_type').eq('id', orderId).single(),
           8000,
           'Order fetch timed out'
         ) as any
@@ -395,17 +395,6 @@ function PaymentPageContent() {
                       </div>
                     )}
 
-                    {orderDetails.extras && orderDetails.extras.length > 0 && (
-                      <div style={{ fontSize: 13, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #eee', backgroundColor: '#fff9e6', padding: '8px', borderRadius: '6px' }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4, color: '#d97706' }}>Extras:</div>
-                        {orderDetails.extras.map((extra: any, idx: number) => (
-                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#555' }}>
-                            <span>{extra.name} x{extra.quantity}</span>
-                            <span>₹{extra.price * extra.quantity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
                     <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', justifyContent: 'space-between', color: '#1a1f2e', paddingTop: 8 }}>
                       <span>Total Amount</span>
