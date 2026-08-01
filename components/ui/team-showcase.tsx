@@ -160,7 +160,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
 
       <div className="ts-root flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full font-sans">
         {/* Photo grid */}
-        <div className="ts-photos flex gap-1.5 md:gap-3 w-full md:w-auto flex-shrink-0">
+        <div className="ts-photos flex gap-1.5 md:gap-3 flex-shrink-0">
           <div className="ts-col ts-col-1 gap-1.5 md:gap-3">
             {col1.map(member => (
               <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
