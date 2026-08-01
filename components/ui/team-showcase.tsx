@@ -176,34 +176,53 @@ function MemberRow({
 }) {
   const isActive = hoveredId === member.id
   const isDimmed = hoveredId !== null && !isActive
-  const hasSocial = member.social?.twitter || member.social?.linkedin || member.social?.instagram
 
   return (
     <div
-      className={cn(
-        'cursor-pointer transition-all duration-300 flex items-center gap-3',
-        isDimmed ? 'opacity-50' : 'opacity-100'
-      )}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        cursor: 'pointer',
+        opacity: isDimmed ? 0.5 : 1,
+        transition: 'all 0.3s',
+        padding: '8px 12px',
+        borderRadius: '8px',
+        backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+      }}
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
     >
       <div
-        className={cn(
-          'w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300',
-          isActive ? 'bg-white w-4 h-4' : 'bg-white/40'
-        )}
+        style={{
+          width: isActive ? '4px' : '3px',
+          height: isActive ? '4px' : '3px',
+          borderRadius: '50%',
+          backgroundColor: isActive ? 'white' : 'rgba(255,255,255,0.4)',
+          flexShrink: 0,
+          marginTop: '4px',
+          transition: 'all 0.3s',
+        }}
       />
       <div>
-        <div className={cn(
-          'text-sm font-semibold transition-colors duration-300',
-          isActive ? 'text-white' : 'text-white/90'
-        )}>
+        <div style={{
+          fontSize: '14px',
+          fontWeight: 600,
+          color: isActive ? 'white' : 'rgba(255,255,255,0.9)',
+          transition: 'color 0.3s',
+          lineHeight: 1.2,
+        }}>
           {member.name}
         </div>
-        <div className={cn(
-          'text-xs uppercase tracking-widest transition-colors duration-300',
-          isActive ? 'text-white/80' : 'text-white/50'
-        )}>
+        <div style={{
+          fontSize: '12px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: isActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)',
+          transition: 'color 0.3s',
+          lineHeight: 1.2,
+          marginTop: '2px',
+        }}>
           {member.role}
         </div>
       </div>
