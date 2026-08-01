@@ -1803,9 +1803,33 @@ export default function CafeteriaPage() {
                 )}
               </>
             )}
+            {Object.entries(selectedExtras).some(([_, qty]) => qty > 0) && (
+              <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 8, textTransform: 'uppercase' }}>Extras</div>
+                {Object.entries(selectedExtras).map(([name, quantity]) =>
+                  quantity > 0 ? (
+                    <div key={name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>
+                      <span>{name} x{quantity}</span>
+                      <span>₹{EXTRAS.find(e => e.name === name)?.price || 0 * quantity}</span>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{
+                (() => {
+                  let totalAmount = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+                  Object.entries(selectedExtras).forEach(([name, quantity]) => {
+                    if (quantity > 0) {
+                      const extra = EXTRAS.find(e => e.name === name)
+                      if (extra) totalAmount += extra.price * quantity
+                    }
+                  })
+                  return totalAmount
+                })()
+              }</span>
             </div>
           </div>
 
