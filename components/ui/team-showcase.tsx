@@ -3,46 +3,11 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
-// Adapted from https://21st.dev/@makviesainte/components/team-showcase
-//
-// Three deviations from the original, all forced by this codebase:
-//
-// 1. react-icons is not a dependency here, so the social glyphs are inline
-//    SVGs in this file. Behance is dropped — it was in the demo data and has
-//    no use for this team.
-// 2. globals.css has an unlayered `* { margin: 0; padding: 0 }`. Tailwind 4
-//    emits utilities inside @layer, and unlayered CSS beats layered CSS
-//    whatever the specificity, so every m-* and p-* class in this app is a
-//    no-op. The spacing that actually carries the layout — the staggered
-//    column offsets above all — is therefore in the .ts-* rules below, which
-//    are class-level and so outrank the `*` reset. Sizes, colours, flex, gap,
-//    rounding and transitions are unaffected and stay as Tailwind.
-// 3. Column placement is explicit rather than `i % 3`. The modulo split is
-//    built for six members; with four it would put Gowtham above Shreyas.
-
 export interface TeamMember {
   id: string
   name: string
   role: string
   image: string
-  /** Photo column, left to right. Set per member so four people can be placed. */
-  column: 1 | 2 | 3
-  /**
-   * Position within that column, top first. Needed separately from array
-   * order because the array drives the name list, which stays in seniority
-   * order regardless of where the photos sit.
-   */
-  row: number
-  /**
-   * Scale the photo inside its card, for one framed wider than the rest.
-   * The card clips, so this crops rather than overflowing. Omit for 1.
-   */
-  zoom?: number
-  /**
-   * Where the zoom pulls towards, as a transform-origin. Portraits want
-   * something above centre or the crop eats the head. Defaults to '50% 30%'.
-   */
-  zoomOrigin?: string
   social?: {
     twitter?: string
     linkedin?: string
@@ -50,8 +15,6 @@ export interface TeamMember {
   }
 }
 
-// Social links to follow — LinkedIn URLs go in the `social` object per member
-// and the icons appear on hover automatically.
 const DEFAULT_MEMBERS: TeamMember[] = [
   {
     id: 'gowtham',
@@ -59,9 +22,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Executive Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/gowtham.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL2dvd3RoYW0uanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjc0OTksImV4cCI6NDkzODkyNzQ5OX0.UjMHHnbbTizHUMHRm22ug1MPzaK4jSQlASVwv8U2mn0',
-    column: 1,
-    row: 1,
-    zoom: 1.15,
+    social: { linkedin: '#' },
   },
   {
     id: 'niyati',
@@ -69,8 +30,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Chief Technical Officer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/niyati.PNG?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL25peWF0aS5QTkciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg1MzI3NTM1LCJleHAiOjQ5Mzg5Mjc1MzV9.7E8rg4hHDXjgdpGSyQ_YTHHU00woTBvKD6U15QZIDGk',
-    column: 2,
-    row: 1,
+    social: { linkedin: '#' },
   },
   {
     id: 'rahul',
@@ -78,8 +38,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Founding Software Engineer',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/rahul%20.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3JhaHVsIC5qcGVnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4NTMyNzU1NCwiZXhwIjo0OTM4OTI3NTU0fQ.2SvIBvLBklQdEso8-1eR7PP-dXaAiqzQYdJLJrUz-ms',
-    column: 3,
-    row: 1,
+    social: { linkedin: '#' },
   },
   {
     id: 'shreyas',
@@ -87,8 +46,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     role: 'Head of External Affairs',
     image:
       'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/sign/Meet%20the%20team/shreyas.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xNTM3ZjNkYy05M2E3LTQzMmItOWQ4Yy02YmI1MmNlMGY0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJNZWV0IHRoZSB0ZWFtL3NocmV5YXMuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODUzMjk3OTMsImV4cCI6NDkzODkyOTc5M30.31oQ4a05JhPy4pwDNrvtfZodrAl3Y6dBCscgxhYs9pU',
-    column: 3,
-    row: 2,
+    social: { linkedin: '#' },
   },
 ]
 
@@ -99,107 +57,72 @@ interface TeamShowcaseProps {
 export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcaseProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  // Sorted by row, not left in array order: the array order is the name list's
-  // (seniority), and the photos are arranged independently of it.
-  const inColumn = (n: 1 | 2 | 3) =>
-    members.filter(m => m.column === n).sort((a, b) => a.row - b.row)
-  const col1 = inColumn(1)
-  const col2 = inColumn(2)
-  const col3 = inColumn(3)
+  const col1 = members.filter((_, i) => i % 3 === 0)
+  const col2 = members.filter((_, i) => i % 3 === 1)
+  const col3 = members.filter((_, i) => i % 3 === 2)
 
   return (
-    <>
-      <style>{`
-        .ts-root { padding: 32px 0; display: flex; flex-wrap: wrap; width: 100%; }
-        .ts-photos { padding-bottom: 4px; display: flex; gap: 12px; flex-wrap: wrap; width: 100%; margin-bottom: 32px; }
-        .ts-list { padding-top: 0; width: 100%; }
-        .ts-role { margin-top: 6px; padding-left: 27px; }
-        .ts-social a { padding: 4px; }
-
-        .ts-col { display: flex; flex-direction: column; flex-shrink: 0; }
-        .ts-col-1 { width: calc(33.333% - 9px); }
-        .ts-col-2 { width: calc(33.333% - 9px); }
-        .ts-col-3 { width: calc(33.333% - 9px); }
-        .ts-card { width: 100%; aspect-ratio: 3 / 4; }
-
-        .ts-card {
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          user-select: none;
-        }
-        .ts-card img {
-          pointer-events: none;
-          -webkit-user-drag: none;
-        }
-
-        @media (max-width: 768px) {
-          .ts-photos { gap: 8px; margin-bottom: 24px; }
-          .ts-col-1 { width: calc(33.333% - 6px); }
-          .ts-col-2 { width: calc(33.333% - 6px); }
-          .ts-col-3 { width: calc(33.333% - 6px); }
-        }
-
-        @media (max-width: 640px) {
-          .ts-photos { gap: 6px; margin-bottom: 20px; }
-          .ts-col-1 { width: calc(33.333% - 4px); }
-          .ts-col-2 { width: calc(33.333% - 4px); }
-          .ts-col-3 { width: calc(33.333% - 4px); }
-        }
-
-        @media (max-width: 480px) {
-          .ts-root { flex-direction: column; }
-          .ts-photos { width: 100%; margin-left: 0; margin-right: 0; gap: 4px; }
-          .ts-col-1 { width: calc(33.333% - 3px); }
-          .ts-col-2 { width: calc(33.333% - 3px); }
-          .ts-col-3 { width: calc(33.333% - 3px); }
-          .ts-list { width: 100%; }
-        }
-      `}</style>
-
-      <div className="ts-root" style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
-        {/* Photo grid - 3 columns */}
-        <div className="ts-photos">
-          <div className="ts-col ts-col-1" style={{ gap: '12px' }}>
-            {col1.map(member => (
-              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
-            ))}
-          </div>
-
-          <div className="ts-col ts-col-2" style={{ gap: '12px' }}>
-            {col2.map(member => (
-              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
-            ))}
-          </div>
-
-          <div className="ts-col ts-col-3" style={{ gap: '12px' }}>
-            {col3.map(member => (
-              <PhotoCard key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
-            ))}
-          </div>
-        </div>
-
-        {/* Name list */}
-        <div className="ts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', marginTop: '32px' }}>
-          {members.map(member => (
-            <MemberRow
+    <div className="flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full max-w-5xl mx-auto py-8 px-4 md:px-6 font-sans">
+      {/* ── Left: photo grid ── */}
+      <div className="flex gap-2 md:gap-3 flex-shrink-0 overflow-x-auto pb-1 md:pb-0">
+        {/* Column 1 */}
+        <div className="flex flex-col gap-2 md:gap-3">
+          {col1.map((member) => (
+            <PhotoCard
               key={member.id}
               member={member}
+              className="w-[110px] h-[147px] sm:w-[130px] sm:h-[173px] md:w-[155px] md:h-[206px]"
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+            />
+          ))}
+        </div>
+
+        {/* Column 2 */}
+        <div className="flex flex-col gap-2 md:gap-3 mt-[48px] sm:mt-[56px] md:mt-[68px]">
+          {col2.map((member) => (
+            <PhotoCard
+              key={member.id}
+              member={member}
+              className="w-[122px] h-[163px] sm:w-[145px] sm:h-[193px] md:w-[172px] md:h-[229px]"
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+            />
+          ))}
+        </div>
+
+        {/* Column 3 */}
+        <div className="flex flex-col gap-2 md:gap-3 mt-[22px] sm:mt-[26px] md:mt-[32px]">
+          {col3.map((member) => (
+            <PhotoCard
+              key={member.id}
+              member={member}
+              className="w-[115px] h-[153px] sm:w-[136px] sm:h-[181px] md:w-[162px] md:h-[216px]"
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
           ))}
         </div>
       </div>
-    </>
+
+      {/* ── Right: member name list ── */}
+      <div className="flex flex-col sm:grid sm:grid-cols-2 md:flex md:flex-col gap-4 md:gap-5 pt-0 md:pt-2 flex-1 w-full">
+        {members.map((member) => (
+          <MemberRow key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
+        ))}
+      </div>
+    </div>
   )
 }
 
 function PhotoCard({
   member,
+  className,
   hoveredId,
   onHover,
 }: {
   member: TeamMember
+  className: string
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
@@ -209,27 +132,19 @@ function PhotoCard({
   return (
     <div
       className={cn(
-        'ts-card overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-500',
-        isDimmed ? 'opacity-60' : 'opacity-100'
+        'overflow-hidden rounded-xl cursor-pointer flex-shrink-0 transition-opacity duration-400',
+        className,
+        isDimmed ? 'opacity-60' : 'opacity-100',
       )}
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
-      onTouchStart={() => onHover(isActive ? null : member.id)}
-      // Belt and braces with the CSS above: covers the desktop right-click
-      // menu, which -webkit-touch-callout does not touch.
-      onContextMenu={e => e.preventDefault()}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={member.image}
         alt={member.name}
-        draggable={false}
         className="w-full h-full object-cover transition-[filter] duration-500"
         style={{
           filter: isActive ? 'grayscale(0) brightness(1)' : 'grayscale(1) brightness(0.77)',
-          ...(member.zoom
-            ? { transform: `scale(${member.zoom})`, transformOrigin: member.zoomOrigin ?? '50% 30%' }
-            : null),
         }}
       />
     </div>
@@ -247,8 +162,7 @@ function MemberRow({
 }) {
   const isActive = hoveredId === member.id
   const isDimmed = hoveredId !== null && !isActive
-  const social = member.social
-  const hasSocial = Boolean(social?.twitter || social?.linkedin || social?.instagram)
+  const hasSocial = member.social?.twitter || member.social?.linkedin || member.social?.instagram
 
   return (
     <div
@@ -256,94 +170,53 @@ function MemberRow({
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
     >
+      {/* Name + social */}
       <div className="flex items-center gap-2.5">
         <span
           className={cn(
-            'h-3 rounded-[5px] flex-shrink-0 transition-all duration-300',
-            isActive ? 'bg-foreground w-5' : 'bg-foreground/25 w-4'
+            'w-4 h-3 rounded-[5px] flex-shrink-0 transition-all duration-300',
+            isActive ? 'bg-foreground w-5' : 'bg-foreground/25',
           )}
         />
         <span
           className={cn(
             'text-base md:text-[18px] font-semibold leading-none tracking-tight transition-colors duration-300',
-            isActive ? 'text-foreground' : 'text-foreground/80'
+            isActive ? 'text-foreground' : 'text-foreground/80',
           )}
         >
           {member.name}
         </span>
 
+        {/* Social icons */}
         {hasSocial && (
           <div
             className={cn(
-              'ts-social flex items-center gap-1.5 transition-all duration-200',
-              isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
+              'flex items-center gap-1.5 ml-0.5 transition-all duration-200',
+              isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none',
             )}
           >
-            {social?.twitter && (
-              <SocialLink href={social.twitter} title="X / Twitter">
-                <XIcon />
-              </SocialLink>
-            )}
-            {social?.linkedin && (
-              <SocialLink href={social.linkedin} title="LinkedIn">
-                <LinkedInIcon />
-              </SocialLink>
-            )}
-            {social?.instagram && (
-              <SocialLink href={social.instagram} title="Instagram">
-                <InstagramIcon />
-              </SocialLink>
+            {member.social?.linkedin && (
+              <a
+                href={member.social.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all duration-150 hover:scale-110"
+                title="LinkedIn"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              </a>
             )}
           </div>
         )}
       </div>
 
-      <p className="ts-role text-[9px] md:text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+      {/* Role */}
+      <p className="mt-1.5 pl-[27px] text-[7px] md:text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
         {member.role}
       </p>
     </div>
-  )
-}
-
-function SocialLink({ href, title, children }: { href: string; title: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={e => e.stopPropagation()}
-      className="rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all duration-150 hover:scale-110"
-      title={title}
-    >
-      {children}
-    </a>
-  )
-}
-
-/* Inline glyphs, since react-icons is not a dependency here. */
-
-function LinkedInIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-    </svg>
-  )
-}
-
-function XIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z" />
-    </svg>
-  )
-}
-
-function InstagramIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <circle cx="12" cy="12" r="4.5" />
-      <circle cx="17.6" cy="6.4" r="1.2" fill="currentColor" stroke="none" />
-    </svg>
   )
 }
