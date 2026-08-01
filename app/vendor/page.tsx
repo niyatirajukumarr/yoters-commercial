@@ -274,7 +274,7 @@ export default function VendorDashboard() {
   async function toggleOpen() {
     if (!cafeteria) return
     const newState = !isOpen
-    await supabase.from('cafeterias').update({ is_open: newState }).eq('id', cafeteria.id)
+    await supabase.from('cafeterias').update({ is_open: newState, is_closed: !newState }).eq('id', cafeteria.id)
     setIsOpen(newState)
   }
 
