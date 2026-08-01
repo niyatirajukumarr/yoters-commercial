@@ -787,10 +787,6 @@ export default function CafeteriaPage() {
       const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge + extrasTotal : orderType === 'takeaway' ? total + PARCEL_CHARGE + extrasTotal : total + extrasTotal
 
       // Add 10-second timeout to prevent infinite loading
-      const extras = Object.entries(selectedExtras).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
-        const extra = EXTRAS.find(e => e.name === name)
-        return { name, quantity: qty, price: extra?.price ?? 0 }
-      })
       const orderPromise = supabase
         .from('orders')
         .insert([{
@@ -800,7 +796,6 @@ export default function CafeteriaPage() {
           delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
-          extras: extras,
           delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
           parcel_charge: orderType !== 'dine_in' ? PARCEL_CHARGE : 0,
         }])
