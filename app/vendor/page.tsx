@@ -34,6 +34,7 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [showMsg, setShowMsg] = useState(true)
   const [waitOverride, setWaitOverride] = useState('')
   const [menuForm, setMenuForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null as File | null })
   const [isOpen, setIsOpen] = useState(true)
@@ -401,15 +402,18 @@ export default function VendorDashboard() {
           clearInterval(alertSoundIntervalRef.current)
           alertSoundIntervalRef.current = null
         }
+        setShowMsg(true)
         setMsg('✅ Order approved! Student notified of prep time.')
         setApprovalModal(null)
         setIsDenying(false)
         setPrepTime('10')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
+        setShowMsg(true)
         setMsg(`Error: ${result.error}`)
       }
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setApproveLoading(false)
@@ -439,15 +443,18 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
+        setShowMsg(true)
         setMsg('❌ Order denied. Student has been notified and refund initiated.')
         setApprovalModal(null)
         setDenialReason('')
         setIsDenying(false)
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
+        setShowMsg(true)
         setMsg(`Error: ${result.error}`)
       }
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setApproveLoading(false)
@@ -465,12 +472,14 @@ export default function VendorDashboard() {
         body: JSON.stringify({ orderId: order.id }),
       })
       const result = await response.json()
+      setShowMsg(true)
       setMsg(response.ok ? '🔔 Payment reminder sent.' : `Error: ${result.error}`)
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setRemindingOrderId(null)
-      setTimeout(() => setMsg(''), 2000)
+      setTimeout(() => { setMsg(''); setShowMsg(false) }, 2000)
     }
   }
 
@@ -487,8 +496,9 @@ export default function VendorDashboard() {
       if (!error && data && data.length > 0) {
         setOrders(prev => prev.filter(o => o.id !== order.id))
       } else {
+        setShowMsg(true)
         setMsg('Could not delete this order. Please try again.')
-        setTimeout(() => setMsg(''), 2000)
+        setTimeout(() => { setMsg(''); setShowMsg(false) }, 2000)
       }
     } finally {
       setDeletingOrderId(null)
@@ -615,7 +625,44 @@ export default function VendorDashboard() {
             ))}
           </motion.div>
 
-          {msg && <div style={{ background: 'var(--green-bg)', border: '1px solid rgba(46,158,107,0.2)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: 'var(--green)', marginBottom: 16 }}>{msg}</div>}
+          {msg && showMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                background: msg.startsWith('✅') ? 'var(--green-bg)' : 'rgba(239, 68, 68, 0.1)',
+                border: msg.startsWith('✅') ? '1px solid rgba(46,158,107,0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: 8,
+                padding: '12px 16px',
+                marginBottom: 16,
+                fontSize: 13,
+                color: msg.startsWith('✅') ? 'var(--green)' : 'var(--red)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <span>{msg}</span>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowMsg(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  padding: '2px 4px',
+                  color: msg.startsWith('✅') ? 'var(--green)' : 'var(--red)',
+                  fontWeight: 700
+                }}
+              >
+                ✓
+              </motion.button>
+            </motion.div>
+          )}
 
           {/* ORDERS */}
           {tab === 'orders' && (() => {
@@ -785,10 +832,10 @@ export default function VendorDashboard() {
                           )}
                           {order.status === 'payment_pending' && order.payment_status === 'unpaid' && (new Date().getTime() - new Date(order.created_at).getTime() >= 60000) && (
                             <>
-                              <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                              <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#f59e0b', color: 'white', fontSize: 13, fontWeight: 700, cursor: remindingOrderId === order.id ? 'not-allowed' : 'pointer' }}>
                                 {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
                               </motion.button>
-                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', marginLeft: 8, borderRadius: 8, border: 'none', background: '#ef4444', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', marginLeft: 8, borderRadius: 8, border: 'none', background: '#ef4444', color: 'white', fontSize: 13, fontWeight: 700, cursor: deletingOrderId === order.id ? 'not-allowed' : 'pointer' }}>
                                 {deletingOrderId === order.id ? '...' : '🗑️ Delete'}
                               </motion.button>
                             </>
