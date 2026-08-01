@@ -124,7 +124,7 @@ function categoryIcon(cat: string) {
 }
 
 const CATEGORY_EMOJI: { [key: string]: string } = {
-  'Combos': '🍽️', 'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
+  'Main': '🍽️', 'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
   'Thick Shake': '🧋', 'Sodas': '🫧', 'Coffee Shake': '☕', 'Special Shakes': '🧋',
   'Ice Cream Shakes': '🍦', 'Lassi': '🥛', 'Delights': '🍮', 'Club Sandwich': '🥪',
   'Strips': '🍗', 'Sandwiches': '🥪', 'Egg Bites': '🍳', 'Loaded Fries': '🍟',
@@ -620,10 +620,7 @@ export default function CafeteriaPage() {
 
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
-  // Combos show in both veg and non-veg modes (mixed category)
-  const visibleItems = menuItems.filter(m =>
-    m.category === 'Combos' || (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m))
-  )
+  const visibleItems = menuItems.filter(m => (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m)))
   // Alphabetical so the pill row has a predictable order, rather than
   // whatever order the rows happen to come back from the DB in.
   const categories = [...new Set(visibleItems.map(m => m.category))]
@@ -633,8 +630,7 @@ export default function CafeteriaPage() {
   // drink/dessert categories; picking it reveals them as a second row.
   const beverageCats = categories.filter(isBeverageCategory)
   const topLevelCategories = [
-    'Combos',
-    ...categories.filter(c => !isBeverageCategory(c) && c !== 'Combos'),
+    ...categories.filter(c => !isBeverageCategory(c)),
     ...(beverageCats.length ? [BEVERAGE_GROUP] : []),
   ].sort((a, b) => a.localeCompare(b))
   // Derived rather than its own state, so the sub-row can never disagree with
@@ -1261,7 +1257,7 @@ export default function CafeteriaPage() {
                         <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
                           <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
                         </div>
-                        <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
+                        <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat === 'Main' ? 'Combos' : cat}</span>
                       </button>
                     )
                   })}
