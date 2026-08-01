@@ -249,3 +249,36 @@ User to decide if automatic daily reset should be implemented:
 
 **Commit:** `a5b7007` "Fix closed cafe toggle to update is_closed field"
 **Status:** ✅ Tested, verified working, pushed to GitHub
+
+### 2026-08-01 — Team Section Layout Fix - Restore 3-Column Grid
+**Issue:** Landing page team section was displaying full-width enlarged photos instead of the intended 3-column responsive grid layout, making the layout "completely gone" as user reported.
+
+**Root Cause:**
+- `components/ui/team-showcase.tsx` CSS had conflicting width calculations and responsive breakpoint rules
+- The flexible layout wasn't properly calculating column widths for the 3-column grid
+- Photos were rendering at full width instead of ~33% width per column
+
+**Fix Applied:**
+- Simplified and corrected CSS grid layout in `team-showcase.tsx`:
+  - Changed column widths to `calc(33.333% - gap)` for proper 3-column distribution
+  - Fixed `.ts-photos` container to use `display: flex` with proper gap handling
+  - Removed conflicting margin/width rules that were causing layout breakdown
+  - Updated responsive breakpoints to maintain 3-column layout on desktop
+- Simplified JSX structure to remove unnecessary Tailwind classes that conflicted with inline styles
+
+**Technical Details:**
+- Desktop (>768px): 3-column grid with equal-width columns (~33% each)
+- Tablet (640-768px): 3-column grid with smaller gaps
+- Mobile (<640px): 3-column grid with minimal gaps (columns still display side-by-side at narrower width)
+- Team member names display in list below photo grid
+
+**Testing & Verification:**
+1. ✅ Local dev server (http://localhost:3000) shows 3-column photo grid
+2. ✅ All 4 team members render: Gowtham, Niyati, Rahul, Shreyas
+3. ✅ Photos display with proper aspect ratio (3:4 portrait)
+4. ✅ Team member names and roles display below photos
+5. ✅ Hover interactions work (grayscale → color on hover)
+6. ✅ Layout is responsive (tested at 800px viewport width)
+
+**Commit:** `c1ed75b` "Restore 3-column team member photo layout"
+**Status:** ✅ Fixed locally, verified working, ready for deployment
