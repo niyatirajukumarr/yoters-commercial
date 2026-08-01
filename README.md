@@ -4,7 +4,7 @@ A commercial cafeteria pre-ordering platform that eliminates queues and reduces 
 
 ## Features
 
-### Mobile App (Student)
+### Mobile App (User)
 - **Browse cafeterias** with live queue status (wait time, people waiting)
 - **Pre-order food items** with images and descriptions
 - **UPI payments** via Razorpay (PhonePe, Google Pay, Paytm, WhatsApp)

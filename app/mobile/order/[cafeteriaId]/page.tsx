@@ -124,7 +124,7 @@ function categoryIcon(cat: string) {
 }
 
 const CATEGORY_EMOJI: { [key: string]: string } = {
-  'Combos': '🍽️', 'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
+  'Main': '🍽️', 'Fresh Juices': '🍹', 'Mojitos': '🍸', 'Hot Beverages': '☕', 'Fruit Milkshakes': '🥤',
   'Thick Shake': '🧋', 'Sodas': '🫧', 'Coffee Shake': '☕', 'Special Shakes': '🧋',
   'Ice Cream Shakes': '🍦', 'Lassi': '🥛', 'Delights': '🍮', 'Club Sandwich': '🥪',
   'Strips': '🍗', 'Sandwiches': '🥪', 'Egg Bites': '🍳', 'Loaded Fries': '🍟',
@@ -460,6 +460,16 @@ export default function CafeteriaPage() {
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
   const PARCEL_CHARGE = 5
+  const EXTRAS = [
+    { name: 'Mayo Dip', price: 10 },
+    { name: 'Egg', price: 10 },
+    { name: 'Cheese', price: 15 },
+  ]
+  const [selectedExtras, setSelectedExtras] = useState<{ [key: string]: number }>({
+    'Mayo Dip': 0,
+    'Egg': 0,
+    'Cheese': 0,
+  })
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -620,10 +630,7 @@ export default function CafeteriaPage() {
 
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
-  // Combos show in both veg and non-veg modes (mixed category)
-  const visibleItems = menuItems.filter(m =>
-    m.category === 'Combos' || (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m))
-  )
+  const visibleItems = menuItems.filter(m => (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m)))
   // Alphabetical so the pill row has a predictable order, rather than
   // whatever order the rows happen to come back from the DB in.
   const categories = [...new Set(visibleItems.map(m => m.category))]
@@ -651,7 +658,7 @@ export default function CafeteriaPage() {
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
-    if (categories.length > 0 && !categories.includes(selectedCategory)) {
+    if (categories.length > 0 && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
       setSelectedCategory(categories[0])
     }
   }, [categories.join('|'), selectedCategory])
@@ -773,9 +780,17 @@ export default function CafeteriaPage() {
       const tokenNumber = (count ?? 0) + 1
 
       const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+      const extrasTotal = Object.entries(selectedExtras).reduce((sum, [name, quantity]) => {
+        const extra = EXTRAS.find(e => e.name === name)
+        return sum + (extra ? extra.price * quantity : 0)
+      }, 0)
+      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge + extrasTotal : orderType === 'takeaway' ? total + PARCEL_CHARGE + extrasTotal : total + extrasTotal
 
       // Add 10-second timeout to prevent infinite loading
+      const extras = Object.entries(selectedExtras).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
+        const extra = EXTRAS.find(e => e.name === name)
+        return { name, quantity: qty, price: extra?.price ?? 0 }
+      })
       const orderPromise = supabase
         .from('orders')
         .insert([{
@@ -785,6 +800,7 @@ export default function CafeteriaPage() {
           delivery_address: orderType === 'delivery' ? deliveryAddress : null,
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
+          extras: extras,
           delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
           parcel_charge: orderType !== 'dine_in' ? PARCEL_CHARGE : 0,
         }])
@@ -1260,7 +1276,7 @@ export default function CafeteriaPage() {
                         <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
                           <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
                         </div>
-                        <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat}</span>
+                        <span className={`cat-pill-label ${isActive ? 'active' : ''}`}>{cat === 'Main' ? 'Combos' : cat}</span>
                       </button>
                     )
                   })}
@@ -1474,8 +1490,35 @@ export default function CafeteriaPage() {
                     )}
                   </>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: (orderType === 'delivery' && deliveryCharge > 0) || orderType === 'takeaway' ? '1px solid var(--border)' : 'none' }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+                <div style={{ marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 10, textTransform: 'uppercase' }}>Add Extras</div>
+                  {EXTRAS.map(extra => (
+                    <div key={extra.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0' }}>
+                      <div>
+                        <span style={{ fontSize: 14 }}>{extra.name}</span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600, marginLeft: 8 }}>+₹{extra.price}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', borderRadius: 6, padding: '4px 8px' }}>
+                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: Math.max(0, prev[extra.name] - 1) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>−</button>
+                        <span style={{ width: 24, textAlign: 'center', fontWeight: 600 }}>{selectedExtras[extra.name]}</span>
+                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: prev[extra.name] + 1 }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{
+                    (() => {
+                      let totalWithExtras = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+                      Object.entries(selectedExtras).forEach(([name, quantity]) => {
+                        if (quantity > 0) {
+                          const extra = EXTRAS.find(e => e.name === name)
+                          if (extra) totalWithExtras += extra.price * quantity
+                        }
+                      })
+                      return totalWithExtras
+                    })()
+                  }</span>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →

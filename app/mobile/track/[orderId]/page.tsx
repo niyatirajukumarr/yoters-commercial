@@ -364,7 +364,7 @@ export default function OrderTrackingPage() {
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: 'white', paddingTop: 12, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                <span>Total Paid</span>
+                <span>Total</span>
                 <span style={{ color: '#2e9e6b' }}>₹{order.total_amount}</span>
               </div>
             </div>
