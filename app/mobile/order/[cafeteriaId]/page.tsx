@@ -462,13 +462,13 @@ export default function CafeteriaPage() {
   const PARCEL_CHARGE = 5
   const EXTRAS = [
     { name: 'Mayo Dip', price: 10 },
-    { name: 'Egg Extra', price: 10 },
-    { name: 'Cheese Extra', price: 15 },
+    { name: 'Egg', price: 10 },
+    { name: 'Cheese', price: 15 },
   ]
-  const [selectedExtras, setSelectedExtras] = useState<{ [key: string]: boolean }>({
-    'Mayo Dip': false,
-    'Egg Extra': false,
-    'Cheese Extra': false,
+  const [selectedExtras, setSelectedExtras] = useState<{ [key: string]: number }>({
+    'Mayo Dip': 0,
+    'Egg': 0,
+    'Cheese': 0,
   })
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
@@ -1484,21 +1484,27 @@ export default function CafeteriaPage() {
                 <div style={{ marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 10, textTransform: 'uppercase' }}>Add Extras</div>
                   {EXTRAS.map(extra => (
-                    <label key={extra.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={selectedExtras[extra.name]} onChange={(e) => setSelectedExtras(prev => ({ ...prev, [extra.name]: e.target.checked }))} style={{ width: 18, height: 18, cursor: 'pointer' }} />
-                      <span style={{ fontSize: 14, flex: 1 }}>{extra.name}</span>
-                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}>+₹{extra.price}</span>
-                    </label>
+                    <div key={extra.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0' }}>
+                      <div>
+                        <span style={{ fontSize: 14 }}>{extra.name}</span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600, marginLeft: 8 }}>+₹{extra.price}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', borderRadius: 6, padding: '4px 8px' }}>
+                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: Math.max(0, prev[extra.name] - 1) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>−</button>
+                        <span style={{ width: 24, textAlign: 'center', fontWeight: 600 }}>{selectedExtras[extra.name]}</span>
+                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: prev[extra.name] + 1 }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>+</button>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
                   <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{
                     (() => {
                       let totalWithExtras = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-                      Object.entries(selectedExtras).forEach(([name, selected]) => {
-                        if (selected) {
+                      Object.entries(selectedExtras).forEach(([name, quantity]) => {
+                        if (quantity > 0) {
                           const extra = EXTRAS.find(e => e.name === name)
-                          if (extra) totalWithExtras += extra.price
+                          if (extra) totalWithExtras += extra.price * quantity
                         }
                       })
                       return totalWithExtras
