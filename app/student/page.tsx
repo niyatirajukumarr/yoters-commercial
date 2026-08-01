@@ -27,6 +27,7 @@ function StudentPageInner() {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', altPhone: '', email: '', notes: '' })
   const [showCart, setShowCart] = useState(false)
+  const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
 
   // FIX 3: Payment polling state
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
@@ -104,6 +105,11 @@ function StudentPageInner() {
       }))
     }
   }, [profile])
+
+  // Reset scroll when filter changes
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [vegMode])
 
   // Listen for payment result from popup window
   useEffect(() => {
@@ -259,7 +265,11 @@ function StudentPageInner() {
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
-  const categories = [...new Set(menuItems.map(i => i.category))]
+  const itemIsVeg = (m: MenuItem) => m.is_veg !== false
+  const filteredMenuItems = menuItems.filter(i =>
+    vegMode === 'veg' ? itemIsVeg(i) : !itemIsVeg(i)
+  )
+  const categories = [...new Set(filteredMenuItems.map(i => i.category))]
 
   const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
     pending: { label: 'Order Received', color: 'var(--yellow)', icon: '⏳' },
@@ -281,7 +291,7 @@ function StudentPageInner() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: vegMode === 'nonveg' ? 'linear-gradient(135deg, rgba(255,200,150,0.08) 0%, rgba(255,150,100,0.05) 100%)' : 'var(--bg)', paddingBottom: 80, transition: 'background 0.3s ease' }}>
       <style>{`
         .s-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(253,248,245,0.95); backdrop-filter:blur(12px); z-index:100; }
         .s-steps { display:flex; gap:4px; align-items:center; }
@@ -341,9 +351,27 @@ function StudentPageInner() {
               <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 700, marginBottom: 6 }}>
                 {cafeteria?.name ?? 'Loading...'}
               </h1>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)' }}>
+              {/* v2: flip animation filter */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
                 <span>📍 {cafeteria?.location}</span>
               </div>
+              <motion.button
+                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
+                style={{ perspective: '1000px', position: 'relative', width: '110px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                <motion.div
+                  animate={{ rotateX: vegMode === 'veg' ? 0 : 180 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+                    Veg
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateX(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
+                    <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '11px solid #fff', flexShrink: 0 }} />
+                    Non-veg
+                  </div>
+                </motion.div>
+              </motion.button>
             </div>
 
             <div className="menu-grid">
@@ -352,7 +380,7 @@ function StudentPageInner() {
                   <motion.div key={cat} variants={staggerItem} style={{ marginBottom: 24 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>{cat}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {menuItems.filter(i => i.category === cat).map(item => {
+                      {filteredMenuItems.filter(i => i.category === cat).map(item => {
                         const inCart = cart.find(i => i.menu_item_id === item.id)
                         const isOutOfStock = item.stock_quantity != null && item.stock_quantity <= 0
                         return (

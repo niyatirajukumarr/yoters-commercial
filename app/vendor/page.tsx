@@ -34,6 +34,7 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [showMsg, setShowMsg] = useState(true)
   const [waitOverride, setWaitOverride] = useState('')
   const [menuForm, setMenuForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null as File | null })
   const [isOpen, setIsOpen] = useState(true)
@@ -54,6 +55,7 @@ export default function VendorDashboard() {
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
   const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const fetchOrdersRef = useRef(null as any)
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
@@ -138,6 +140,11 @@ export default function VendorDashboard() {
     }
   }, [])
 
+  // Keep fetchOrders ref updated so real-time subscriptions always use the latest version
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders
+  }, [fetchOrders])
+
   useEffect(() => {
     async function init() {
       try {
@@ -180,7 +187,7 @@ export default function VendorDashboard() {
     }
 
     channel = supabase.channel('vendor-realtime-' + cafeteria.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrders(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrdersRef.current?.(cafeteria.id, true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
       .subscribe()
 
@@ -220,7 +227,7 @@ export default function VendorDashboard() {
   }, [cafeteria, orderStateSignature, fetchSummary, tab])
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timerInterval = setInterval(() => {
       setTimerSeconds(prev => {
         const updated = { ...prev }
         orders.forEach(order => {
@@ -234,8 +241,17 @@ export default function VendorDashboard() {
         return updated
       })
     }, 1000)
-    return () => clearInterval(interval)
+    return () => clearInterval(timerInterval)
   }, [orders])
+
+  // Polling fallback: fetch orders every 5 seconds when in orders tab to catch payment updates
+  useEffect(() => {
+    if (!cafeteria || tab !== 'orders') return
+    const pollInterval = setInterval(() => {
+      fetchOrdersRef.current?.(cafeteria.id, false)
+    }, 5000)
+    return () => clearInterval(pollInterval)
+  }, [cafeteria, tab])
 
   async function updateOrderStatus(orderId: string, status: Order['status']) {
     setActionLoading(orderId)
@@ -258,7 +274,7 @@ export default function VendorDashboard() {
   async function toggleOpen() {
     if (!cafeteria) return
     const newState = !isOpen
-    await supabase.from('cafeterias').update({ is_open: newState }).eq('id', cafeteria.id)
+    await supabase.from('cafeterias').update({ is_open: newState, is_closed: !newState }).eq('id', cafeteria.id)
     setIsOpen(newState)
   }
 
@@ -386,15 +402,18 @@ export default function VendorDashboard() {
           clearInterval(alertSoundIntervalRef.current)
           alertSoundIntervalRef.current = null
         }
+        setShowMsg(true)
         setMsg('✅ Order approved! Student notified of prep time.')
         setApprovalModal(null)
         setIsDenying(false)
         setPrepTime('10')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
+        setShowMsg(true)
         setMsg(`Error: ${result.error}`)
       }
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setApproveLoading(false)
@@ -424,15 +443,18 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
+        setShowMsg(true)
         setMsg('❌ Order denied. Student has been notified and refund initiated.')
         setApprovalModal(null)
         setDenialReason('')
         setIsDenying(false)
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
+        setShowMsg(true)
         setMsg(`Error: ${result.error}`)
       }
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setApproveLoading(false)
@@ -450,12 +472,14 @@ export default function VendorDashboard() {
         body: JSON.stringify({ orderId: order.id }),
       })
       const result = await response.json()
+      setShowMsg(true)
       setMsg(response.ok ? '🔔 Payment reminder sent.' : `Error: ${result.error}`)
     } catch (err: any) {
+      setShowMsg(true)
       setMsg(`Error: ${err.message}`)
     } finally {
       setRemindingOrderId(null)
-      setTimeout(() => setMsg(''), 2000)
+      setTimeout(() => { setMsg(''); setShowMsg(false) }, 2000)
     }
   }
 
@@ -472,8 +496,9 @@ export default function VendorDashboard() {
       if (!error && data && data.length > 0) {
         setOrders(prev => prev.filter(o => o.id !== order.id))
       } else {
+        setShowMsg(true)
         setMsg('Could not delete this order. Please try again.')
-        setTimeout(() => setMsg(''), 2000)
+        setTimeout(() => { setMsg(''); setShowMsg(false) }, 2000)
       }
     } finally {
       setDeletingOrderId(null)
@@ -600,18 +625,58 @@ export default function VendorDashboard() {
             ))}
           </motion.div>
 
-          {msg && <div style={{ background: 'var(--green-bg)', border: '1px solid rgba(46,158,107,0.2)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: 'var(--green)', marginBottom: 16 }}>{msg}</div>}
+          {msg && showMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                background: msg.startsWith('✅') ? 'var(--green-bg)' : 'rgba(239, 68, 68, 0.1)',
+                border: msg.startsWith('✅') ? '1px solid rgba(46,158,107,0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: 8,
+                padding: '12px 16px',
+                marginBottom: 16,
+                fontSize: 13,
+                color: msg.startsWith('✅') ? 'var(--green)' : 'var(--red)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <span>{msg}</span>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowMsg(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  padding: '2px 4px',
+                  color: msg.startsWith('✅') ? 'var(--green)' : 'var(--red)',
+                  fontWeight: 700
+                }}
+              >
+                ✓
+              </motion.button>
+            </motion.div>
+          )}
 
           {/* ORDERS */}
           {tab === 'orders' && (() => {
             const activeOrders = orders.filter(o => !['collected', 'cancelled'].includes(o.status))
 
             const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-              pending:   { label: '💳 Payment Pending',   color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
-              paid:      { label: '⏳ Awaiting Approval', color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
-              approved:  { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
-              preparing: { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
-              ready:     { label: '🔔 Ready for Pickup',  color: 'var(--green)', bg: 'var(--green-bg)',   border: 'var(--green)' },
+              pending_payment:  { label: '⏳ Processing Payment', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: '#f59e0b' },
+              payment_pending:  { label: '💳 Payment Pending',    color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
+              pending_approval: { label: '⏳ Awaiting Approval',  color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
+              pending:          { label: '💳 Payment Pending',    color: 'var(--red)', bg: 'var(--red-bg)',      border: 'var(--red)' },
+              paid:             { label: '⏳ Awaiting Approval',  color: '#d4821a', bg: 'rgba(212,130,26,0.08)', border: '#d4821a' },
+              approved:         { label: '✓ Accepted',           color: '#2563eb', bg: 'rgba(37,99,235,0.06)',  border: '#2563eb' },
+              preparing:        { label: '👨‍🍳 Preparing',         color: '#7c5cfc', bg: 'rgba(124,92,252,0.07)', border: '#7c5cfc' },
+              ready:            { label: '🔔 Ready for Pickup',  color: 'var(--green)', bg: 'var(--green-bg)',   border: 'var(--green)' },
             }
 
             if (activeOrders.length === 0) return (
@@ -763,10 +828,20 @@ export default function VendorDashboard() {
 
                         {/* Action buttons */}
                         <div className="order-actions">
-                          {order.status === 'payment_pending' && (
-                            <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--red)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                              {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
-                            </motion.button>
+                          {order.status === 'pending_payment' && (new Date().getTime() - new Date(order.created_at).getTime() < 60000) && (
+                            <div style={{ width: '100%', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '3px solid #f59e0b', borderRadius: 12, padding: '20px 16px', textAlign: 'center', fontSize: 16, fontWeight: 800, color: '#92400e', lineHeight: 1.6 }}>
+                              ⏳ THE USER IS STILL PROCESSING THE PAYMENT<br/>WILL BE NOTIFIED ONCE PAYMENT COMPLETED.
+                            </div>
+                          )}
+                          {order.status === 'payment_pending' && order.payment_status === 'unpaid' && (new Date().getTime() - new Date(order.created_at).getTime() >= 60000) && (
+                            <>
+                              <motion.button {...(remindingOrderId !== order.id ? hoverScale : {})} onClick={() => remindPayment(order)} disabled={remindingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#f59e0b', color: 'white', fontSize: 13, fontWeight: 700, cursor: remindingOrderId === order.id ? 'not-allowed' : 'pointer' }}>
+                                {remindingOrderId === order.id ? '...' : '🔔 Remind to Pay'}
+                              </motion.button>
+                              <motion.button {...(deletingOrderId !== order.id ? hoverScale : {})} onClick={() => deleteOrder(order)} disabled={deletingOrderId === order.id} style={{ flex: 1, padding: '10px 16px', marginLeft: 8, borderRadius: 8, border: 'none', background: '#ef4444', color: 'white', fontSize: 13, fontWeight: 700, cursor: deletingOrderId === order.id ? 'not-allowed' : 'pointer' }}>
+                                {deletingOrderId === order.id ? '...' : '🗑️ Delete'}
+                              </motion.button>
+                            </>
                           )}
                           {order.status === 'pending_approval' && (
                             <>

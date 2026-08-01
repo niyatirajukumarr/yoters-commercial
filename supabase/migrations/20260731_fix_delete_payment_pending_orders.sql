@@ -1,6 +1,5 @@
--- Allow vendors to delete pending payment orders
--- Drop the old policy and create a new one that allows 'collected', 'pending', and 'payment_pending' statuses
-drop policy if exists "Vendor delete collected orders" on orders;
+-- Fix RLS policy to allow deleting payment_pending orders
+-- Updates the vendor delete policy to include 'payment_pending' status
 drop policy if exists "Vendor delete collected and pending orders" on orders;
 
 create policy "Vendor delete collected and pending payment orders" on orders

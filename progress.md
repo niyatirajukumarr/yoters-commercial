@@ -209,3 +209,43 @@ User to decide if automatic daily reset should be implemented:
 1. Database-level cleanup job (delete orders after N days)
 2. Scheduled API endpoint at midnight IST
 3. Keep current system (permanent storage with date filtering)
+
+### 2026-08-01 — Closed Cafe Feature - Toggle Fix & Verification
+**Issue:** Vendor dashboard toggle for closing/opening restaurants was only updating `is_open` field, not `is_closed`. This prevented the closed cafe feature (faded/grayed out styling) from working even when vendors marked restaurants as closed.
+
+**Root Cause:** 
+- `app/vendor/page.tsx` `toggleOpen()` function (line 274-279) was only updating `is_open` to the database
+- The browse/home pages check for `is_closed` field to apply grayscale + brightness filters
+- When `is_closed` stayed `false`, restaurants appeared fully open/colorful despite vendor marking them closed
+
+**Fix Applied:**
+- Updated `toggleOpen()` function to update BOTH fields:
+  ```typescript
+  await supabase.from('cafeterias').update({ 
+    is_open: newState, 
+    is_closed: !newState 
+  }).eq('id', cafeteria.id)
+  ```
+- Now when vendor toggles closed: `is_open = false` AND `is_closed = true` ✅
+- When vendor toggles open: `is_open = true` AND `is_closed = false` ✅
+
+**Testing & Verification:**
+1. Logged into vendor dashboard (LETHAFI restaurant)
+2. Toggled restaurant from "🔴 Closed" → "🟢 Open" → "🔴 Closed"
+3. Navigated to browse page and verified LETHAFI displayed with:
+   - ✅ Grayscale/black & white image (not colorful)
+   - ✅ Reduced brightness/opacity for faded appearance
+   - ✅ "Cafe Closed" button instead of queue stats
+   - ✅ Restaurant card dimmed but still visible (not hidden)
+4. Clicking "Cafe Closed" button shows notification: "The cafe is closed for now, you'll be notified soon!"
+
+**Implementation Details:**
+- Migration `20260801_add_is_closed_column.sql` was already applied to database
+- RLS policies for public read access already in place (`20260801_add_cafeteria_public_read_policy.sql`, `20260801_add_menu_public_read_policy.sql`)
+- CSS filters applied in `app/browse/page.tsx` (line 339-393) and `app/mobile/(tabs)/home/page.tsx` (line 156):
+  - `filter: 'grayscale(100%) brightness(0.7)'` for grayscale effect
+  - `opacity: 0.5` for dimmed appearance
+  - `handleClosedCafeClick` prevents navigation into closed restaurant
+
+**Commit:** `a5b7007` "Fix closed cafe toggle to update is_closed field"
+**Status:** ✅ Tested, verified working, pushed to GitHub

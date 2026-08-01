@@ -371,7 +371,7 @@ export default function CafeteriaPage() {
   const [selectedCategory, setSelectedCategory] = useState('')
   // Whether the non-beverage pills are showing while the group is open.
   const [othersOpen, setOthersOpen] = useState(false)
-  const [vegMode, setVegMode] = useState<'veg' | 'nonveg'>('veg')
+  const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
   const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
   const [priceRange, setPriceRange] = useState<'all' | 'under200' | 'mid' | 'above400'>('all')
@@ -622,7 +622,7 @@ export default function CafeteriaPage() {
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   // Combos show in both veg and non-veg modes (mixed category)
   const visibleItems = menuItems.filter(m =>
-    m.category === 'Combos' || (vegMode === 'veg' ? itemIsVeg(m) : !itemIsVeg(m))
+    m.category === 'Combos' || (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m))
   )
   // Alphabetical so the pill row has a predictable order, rather than
   // whatever order the rows happen to come back from the DB in.
@@ -977,7 +977,6 @@ export default function CafeteriaPage() {
       <motion.div
         key={item.id}
         className="dish-card"
-        style={vegMode === 'nonveg' ? { background: 'transparent' } : undefined}
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={viewportOnce}
@@ -1097,8 +1096,7 @@ export default function CafeteriaPage() {
     <div style={{
       minHeight: '100vh',
       paddingBottom: 80,
-      background: vegMode === 'nonveg' ? 'linear-gradient(160deg, #fff0e8 0%, #ffe9ee 100%)' : undefined,
-      transition: 'background 0.3s ease',
+      background: !showVegFront ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)' : 'transparent',
     }}>
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
@@ -1172,7 +1170,7 @@ export default function CafeteriaPage() {
           `}</style>
 
           {/* Sticky top: header + search + category pills */}
-          <div className="menu-sticky-top" style={vegMode === 'nonveg' ? { background: '#fff0e8' } : undefined}>
+          <div className="menu-sticky-top">
             <div className="menu-header">
               <motion.button {...hoverScale} className="menu-back-btn" onClick={() => { window.location.href = '/browse' }} style={{ border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={22} color='var(--text)' />
@@ -1191,27 +1189,28 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg. Flips between the two faces on tap rather than
-                  on hover — phones have no hover, and the flip is the whole
-                  point of the control. The marks are the same ones the dish
-                  cards carry, so the toggle and the cards read as one system. */}
-              <FlipButton
-                frontText="Veg"
-                backText="Non-veg"
-                frontIcon={<VegMark veg />}
-                backIcon={<VegMark />}
-                from="top"
-                flipped={vegMode === 'nonveg'}
-                onClick={() => setVegMode(vegMode === 'veg' ? 'nonveg' : 'veg')}
-                aria-label={vegMode === 'veg' ? 'Showing veg dishes. Tap for non-veg' : 'Showing non-veg dishes. Tap for veg'}
-                className="h-8 shrink-0 text-[12.5px] font-bold tracking-[-0.1px]"
-                style={{ padding: '0 12px' }}
-                frontClassName="rounded-full border border-[#2e9e6b]/35 bg-[#eef9f3] text-[#217a53]"
-                backClassName="rounded-full border border-[#b8321f]/35 bg-[#fdf0ed] text-[#a32d1c]"
-              />
+              {/* Veg / Non-veg flip card */}
+              <motion.button
+                onClick={() => setShowVegFront(!showVegFront)}
+                style={{ marginLeft: 'auto', perspective: '1000px', position: 'relative', width: '110px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                <motion.div
+                  animate={{ rotateX: showVegFront ? 0 : 180 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+                    Veg
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateX(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
+                    <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '11px solid #fff', flexShrink: 0 }} />
+                    Non-veg
+                  </div>
+                </motion.div>
+              </motion.button>
             </div>
 
             {/* Filter + Search */}
+            {/* FLIP_ANIMATION_V2_DEPLOYED */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
               <motion.button
                 {...hoverScale}
@@ -1327,7 +1326,7 @@ export default function CafeteriaPage() {
                 if (visibleItems.length === 0) {
                   return (
                     <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>
-                      No {vegMode === 'veg' ? 'veg' : 'non-veg'} items available here.
+                      No items available with selected filters.
                     </div>
                   )
                 }
@@ -1336,7 +1335,7 @@ export default function CafeteriaPage() {
                 // the shared image otherwise — several categories carry both,
                 // so a veg-looking banner over a non-veg list would be wrong.
                 const heroSrc =
-                  (vegMode === 'nonveg' ? CATEGORY_IMAGES_NONVEG[selectedCategory] : null)
+                  (!showVegFront ? CATEGORY_IMAGES_NONVEG[selectedCategory] : null)
                   || CATEGORY_IMAGES[selectedCategory]
                   || null
                 // Failures are tracked by URL, not category — one category can

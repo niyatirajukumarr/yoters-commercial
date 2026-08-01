@@ -30,6 +30,7 @@ export default function StudentHome() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
+  const [closedNotification, setClosedNotification] = useState(false)
   const router = useRouter()
 
   // Arriving from the Search tab on a page that has no search box of its own
@@ -48,6 +49,12 @@ export default function StudentHome() {
       else next.add(id)
       return next
     })
+  }
+
+  const handleClosedCafeClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setClosedNotification(true)
+    setTimeout(() => setClosedNotification(false), 3000)
   }
 
   // Check if user is vendor and redirect
@@ -84,8 +91,7 @@ export default function StudentHome() {
       const result = await withTimeout(
         supabase
           .from('cafeterias')
-          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-          .eq('is_open', true)
+          .select('id, name, description, location, image_url, image_emoji, is_open, is_closed, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
           .order('name'),
         8000,
         'Cafeterias fetch timed out'
@@ -135,11 +141,22 @@ export default function StudentHome() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {closedNotification && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          background: '#E8334A', color: 'white', padding: '14px 24px', borderRadius: 8,
+          fontSize: 14, fontWeight: 600, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          animation: 'slideDown 0.3s ease-out'
+        }}>
+          The cafe is closed for now, you'll be notified soon!
+        </div>
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes tilt { 0% { transform: perspective(1000px) rotateX(0) rotateY(0); } 100% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg); } }
         @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+        @keyframes slideDown { 0% { opacity: 0; transform: translateX(-50%) translateY(-10px); } 100% { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
         .browse-hero-wrap { position: relative; padding: 36px 0 24px; overflow: hidden; }
         .floating-food-img {
@@ -319,11 +336,12 @@ export default function StudentHome() {
                         those inside an anchor would turn every click on them
                         into a navigation. Inside the .map, so it holds for any
                         restaurant added later. */}
-                    <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`}>
+                    <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`} style={{ filter: c.is_closed ? 'grayscale(100%) brightness(0.7)' : 'none', opacity: c.is_closed ? 0.5 : 1, transition: 'all 0.2s' }}>
                       <Link
-                        href={`/mobile/order/${generateSlug(c.name)}`}
+                        href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`}
                         aria-label={`Open ${c.name}`}
                         style={{ display: 'block', width: '100%', height: '100%' }}
+                        onClick={c.is_closed ? handleClosedCafeClick : undefined}
                       >
                         <img
                           src={CAFETERIA_LOGOS[c.name] || c.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop'}
@@ -363,13 +381,14 @@ export default function StudentHome() {
                           </div>
                         </div>
                       )}
-                      <Link href={`/mobile/order/${generateSlug(c.name)}`}>
+                      <Link href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`} onClick={c.is_closed ? handleClosedCafeClick : undefined}>
                         <motion.button
                           className="cafe-see-menu-btn"
-                          whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(232,51,74,0.3)' }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={!c.is_closed ? { scale: 1.05, boxShadow: '0 8px 20px rgba(232,51,74,0.3)' } : {}}
+                          whileTap={!c.is_closed ? { scale: 0.97 } : {}}
+                          style={{ opacity: c.is_closed ? 0.5 : 1, cursor: c.is_closed ? 'not-allowed' : 'pointer' }}
                         >
-                          See Full Menu →
+                          {c.is_closed ? 'Cafe Closed' : 'See Full Menu →'}
                         </motion.button>
                       </Link>
                     </div>
