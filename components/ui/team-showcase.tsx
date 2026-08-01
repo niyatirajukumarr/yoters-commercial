@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { FaLinkedinIn } from 'react-icons/fa'
 import { cn } from '@/lib/utils'
 
 export interface TeamMember {
