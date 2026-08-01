@@ -18,6 +18,7 @@ export default function MobileHome() {
   const [cafeterias, setCafeterias] = useState<CafeteriaWithQueue[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [closedNotification, setClosedNotification] = useState(false)
 
   const fetchData = useCallback(async () => {
     // Show cache instantly
@@ -30,8 +31,7 @@ export default function MobileHome() {
       const result = await withTimeout(
         supabase
           .from('cafeterias')
-          .select('id, name, description, location, image_url, image_emoji, is_open, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
-          .eq('is_open', true)
+          .select('id, name, description, location, image_url, image_emoji, is_open, is_closed, queue:cafeteria_queues(cafeteria_id, avg_wait_mins, queue_count)')
           .order('name'),
         8000,
         'Cafeterias fetch timed out'
@@ -73,9 +73,26 @@ export default function MobileHome() {
     return { bg: '#fff0f2', color: '#e8334a' }
   }
 
+  const handleClosedCafeClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setClosedNotification(true)
+    setTimeout(() => setClosedNotification(false), 3000)
+  }
+
   return (
     <div style={{ paddingBottom: 100 }} className="mobile-page-enter">
+      {closedNotification && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          background: '#E8334A', color: 'white', padding: '14px 24px', borderRadius: 8,
+          fontSize: 14, fontWeight: 600, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          animation: 'slideDown 0.3s ease-out'
+        }}>
+          The cafe is closed for now, you'll be notified soon!
+        </div>
+      )}
       <style>{`
+        @keyframes slideDown { 0% { opacity: 0; transform: translateX(-50%) translateY(-10px); } 100% { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .cafe-item { border-radius: 14px; overflow: hidden; border: 1px solid rgba(26,31,46,0.08); margin-bottom: 12px; text-decoration: none; color: inherit; display: block; }
         .cafe-image { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 64px; background: #f5f0eb; }
         .cafe-info { padding: 16px; background: white; }
@@ -135,20 +152,22 @@ export default function MobileHome() {
               const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)
               const slug = generateSlug(cafe.name)
               return (
-                <Link key={cafe.id} href={`/mobile/order/${slug}`} style={{ textDecoration: 'none' }}>
-                  <motion.div className="cafe-item" variants={staggerItem} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}>
+                <Link key={cafe.id} href={cafe.is_closed ? '#' : `/mobile/order/${slug}`} onClick={cafe.is_closed ? handleClosedCafeClick : undefined} style={{ textDecoration: 'none' }}>
+                  <motion.div className="cafe-item" variants={staggerItem} whileHover={!cafe.is_closed ? { y: -3 } : {}} whileTap={!cafe.is_closed ? { scale: 0.98 } : {}} style={{ filter: cafe.is_closed ? 'grayscale(100%)' : 'none', opacity: cafe.is_closed ? 0.6 : 1, transition: 'all 0.2s' }}>
                     <div className="cafe-image">{cafe.image_emoji}</div>
                     <div className="cafe-info">
                       <div className="cafe-name">{cafe.name}</div>
-                      <div className="cafe-location">{cafe.location}</div>
-                      <div className="cafe-queue">
-                        <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
-                          <Clock size={12} /> {cafe.queue?.avg_wait_mins ?? 0} min
+                      <div className="cafe-location">{cafe.is_closed ? '🔒 Cafe Closed' : cafe.location}</div>
+                      {!cafe.is_closed && (
+                        <div className="cafe-queue">
+                          <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
+                            <Clock size={12} /> {cafe.queue?.avg_wait_mins ?? 0} min
+                          </div>
+                          <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
+                            <Users size={12} /> {cafe.queue?.queue_count ?? 0} waiting
+                          </div>
                         </div>
-                        <div className="queue-stat" style={{ background: qColor.bg, color: qColor.color, padding: '4px 8px', borderRadius: 6 }}>
-                          <Users size={12} /> {cafe.queue?.queue_count ?? 0} waiting
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </motion.div>
                 </Link>
