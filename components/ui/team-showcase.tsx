@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FaLinkedinIn } from 'react-icons/fa'
 import { cn } from '@/lib/utils'
 
 export interface TeamMember {
@@ -57,47 +58,48 @@ interface TeamShowcaseProps {
 export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcaseProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const col1 = members.filter((_, i) => i % 3 === 0)
-  const col2 = members.filter((_, i) => i % 3 === 1)
-  const col3 = members.filter((_, i) => i % 3 === 2)
+  // Distribute 4 members as: 1 | 1 | 2 for 3-column magazine layout
+  const col1 = members.slice(0, 1)
+  const col2 = members.slice(1, 2)
+  const col3 = members.slice(2, 4)
 
   return (
-    <div className="flex flex-col md:flex-row items-start gap-8 md:gap-10 lg:gap-14 select-none w-full max-w-5xl mx-auto py-8 px-4 md:px-6 font-sans">
-      {/* ── Left: photo grid ── */}
-      <div className="flex gap-2 md:gap-3 flex-shrink-0 overflow-x-auto pb-1 md:pb-0">
-        {/* Column 1 */}
-        <div className="flex flex-col gap-2 md:gap-3">
+    <div className="flex gap-12 w-full max-w-6xl mx-auto py-12 px-6 select-none">
+      {/* Photo Grid */}
+      <div className="flex gap-4 flex-shrink-0 flex-1">
+        {/* Column 1: 1 photo */}
+        <div className="flex flex-col gap-4">
           {col1.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-[110px] h-[147px] sm:w-[130px] sm:h-[173px] md:w-[155px] md:h-[206px]"
+              className="w-32 h-40"
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
           ))}
         </div>
 
-        {/* Column 2 */}
-        <div className="flex flex-col gap-2 md:gap-3 mt-[48px] sm:mt-[56px] md:mt-[68px]">
+        {/* Column 2: 1 photo */}
+        <div className="flex flex-col gap-4 mt-8">
           {col2.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-[122px] h-[163px] sm:w-[145px] sm:h-[193px] md:w-[172px] md:h-[229px]"
+              className="w-40 h-56"
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
           ))}
         </div>
 
-        {/* Column 3 */}
-        <div className="flex flex-col gap-2 md:gap-3 mt-[22px] sm:mt-[26px] md:mt-[32px]">
+        {/* Column 3: 2 photos stacked */}
+        <div className="flex flex-col gap-4">
           {col3.map((member) => (
             <PhotoCard
               key={member.id}
               member={member}
-              className="w-[115px] h-[153px] sm:w-[136px] sm:h-[181px] md:w-[162px] md:h-[216px]"
+              className="w-36 h-48"
               hoveredId={hoveredId}
               onHover={setHoveredId}
             />
@@ -105,8 +107,8 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         </div>
       </div>
 
-      {/* ── Right: member name list ── */}
-      <div className="flex flex-col sm:grid sm:grid-cols-2 md:flex md:flex-col gap-4 md:gap-5 pt-0 md:pt-2 flex-1 w-full">
+      {/* Names List */}
+      <div className="flex flex-col gap-6 flex-shrink-0">
         {members.map((member) => (
           <MemberRow key={member.id} member={member} hoveredId={hoveredId} onHover={setHoveredId} />
         ))}
@@ -166,57 +168,33 @@ function MemberRow({
 
   return (
     <div
-      className={cn('cursor-pointer transition-opacity duration-300', isDimmed ? 'opacity-50' : 'opacity-100')}
+      className={cn(
+        'cursor-pointer transition-all duration-300 flex items-center gap-3',
+        isDimmed ? 'opacity-50' : 'opacity-100'
+      )}
       onMouseEnter={() => onHover(member.id)}
       onMouseLeave={() => onHover(null)}
     >
-      {/* Name + social */}
-      <div className="flex items-center gap-2.5">
-        <span
-          className={cn(
-            'w-4 h-3 rounded-[5px] flex-shrink-0 transition-all duration-300',
-            isActive ? 'bg-foreground w-5' : 'bg-foreground/25',
-          )}
-        />
-        <span
-          className={cn(
-            'text-base md:text-[18px] font-semibold leading-none tracking-tight transition-colors duration-300',
-            isActive ? 'text-foreground' : 'text-foreground/80',
-          )}
-        >
-          {member.name}
-        </span>
-
-        {/* Social icons */}
-        {hasSocial && (
-          <div
-            className={cn(
-              'flex items-center gap-1.5 ml-0.5 transition-all duration-200',
-              isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none',
-            )}
-          >
-            {member.social?.linkedin && (
-              <a
-                href={member.social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all duration-150 hover:scale-110"
-                title="LinkedIn"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                </svg>
-              </a>
-            )}
-          </div>
+      <div
+        className={cn(
+          'w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300',
+          isActive ? 'bg-white w-4 h-4' : 'bg-white/40'
         )}
+      />
+      <div>
+        <div className={cn(
+          'text-sm font-semibold transition-colors duration-300',
+          isActive ? 'text-white' : 'text-white/90'
+        )}>
+          {member.name}
+        </div>
+        <div className={cn(
+          'text-xs uppercase tracking-widest transition-colors duration-300',
+          isActive ? 'text-white/80' : 'text-white/50'
+        )}>
+          {member.role}
+        </div>
       </div>
-
-      {/* Role */}
-      <p className="mt-1.5 pl-[27px] text-[7px] md:text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        {member.role}
-      </p>
     </div>
   )
 }
