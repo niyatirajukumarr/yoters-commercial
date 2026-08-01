@@ -54,7 +54,7 @@ export default function VendorDashboard() {
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
   const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const fetchOrdersRef = useRef<(cafId: string, notify?: boolean, date?: string) => Promise<void>>()
+  const fetchOrdersRef = useRef<((cafId: string, notify?: boolean, date?: string) => Promise<void>) | null>(null)
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
