@@ -45,9 +45,20 @@ export async function GET(req: NextRequest) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
 
   // Auto-mark pending_payment orders as payment_pending if 60+ seconds old
-  const { error: autoMarkError } = await adminSupabase.rpc('auto_mark_payment_pending')
-  if (autoMarkError) {
-    logger.error('Failed to auto-mark payment pending:', autoMarkError)
+  try {
+    const sixtySecondsAgo = new Date(new Date().getTime() - 60000)
+    const { error: updateError } = await adminSupabase
+      .from('orders')
+      .update({ status: 'payment_pending' })
+      .eq('cafeteria_id', cafId)
+      .eq('status', 'pending_payment')
+      .eq('payment_status', 'unpaid')
+      .lt('created_at', sixtySecondsAgo.toISOString())
+    if (updateError) {
+      logger.error('Failed to auto-mark payment pending:', updateError)
+    }
+  } catch (err) {
+    logger.error('Error in auto-mark payment pending:', err)
   }
 
   const { data, error } = await adminSupabase
