@@ -199,10 +199,11 @@ export default function VendorDashboard() {
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
     if (tab !== 'today' || !cafeteria) return
-    const isToday = selectedDate === new Date().toISOString().split('T')[0]
 
+    // Check cache first
     if (ordersCache[selectedDate]) {
       setOrders(ordersCache[selectedDate])
+      setLoadingDate(false)
     } else {
       setLoadingDate(true)
       fetchOrders(cafeteria.id, false, selectedDate).finally(() => setLoadingDate(false))
@@ -210,7 +211,7 @@ export default function VendorDashboard() {
 
     // Fetch summary for selected date
     fetchSummary(cafeteria.id, selectedDate)
-  }, [selectedDate, tab, cafeteria, ordersCache, fetchOrders, fetchSummary])
+  }, [selectedDate, tab, cafeteria])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
