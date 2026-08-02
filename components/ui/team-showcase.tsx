@@ -60,16 +60,16 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   return (
     <>
       <style>{`
-        .team-container { display: flex; gap: 24px; width: 100%; margin: 0; padding: 32px 16px; flex-wrap: wrap; }
+        .team-container { display: flex; gap: 40px; width: 100%; margin: 0; padding: 32px 16px; flex-wrap: wrap; justify-content: flex-end; }
         @media (min-width: 769px) {
-          .team-container { width: 100vw; margin-left: calc(-50vw + 50%); padding: 48px 8vw; }
+          .team-container { width: 100vw; margin-left: calc(-50vw + 50%); padding: 48px 8vw; gap: 48px; }
         }
         .team-column { display: flex; flex-direction: column; gap: 24px; }
-        .team-column-1 { flex: 0 0 auto; width: 150px; }
-        .team-column-2 { flex: 0 0 auto; width: 150px; margin-top: 145px; }
-        .team-column-3 { flex: 0 0 auto; width: 150px; margin-top: 30px; }
+        .team-column-1 { flex: 0 0 auto; width: 220px; }
+        .team-column-2 { flex: 0 0 auto; width: 220px; margin-top: 200px; }
+        .team-column-3 { flex: 0 0 auto; width: 220px; margin-top: 40px; }
         @media (max-width: 768px) {
-          .team-container { gap: 16px; padding: 24px 12px; }
+          .team-container { gap: 16px; padding: 24px 12px; justify-content: flex-start; }
           .team-column { gap: 16px; }
           .team-column-1 { width: 90px; }
           .team-column-2 { width: 90px; margin-top: 85px !important; }
@@ -77,10 +77,10 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
           .team-name { font-size: 12px; }
           .team-role { font-size: 10px; }
         }
-        .team-card { width: 100% !important; max-width: 200px; aspect-ratio: 3/4; }
+        .team-card { width: 100% !important; max-width: 250px; aspect-ratio: 3/4; }
         .team-photo { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
-        .team-name { font-size: 14px; font-weight: 600; margin-top: 12px; color: #1a1a1a; }
-        .team-role { font-size: 12px; color: #666; margin-top: 4px; }
+        .team-name { font-size: 16px; font-weight: 600; margin-top: 14px; color: #1a1a1a; }
+        .team-role { font-size: 14px; color: #666; margin-top: 6px; }
       `}</style>
 
       <div className="team-container">
