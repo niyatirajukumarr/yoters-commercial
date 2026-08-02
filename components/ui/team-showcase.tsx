@@ -66,9 +66,13 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
         .team-column-2 { flex: 0 0 auto; width: 150px; margin-top: 120px; }
         .team-column-3 { flex: 0 0 auto; width: 150px; margin-top: 30px; }
         @media (max-width: 768px) {
-          .team-column-1 { width: 100px; }
-          .team-column-2 { width: 100px; margin-top: 80px !important; }
-          .team-column-3 { width: 100px; margin-top: 40px !important; }
+          .team-container { gap: 16px; padding: 24px 12px; }
+          .team-column { gap: 16px; }
+          .team-column-1 { width: 90px; }
+          .team-column-2 { width: 90px; margin-top: 70px !important; }
+          .team-column-3 { width: 90px; margin-top: 20px !important; }
+          .team-name { font-size: 12px; }
+          .team-role { font-size: 10px; }
         }
         .team-card { width: 100% !important; max-width: 200px; aspect-ratio: 3/4; }
         .team-photo { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
