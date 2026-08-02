@@ -98,6 +98,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
                   src={member.image}
                   alt={member.name}
                   className="team-photo"
+                  onContextMenu={(e) => e.preventDefault()}
                   style={{
                     filter: hoveredId === member.id
                       ? 'grayscale(0) brightness(1)'
@@ -126,6 +127,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
                   src={member.image}
                   alt={member.name}
                   className="team-photo"
+                  onContextMenu={(e) => e.preventDefault()}
                   style={{
                     filter: hoveredId === member.id
                       ? 'grayscale(0) brightness(1)'
@@ -154,6 +156,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
                   src={member.image}
                   alt={member.name}
                   className="team-photo"
+                  onContextMenu={(e) => e.preventDefault()}
                   style={{
                     filter: hoveredId === member.id
                       ? 'grayscale(0) brightness(1)'
