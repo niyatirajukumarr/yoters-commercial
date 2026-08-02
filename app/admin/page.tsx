@@ -69,11 +69,12 @@ export default function AdminDashboard() {
 
       if (cafsError) throw cafsError
 
-      // Fetch all paid orders
+      // Fetch only completed orders that were paid (revenue only, not cancelled/refunded)
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('cafeteria_id, total_amount, payment_status')
+        .select('cafeteria_id, total_amount, payment_status, status')
         .eq('payment_status', 'paid')
+        .eq('status', 'collected')
 
       if (ordersError) throw ordersError
 
