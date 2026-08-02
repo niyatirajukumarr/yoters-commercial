@@ -200,18 +200,12 @@ export default function VendorDashboard() {
   useEffect(() => {
     if (tab !== 'today' || !cafeteria) return
 
-    // Check cache first
-    if (ordersCache[selectedDate]) {
-      setOrders(ordersCache[selectedDate])
-      setLoadingDate(false)
-    } else {
-      setLoadingDate(true)
-      fetchOrders(cafeteria.id, false, selectedDate).finally(() => setLoadingDate(false))
-    }
-
-    // Fetch summary for selected date
-    fetchSummary(cafeteria.id, selectedDate)
-  }, [selectedDate, tab, cafeteria])
+    setLoadingDate(true)
+    Promise.all([
+      fetchOrders(cafeteria.id, false, selectedDate),
+      fetchSummary(cafeteria.id, selectedDate)
+    ]).finally(() => setLoadingDate(false))
+  }, [selectedDate, tab, cafeteria, fetchOrders, fetchSummary])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
