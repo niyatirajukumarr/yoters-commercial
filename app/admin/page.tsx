@@ -80,11 +80,11 @@ export default function AdminDashboard() {
 
       // Payouts already sent. 'processing' counts as spent — its outcome is
       // unconfirmed, and treating unknown money as unspent is what causes a
-      // vendor to be paid twice. Include 'completed' status as well.
+      // vendor to be paid twice. Include 'completed', 'confirmed', 'processed' statuses.
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('payouts')
         .select('cafeteria_id, amount, status')
-        .in('status', ['processing', 'processed', 'completed'])
+        .in('status', ['processing', 'processed', 'completed', 'confirmed'])
 
       if (payoutsError) throw payoutsError
 
