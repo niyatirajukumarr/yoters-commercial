@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 
 export interface TeamMember {
   id: string
@@ -45,44 +44,44 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 md:px-6 py-12">
-      {/* Photo Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-        {members.map((member) => (
-          <div
-            key={member.id}
-            onMouseEnter={() => setHoveredId(member.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            className="cursor-pointer"
-          >
+    <>
+      <style>{`
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px; width: 100%; max-width: 100%; }
+        @media (max-width: 768px) { .team-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+        .team-card { width: 100% !important; max-width: 200px; aspect-ratio: 3/4; }
+        .team-photo { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
+        .team-name { font-size: 14px; font-weight: 600; margin-top: 12px; }
+        .team-role { font-size: 12px; color: #666; margin-top: 4px; }
+      `}</style>
+
+      <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
+        <div className="team-grid">
+          {members.map((member) => (
             <div
-              className={cn(
-                'overflow-hidden rounded-lg aspect-[3/4] transition-all duration-300',
-                hoveredId === member.id ? 'ring-2 ring-red-500' : ''
-              )}
+              key={member.id}
+              onMouseEnter={() => setHoveredId(member.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              style={{ cursor: 'pointer' }}
             >
-              <img
-                src={member.image}
-                alt={member.name}
-                className="w-full h-full object-cover transition-[filter] duration-500"
-                style={{
-                  filter: hoveredId === member.id
-                    ? 'grayscale(0) brightness(1)'
-                    : 'grayscale(1) brightness(0.75)',
-                }}
-              />
+              <div className="team-card">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="team-photo"
+                  style={{
+                    filter: hoveredId === member.id
+                      ? 'grayscale(0) brightness(1)'
+                      : 'grayscale(1) brightness(0.75)',
+                    transition: 'filter 0.3s ease',
+                  }}
+                />
+              </div>
+              <div className="team-name">{member.name}</div>
+              <div className="team-role">{member.role}</div>
             </div>
-            {/* Name and Role */}
-            <div className={cn(
-              'mt-3 transition-opacity duration-300',
-              hoveredId && hoveredId !== member.id ? 'opacity-50' : 'opacity-100'
-            )}>
-              <h3 className="text-sm md:text-base font-semibold text-gray-900">{member.name}</h3>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">{member.role}</p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
