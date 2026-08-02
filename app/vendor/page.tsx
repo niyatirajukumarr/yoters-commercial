@@ -981,22 +981,30 @@ export default function VendorDashboard() {
             const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
             const todayIST = new Date(new Date().getTime() + IST_OFFSET_MS)
             const todayISTStr = todayIST.toISOString().split('T')[0]
-            const startDate = new Date('2026-07-29')
 
-            let currentDateStr = todayISTStr
+            let [year, month, day] = todayISTStr.split('-').map(Number)
             let daysCount = 0
-            while (currentDateStr >= '2026-07-29') {
+            while (`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` >= '2026-07-29') {
+              const currentDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
               const dayLabel = daysCount === 0 ? 'Today' : daysCount === 1 ? 'Yesterday' : ''
-              const [year, month, day] = currentDateStr.split('-')
-              const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+              const dateObj = new Date(year, month - 1, day)
               const dateLabel = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
               dateOptions.push({
                 value: currentDateStr,
                 label: dayLabel ? `${dayLabel} ${dateLabel}` : dateLabel
               })
-              // Go back one day
-              const prevDate = new Date(Date.parse(currentDateStr) - 24 * 60 * 60 * 1000)
-              currentDateStr = prevDate.toISOString().split('T')[0]
+              // Go back one day using date math
+              day--
+              if (day < 1) {
+                month--
+                if (month < 1) {
+                  year--
+                  month = 12
+                }
+                // Days in month (simplistic, but works for this date range)
+                day = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+                if (month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) day = 29
+              }
               daysCount++
             }
 
