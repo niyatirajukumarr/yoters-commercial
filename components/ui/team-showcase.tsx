@@ -60,9 +60,9 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
   return (
     <>
       <style>{`
-        .team-container { display: flex; gap: 40px; width: 100%; margin: 0; padding: 32px 16px; flex-wrap: wrap; justify-content: flex-end; }
+        .team-container { display: flex; gap: 40px; width: 100%; margin: 0; padding: 32px 16px; flex-wrap: wrap; justify-content: space-between; }
         @media (min-width: 769px) {
-          .team-container { width: 100vw; margin-left: calc(-50vw + 50%); padding: 48px 8vw; gap: 48px; }
+          .team-container { width: 100vw; margin-left: calc(-50vw + 50%); padding: 48px 8vw; gap: 48px; justify-content: space-around; }
         }
         .team-column { display: flex; flex-direction: column; gap: 24px; }
         .team-column-1 { flex: 0 0 auto; width: 220px; }
