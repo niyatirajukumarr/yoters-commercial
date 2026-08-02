@@ -1098,8 +1098,10 @@ export default function VendorDashboard() {
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders ({collected.length > 0 ? collected.length : (s?.completed || 0)})</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                        {collected.length === 0 && (s?.completed || 0) > 0 && loadingDate
-                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>Loading orders...</div>
+                        {collected.length === 0 && (s?.completed || 0) > 0
+                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>
+                              {loadingDate ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
+                            </div>
                           : collected.length === 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders</div>
                           : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
