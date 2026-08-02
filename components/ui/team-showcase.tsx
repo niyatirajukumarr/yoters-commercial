@@ -65,9 +65,9 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
           .team-container { width: 100vw; margin-left: calc(-50vw + 50%); padding: 48px 8vw; gap: 48px; justify-content: space-around; }
         }
         .team-column { display: flex; flex-direction: column; gap: 24px; }
-        .team-column-1 { flex: 0 0 auto; width: 220px; }
-        .team-column-2 { flex: 0 0 auto; width: 220px; margin-top: 200px; }
-        .team-column-3 { flex: 0 0 auto; width: 220px; margin-top: 40px; }
+        .team-column-1 { flex: 0 0 auto; width: 280px; }
+        .team-column-2 { flex: 0 0 auto; width: 280px; margin-top: 200px; }
+        .team-column-3 { flex: 0 0 auto; width: 280px; margin-top: 40px; }
         @media (max-width: 768px) {
           .team-container { gap: 16px; padding: 24px 12px; justify-content: flex-start; }
           .team-column { gap: 16px; }
@@ -77,7 +77,7 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
           .team-name { font-size: 12px; }
           .team-role { font-size: 10px; }
         }
-        .team-card { width: 100% !important; max-width: 250px; aspect-ratio: 3/4; }
+        .team-card { width: 100% !important; max-width: 320px; aspect-ratio: 3/4; }
         .team-photo { width: 100% !important; height: 100% !important; object-fit: cover; border-radius: 8px; }
         .team-name { font-size: 16px; font-weight: 600; margin-top: 14px; color: #1a1a1a; }
         .team-role { font-size: 14px; color: #666; margin-top: 6px; }
