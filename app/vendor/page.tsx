@@ -191,14 +191,21 @@ export default function VendorDashboard() {
     }
 
     channel = supabase.channel('vendor-realtime-' + cafeteria.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrdersRef.current?.(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => {
+        // Only fetch without date param when in orders tab; in today tab, respect selected date
+        if (tab === 'today') {
+          fetchOrdersRef.current?.(cafeteria.id, true, selectedDate)
+        } else {
+          fetchOrdersRef.current?.(cafeteria.id, true)
+        }
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
       .subscribe()
 
     return () => {
       channel?.unsubscribe()
     }
-  }, [cafeteria])
+  }, [cafeteria, tab, selectedDate])
 
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
