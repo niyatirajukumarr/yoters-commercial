@@ -900,12 +900,16 @@ export default function VendorDashboard() {
 
           {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
-            // Filter orders by selected date
+            // Filter orders by selected date (handle IST timezone)
             const isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
             const filterByDate = (order: Order) => {
               if (summaryRange === 'allTime') return true
-              const orderDate = new Date(order.created_at).toISOString().split('T')[0]
-              return orderDate === selectedDate
+              // Convert UTC created_at to IST date for comparison
+              const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+              const createdAtUTC = new Date(order.created_at).getTime()
+              const createdAtIST = new Date(createdAtUTC + IST_OFFSET_MS)
+              const orderDateIST = createdAtIST.toISOString().split('T')[0]
+              return orderDateIST === selectedDate
             }
 
             const collected = orders.filter(o => o.status === 'collected' && filterByDate(o))
