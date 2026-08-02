@@ -960,19 +960,23 @@ export default function VendorDashboard() {
               </div>
             )
 
-            // Generate date options (today + yesterday only)
+            // Generate date options from start date to today
             const dateOptions = []
             const today = new Date()
-            for (let i = 0; i < 2; i++) {
-              const d = new Date(today)
-              d.setDate(d.getDate() - i)
-              const dateStr = d.toISOString().split('T')[0]
-              const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : ''
-              const dateLabel = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            const startDate = new Date(2026, 6, 29) // 29.07.2026
+
+            let currentDate = new Date(today)
+            let daysCount = 0
+            while (currentDate >= startDate) {
+              const dateStr = currentDate.toISOString().split('T')[0]
+              const dayLabel = daysCount === 0 ? 'Today' : daysCount === 1 ? 'Yesterday' : ''
+              const dateLabel = currentDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
               dateOptions.push({
                 value: dateStr,
                 label: dayLabel ? `${dayLabel} ${dateLabel}` : dateLabel
               })
+              currentDate.setDate(currentDate.getDate() - 1)
+              daysCount++
             }
 
             return (
