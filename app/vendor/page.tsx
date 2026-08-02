@@ -1012,7 +1012,24 @@ export default function VendorDashboard() {
               <div style={{ maxWidth: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>
-                    {isAll ? 'All-Time Summary' : `${selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : selectedDate === new Date(new Date().getTime() - 86400000).toISOString().split('T')[0] ? "Yesterday's" : new Date(selectedDate).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} Summary`}
+                    {isAll ? 'All-Time Summary' : (() => {
+                      const todayIST = getISTDateString()
+                      const yesterdayIST = (() => {
+                        const [y, m, d] = todayIST.split('-').map(Number)
+                        let day = d - 1, month = m, year = y
+                        if (day < 1) {
+                          month--
+                          if (month < 1) { year--; month = 12 }
+                          day = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+                          if (month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) day = 29
+                        }
+                        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                      })()
+                      if (selectedDate === todayIST) return "Today's Summary"
+                      if (selectedDate === yesterdayIST) return "Yesterday's Summary"
+                      const [y, m, d] = selectedDate.split('-').map(Number)
+                      return `${new Date(y, m - 1, d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} Summary`
+                    })()}
                   </div>
                   <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                     {!isAll && (
@@ -1067,7 +1084,10 @@ export default function VendorDashboard() {
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
                   {isAll
                     ? `Every order since launch — ${s?.orders ?? 0} in total.`
-                    : `${new Date(selectedDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+                    : (() => {
+                      const [y, m, d] = selectedDate.split('-').map(Number)
+                      return new Date(y, m - 1, d).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                    })()}
                 </div>
 
                 {/* Check if there are any orders for the selected date */}
