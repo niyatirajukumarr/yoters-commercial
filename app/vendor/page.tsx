@@ -983,7 +983,7 @@ export default function VendorDashboard() {
               <div style={{ maxWidth: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>
-                    {isAll ? 'All-Time Summary' : "Today's Summary"}
+                    {isAll ? 'All-Time Summary' : `${selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : selectedDate === new Date(new Date().getTime() - 86400000).toISOString().split('T')[0] ? "Yesterday's" : new Date(selectedDate).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} Summary`}
                   </div>
                   <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                     {!isAll && (
