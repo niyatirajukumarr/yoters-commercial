@@ -62,7 +62,13 @@ export default function VendorDashboard() {
   // figures can't be derived from it.
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  // Initialize to today's date in IST, not browser timezone
+  const getISTDateString = (date: Date = new Date()) => {
+    const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+    const istDate = new Date(date.getTime() + IST_OFFSET_MS)
+    return istDate.toISOString().split('T')[0]
+  }
+  const [selectedDate, setSelectedDate] = useState<string>(getISTDateString())
   const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
   const [loadingDate, setLoadingDate] = useState(false)
 
@@ -970,22 +976,27 @@ export default function VendorDashboard() {
               </div>
             )
 
-            // Generate date options from start date to today
+            // Generate date options from start date to today (in IST)
             const dateOptions = []
-            const today = new Date()
-            const startDate = new Date(2026, 6, 29) // 29.07.2026
+            const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+            const todayIST = new Date(new Date().getTime() + IST_OFFSET_MS)
+            const todayISTStr = todayIST.toISOString().split('T')[0]
+            const startDate = new Date('2026-07-29')
 
-            let currentDate = new Date(today)
+            let currentDateStr = todayISTStr
             let daysCount = 0
-            while (currentDate >= startDate) {
-              const dateStr = currentDate.toISOString().split('T')[0]
+            while (currentDateStr >= '2026-07-29') {
               const dayLabel = daysCount === 0 ? 'Today' : daysCount === 1 ? 'Yesterday' : ''
-              const dateLabel = currentDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              const [year, month, day] = currentDateStr.split('-')
+              const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+              const dateLabel = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
               dateOptions.push({
-                value: dateStr,
+                value: currentDateStr,
                 label: dayLabel ? `${dayLabel} ${dateLabel}` : dateLabel
               })
-              currentDate.setDate(currentDate.getDate() - 1)
+              // Go back one day
+              const prevDate = new Date(Date.parse(currentDateStr) - 24 * 60 * 60 * 1000)
+              currentDateStr = prevDate.toISOString().split('T')[0]
               daysCount++
             }
 
