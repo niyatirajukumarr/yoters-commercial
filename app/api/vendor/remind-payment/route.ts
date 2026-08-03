@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
     // Stamped so the customer's own order card can show "won't be confirmed
     // until paid" without needing a notifications inbox UI.
     await supabase.from('orders').update({ payment_reminder_sent_at: new Date().toISOString() }).eq('id', orderId)
-    await notifyStudentPaymentPending(order.student_phone, orderId, ctx.cafeteria.name)
+    const smsSent = await notifyStudentPaymentPending(order.student_phone, orderId, ctx.cafeteria.name)
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, smsSent, message: smsSent ? 'SMS sent successfully' : 'Notification saved (SMS not sent)' })
   } catch (error: any) {
     logger.error('Remind payment error:', error)
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 })

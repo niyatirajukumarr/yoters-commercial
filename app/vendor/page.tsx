@@ -485,7 +485,11 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       setShowMsg(true)
-      setMsg(response.ok ? '🔔 Payment reminder sent.' : `Error: ${result.error}`)
+      if (response.ok) {
+        setMsg(result.smsSent ? '✅ SMS sent to customer!' : '✅ Reminder queued (SMS pending)')
+      } else {
+        setMsg(`Error: ${result.error}`)
+      }
     } catch (err: any) {
       setShowMsg(true)
       setMsg(`Error: ${err.message}`)
