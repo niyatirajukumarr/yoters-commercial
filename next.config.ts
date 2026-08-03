@@ -59,8 +59,8 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
+  webpack: (config) => {
+    return config
   },
   images: {
     remotePatterns,
