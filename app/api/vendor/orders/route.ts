@@ -61,17 +61,32 @@ export async function GET(req: NextRequest) {
     logger.error('Error in auto-mark payment pending:', err)
   }
 
+  // Fetch orders from the requested date + include active orders from the previous day
+  // This ensures preparing orders from yesterday don't disappear after midnight
+  const prevDayStart = new Date(dayStart.getTime() - 24 * 60 * 60 * 1000)
+
   const { data, error } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('cafeteria_id', cafId)
-    .gte('created_at', dayStart.toISOString())
+    .gte('created_at', prevDayStart.toISOString())
     .lt('created_at', dayEnd.toISOString())
     .order('created_at', { ascending: false })
+
+  // Filter to include: all today's orders + active orders from yesterday
+  let filteredData = data ?? []
+  if (filteredData.length > 0) {
+    filteredData = filteredData.filter(order => {
+      const createdTime = new Date(order.created_at).getTime()
+      const isFromToday = createdTime >= dayStart.getTime()
+      const isActiveFromYesterday = createdTime < dayStart.getTime() && !['collected', 'cancelled'].includes(order.status)
+      return isFromToday || isActiveFromYesterday
+    })
+  }
 
   if (error) {
     logger.error('Vendor orders query failed:', error)
     return NextResponse.json({ error: 'Failed to load orders.' }, { status: 500 })
   }
-  return NextResponse.json({ orders: data })
+  return NextResponse.json({ orders: filteredData })
 }
