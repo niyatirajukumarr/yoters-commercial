@@ -118,13 +118,13 @@ export default function AdminDashboard() {
         }
       })
 
-      // Pending is what came in minus what has gone out. total_paid used to be
-      // hardcoded to 0, so this line always returned the full received amount —
-      // the page could never tell you a vendor had already been paid.
+      // Pending is what came in minus what has gone out, minus the initial ₹1000 already paid.
+      // Formula: pending = (received - 1000) - additional_payouts
+      const INITIAL_PAID = 1000
       Object.keys(cafePayouts).forEach(cafeId => {
         cafePayouts[cafeId].pending_payout = Math.max(
           0,
-          Math.round((cafePayouts[cafeId].total_received - cafePayouts[cafeId].total_paid) * 100) / 100
+          Math.round((cafePayouts[cafeId].total_received - INITIAL_PAID - cafePayouts[cafeId].total_paid) * 100) / 100
         )
       })
 
