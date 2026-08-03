@@ -213,6 +213,19 @@ export default function VendorDashboard() {
     }
   }, [cafeteria, tab, selectedDate])
 
+  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working
+  useEffect(() => {
+    if (!cafeteria) return
+    const interval = setInterval(() => {
+      if (tab === 'today') {
+        fetchOrdersRef.current?.(cafeteria.id, false, selectedDate)
+      } else {
+        fetchOrdersRef.current?.(cafeteria.id, false)
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [cafeteria, tab, selectedDate])
+
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
     if (tab !== 'today' || !cafeteria) return
