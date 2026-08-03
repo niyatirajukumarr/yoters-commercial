@@ -752,6 +752,7 @@ export default function VendorDashboard() {
                             <div>
                               <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{order.student_name}</div>
                               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>📱 {order.student_phone}</div>
+                              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3 }}>🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                             </div>
                           </div>
                           <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
@@ -810,13 +811,27 @@ export default function VendorDashboard() {
                           </div>
                         )}
                         {order.order_type === 'takeaway' && (
-                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
-                            🥡 TAKEAWAY ORDER
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 10px', marginBottom: 8 }}>
+                              🥡 TAKEAWAY ORDER
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <a href={`tel:${order.student_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#059669', background: '#d1fae5', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                📞 Call {order.student_name}
+                              </a>
+                            </div>
                           </div>
                         )}
                         {order.order_type === 'dine_in' && (
-                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
-                            🍽️ DINE-IN ORDER
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 10px', marginBottom: 8 }}>
+                              🍽️ DINE-IN ORDER
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <a href={`tel:${order.student_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#059669', background: '#d1fae5', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                📞 Call {order.student_name}
+                              </a>
+                            </div>
                           </div>
                         )}
 
