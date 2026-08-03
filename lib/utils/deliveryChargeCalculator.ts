@@ -3,18 +3,24 @@
  *
  * Pricing:
  * - 0.5-1 km: ₹10
- * - 1-2 km: ₹15 (₹10 + ₹5)
- * - 2-3 km: ₹20 (₹10 + ₹5×2)
- * - 3-4 km: ₹25 (₹10 + ₹5×3)
- * - And so on: ₹5 per additional km
+ * - 1-2 km: ₹20
+ * - 2-3 km: ₹30
+ * - 3-4 km: ₹40
+ * - 4-5 km: ₹50
+ * - Beyond 5 km: No delivery
  */
 export function getDeliveryCharge(distanceKm: number): { charge: number; message?: string } {
   if (distanceKm <= 0) {
     return { charge: 0 }
   }
 
-  // Base ₹10 for first 1km, then ₹5 for each additional km
-  const charge = 10 + (Math.ceil(distanceKm) - 1) * 5
+  // No delivery beyond 5km
+  if (distanceKm > 5) {
+    return { charge: 0, message: 'Delivery not available beyond 5 km' }
+  }
+
+  // ₹10 per km (rounded up)
+  const charge = Math.ceil(distanceKm) * 10
 
   return { charge }
 }

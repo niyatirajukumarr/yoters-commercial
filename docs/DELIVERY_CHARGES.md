@@ -4,20 +4,20 @@
 This feature adds **progressive distance-based delivery charges** for orders placed with "Home Delivery" option. Users see real-time delivery cost based on location distance from the cafeteria.
 
 ## Pricing Model
-**Progressive: ₹10 base + ₹5 per additional km**
+**Progressive: ₹10 per km (rounded up)**
 
-| Distance Range | Calculation | Charge |
-|---|---|---|
-| 0.5 - 1.0 km | ₹10 | ₹10 |
-| 1.0 - 2.0 km | ₹10 + ₹5 | ₹15 |
-| 2.0 - 3.0 km | ₹10 + ₹10 | ₹20 |
-| 3.0 - 4.0 km | ₹10 + ₹15 | ₹25 |
-| 4.0 - 5.0 km | ₹10 + ₹20 | ₹30 |
-| *n* km | ₹10 + ((*n*-1) × ₹5) | *calculated* |
+| Distance Range | Charge |
+|---|---|
+| 0.5 - 1.0 km | ₹10 |
+| 1.0 - 2.0 km | ₹20 |
+| 2.0 - 3.0 km | ₹30 |
+| 3.0 - 4.0 km | ₹40 |
+| 4.0 - 5.0 km | ₹50 |
+| Beyond 5.0 km | Not serviceable |
 
-**Formula:** `charge = 10 + (ceil(distance) - 1) × 5`
+**Formula:** `charge = ceil(distance) × 10` (max 5 km)
 
-No distance limit — unlimited delivery range with progressive pricing.
+Delivery available up to 5 km only.
 
 ## Implementation Details
 
@@ -68,7 +68,7 @@ No distance limit — unlimited delivery range with progressive pricing.
    ↓
 4. System calculates distance from cafeteria to location
    ↓
-5. Delivery charge calculated: ₹10 + (ceil(distance) - 1) × ₹5
+5. Delivery charge calculated: ceil(distance) × ₹10 (max 5 km)
    ↓
 6. Order total updated: Items + Delivery Charge
    ↓
@@ -153,8 +153,9 @@ Orders with delivery now store:
 - [ ] **Delivery Feature**
   - [ ] Select "Home Delivery" order type
   - [ ] Pick location 0.5-1 km away → ₹10 shown ✓
-  - [ ] Pick location 1-2 km away → ₹15 shown ✓
-  - [ ] Pick location 2-3 km away → ₹20 shown ✓
+  - [ ] Pick location 1-2 km away → ₹20 shown ✓
+  - [ ] Pick location 2-3 km away → ₹30 shown ✓
+  - [ ] Pick location 5+ km away → "Not serviceable" error ✓
   - [ ] Distance & charge visible in order type modal
   - [ ] Distance & charge visible in cart sheet
   - [ ] Distance & charge breakdown visible in order details
@@ -195,7 +196,8 @@ This prevents client tampering with delivery charges (same as validating order `
 - ✓ Ensure delivery location (coordinates) was picked on map, not typed
 
 **Issue:** Wrong charge amount
-- ✓ Verify formula: `10 + (ceil(distance) - 1) × 5`
+- ✓ Verify formula: `ceil(distance) × 10` (₹10 per km)
+- ✓ Check max 5 km limit
 - ✓ Check distance calculation (use [online Haversine calculator](https://www.movable-type.co.uk/scripts/latlong.html) to verify)
 
 **Issue:** Delivery charge not in order
