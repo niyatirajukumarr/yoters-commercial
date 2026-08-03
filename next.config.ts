@@ -59,9 +59,6 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
-    return config
-  },
   images: {
     remotePatterns,
   },
