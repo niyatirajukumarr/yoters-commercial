@@ -40,10 +40,11 @@ export async function POST(req: NextRequest) {
       .eq('cafeteria_id', order.cafeteria_id)
 
     if (error) {
-      logger.error('Approve order failed:', error)
-      return NextResponse.json({ error: 'Failed to approve order.' }, { status: 500 })
+      logger.error('Approve order failed:', error.message, error.code)
+      return NextResponse.json({ error: `Failed to approve order: ${error.message}` }, { status: 500 })
     }
 
+    logger.debug('Order approved:', orderId)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     logger.error('Approve order error:', error)
