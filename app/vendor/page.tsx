@@ -997,8 +997,8 @@ export default function VendorDashboard() {
               return orderDateIST === selectedDate
             }
 
-            const collected = orders.filter(o => o.status === 'collected' && filterByDate(o))
-            const cancelled = orders.filter(o => o.status === 'cancelled' && filterByDate(o))
+            const collected = orders.filter(o => o.status === 'collected')
+            const cancelled = orders.filter(o => o.status === 'cancelled')
             const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status) && filterByDate(o))
 
             // Server figures once they land; until then fall back to today's
