@@ -49,6 +49,7 @@ env.download
 
 # Security & internal documentation (local development only)
 SECURITY_*.md
+DATA_PRIVACY_AUDIT.md
 progress.md
 SETUP_PAYOUTS.md
 TRANSFER.md
