@@ -50,6 +50,7 @@ export default function VendorDashboard() {
   const [togglingDelivery, setTogglingDelivery] = useState(false)
   const [isDenying, setIsDenying] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
+  const [deliveryTime, setDeliveryTime] = useState('5')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
   const [timerSeconds, setTimerSeconds] = useState<Record<string, number>>({})
@@ -430,10 +431,22 @@ export default function VendorDashboard() {
       setMsg('Please enter preparation time')
       return
     }
+    if (order.order_type === 'delivery' && !deliveryTime) {
+      setMsg('Please enter delivery time')
+      return
+    }
     setApproveLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) return
+
+      const body: any = {
+        orderId: order.id,
+        prepTimeMinutes: parseInt(prepTime),
+      }
+      if (order.order_type === 'delivery') {
+        body.deliveryTimeMinutes = parseInt(deliveryTime)
+      }
 
       const response = await fetch('/api/vendor/approve-order', {
         method: 'POST',
@@ -441,10 +454,7 @@ export default function VendorDashboard() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          orderId: order.id,
-          prepTimeMinutes: parseInt(prepTime),
-        }),
+        body: JSON.stringify(body),
       })
       const result = await response.json()
       if (response.ok) {
@@ -454,10 +464,14 @@ export default function VendorDashboard() {
           alertSoundIntervalRef.current = null
         }
         setShowMsg(true)
-        setMsg('✅ Order approved! Student notified of prep time.')
+        const msg = order.order_type === 'delivery'
+          ? `✅ Order approved! Prep: ${prepTime}m, Delivery: ${deliveryTime}m`
+          : '✅ Order approved! Student notified of prep time.'
+        setMsg(msg)
         setApprovalModal(null)
         setIsDenying(false)
         setPrepTime('10')
+        setDeliveryTime('5')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
         setShowMsg(true)
@@ -1533,6 +1547,34 @@ export default function VendorDashboard() {
               />
               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Student will see: "Ready in ~{prepTime} minutes"</div>
             </div>
+
+            {/* Delivery Time Section - Only for delivery orders */}
+            {approvalModal.order_type === 'delivery' && (
+              <div style={{ marginBottom: 18, padding: 14, background: '#fbbf2415', borderRadius: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8, display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>🛵 Delivery Time (minutes) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={deliveryTime}
+                  onChange={e => setDeliveryTime(e.target.value)}
+                  placeholder="e.g., 5 for nearby, 15 for far"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: '1px solid #fbbf24',
+                    borderRadius: 8,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                  ⏰ Total ETA: ~{parseInt(prepTime) + parseInt(deliveryTime)} minutes (Prep {prepTime}m + Delivery {deliveryTime}m)
+                </div>
+              </div>
+            )}
 
             {/* Decision Section */}
             <div>
