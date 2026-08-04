@@ -1502,18 +1502,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{
-                    (() => {
-                      let cartTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-                      Object.entries(selectedExtras).forEach(([name, quantity]) => {
-                        if (quantity > 0) {
-                          const extra = EXTRAS.find(e => e.name === name)
-                          if (extra) cartTotal += extra.price * quantity
-                        }
-                      })
-                      return cartTotal
-                    })()
-                  }</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
