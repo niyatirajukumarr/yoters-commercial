@@ -64,6 +64,7 @@ export interface Order {
   ready_at?: string
   collected_at?: string
   prep_time_minutes?: number
+  delivery_time_minutes?: number
   order_type?: 'dine_in' | 'takeaway' | 'delivery'
   delivery_address?: string | null
   delivery_latitude?: number | null
