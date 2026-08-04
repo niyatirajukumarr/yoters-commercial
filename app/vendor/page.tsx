@@ -578,7 +578,8 @@ export default function VendorDashboard() {
   const pendingCount = orders.filter(o => o.status === 'pending_approval').length
   const preparingCount = orders.filter(o => o.status === 'preparing').length
   const readyCount = orders.filter(o => o.status === 'ready').length
-  const todayRevenue = orders.filter(o => o.status === 'collected').reduce((s, o) => s + o.total_amount, 0)
+  // Use summary revenue for accurate real-time totals (orders array excludes collected/cancelled)
+  const todayRevenue = summary?.today?.revenue ?? 0
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
