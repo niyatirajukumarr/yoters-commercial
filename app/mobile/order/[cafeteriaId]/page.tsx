@@ -45,6 +45,7 @@ interface Cafeteria {
   location: string
   latitude?: number
   longitude?: number
+  delivery_available?: boolean
 }
 
 interface Order {
@@ -1914,17 +1915,40 @@ export default function CafeteriaPage() {
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: PARCEL_CHARGE, emoji: '🥡' },
                 { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: PARCEL_CHARGE, emoji: '🛵' },
-              ].map(opt => (
-                <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'; setOrderType(t); if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') } }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left' }}>
-                  <span style={{ fontSize: 32 }}>{opt.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}{opt.charge > 0 ? ` • +₹${opt.charge}` : ''}</div>
-                  </div>
-                  {orderType === opt.key && <span style={{ color: 'var(--accent)', fontSize: 18 }}>✓</span>}
-                </motion.button>
-              ))}
+              ].map(opt => {
+                const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
+                return (
+                  <motion.button
+                    key={opt.key}
+                    whileHover={!isDeliveryUnavailable ? { scale: 1.01 } : {}}
+                    whileTap={!isDeliveryUnavailable ? { scale: 0.98 } : {}}
+                    onClick={() => {
+                      if (isDeliveryUnavailable) return
+                      const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'
+                      setOrderType(t)
+                      if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      padding: '16px 18px',
+                      border: `2px solid ${isDeliveryUnavailable ? '#ddd' : orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: 14,
+                      background: isDeliveryUnavailable ? '#f9f9f9' : orderType === opt.key ? 'var(--accent-light)' : 'white',
+                      cursor: isDeliveryUnavailable ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                      opacity: isDeliveryUnavailable ? 0.5 : 1,
+                    }}>
+                    <span style={{ fontSize: 32 }}>{opt.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: isDeliveryUnavailable ? '#ccc' : orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{isDeliveryUnavailable ? 'Not available now' : `${opt.desc}${opt.charge > 0 ? ` • +₹${opt.charge}` : ''}`}</div>
+                    </div>
+                    {orderType === opt.key && !isDeliveryUnavailable && <span style={{ color: 'var(--accent)', fontSize: 18 }}>✓</span>}
+                  </motion.button>
+                )
+              })}
             </div>
             {orderType === 'delivery' && (
               <div style={{ marginTop: 16 }}>

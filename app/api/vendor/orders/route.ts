@@ -61,13 +61,25 @@ export async function GET(req: NextRequest) {
     logger.error('Error in auto-mark payment pending:', err)
   }
 
-  const { data, error } = await adminSupabase
+  // Orders tab: show only ACTIVE orders (exclude collected/cancelled) regardless of date
+  // Today tab (Revenue): show only orders from the selected date (including completed)
+  let query = adminSupabase
     .from('orders')
     .select('*')
     .eq('cafeteria_id', cafId)
-    .gte('created_at', dayStart.toISOString())
-    .lt('created_at', dayEnd.toISOString())
-    .order('created_at', { ascending: false })
+
+  if (dateParam) {
+    // For "today/revenue" tab: filter by specific date only (12 AM to 11:59 PM IST)
+    query = query
+      .gte('created_at', dayStart.toISOString())
+      .lt('created_at', dayEnd.toISOString())
+  } else {
+    // For "orders" tab: exclude collected and cancelled orders
+    query = query
+      .not('status', 'in', '(collected,cancelled)')
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     logger.error('Vendor orders query failed:', error)
