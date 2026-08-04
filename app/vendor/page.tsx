@@ -92,7 +92,6 @@ export default function VendorDashboard() {
       if (!res.ok) return
       setSummary(await res.json())
     } catch (error) {
-      console.error('Vendor summary fetch error:', error)
     }
   }, [])
 
@@ -111,12 +110,10 @@ export default function VendorDashboard() {
         'Orders fetch timed out'
       )
       if (!res.ok) {
-        console.error('Orders fetch failed:', res.status, res.statusText)
         return
       }
       const json = await res.json()
       const data = json.orders
-      console.log('Fetched orders for date', date, ':', data?.length || 0, 'orders')
       if (data) {
         if (notify && data.length > prevOrderCount[0].count) {
           const newest = data[data.length - 1]
@@ -132,7 +129,6 @@ export default function VendorDashboard() {
             try {
               const audio = new Audio('/sound beat.mp3')
               audio.volume = 1.0
-              audio.play().catch(err => console.log('Audio play error:', err))
             } catch {}
           }
 
@@ -149,7 +145,6 @@ export default function VendorDashboard() {
         }
       }
     } catch (error) {
-      console.error('Vendor orders fetch error:', error)
     }
   }, [])
 
@@ -178,7 +173,6 @@ export default function VendorDashboard() {
         ) as any
         if (menu) setMenuItems(menu)
       } catch (error) {
-        console.error('Vendor dashboard init error:', error)
       } finally {
         setLoading(false)
       }
@@ -322,7 +316,6 @@ export default function VendorDashboard() {
         setTimeout(() => setMsg(''), 2000)
       }
     } catch (err) {
-      console.error('Toggle delivery error:', err)
       setMsg('❌ Failed to toggle delivery')
       setTimeout(() => setMsg(''), 2000)
     } finally {

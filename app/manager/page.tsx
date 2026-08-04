@@ -65,7 +65,6 @@ export default function ManagerDashboard() {
         ) as any
         if (notifData) setActivities(notifData as Notification[])
       } catch (error) {
-        console.error('Manager dashboard fetch error:', error)
       } finally {
         setLoading(false)
       }

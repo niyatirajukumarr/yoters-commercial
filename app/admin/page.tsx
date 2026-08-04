@@ -51,7 +51,6 @@ export default function AdminDashboard() {
         setIsAuthorized(true)
         await fetchAllPayoutData()
       } catch (error) {
-        console.error('Auth check error:', error)
         setLoading(false)
       }
     }
@@ -132,7 +131,6 @@ export default function AdminDashboard() {
       setTotalReceived(grandTotal)
       setLoading(false)
     } catch (error) {
-      console.error('Fetch payout data error:', error)
       setLoading(false)
     }
   }

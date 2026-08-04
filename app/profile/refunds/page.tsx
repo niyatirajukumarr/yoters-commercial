@@ -53,7 +53,6 @@ export default function Refunds() {
           })))
         }
       } catch (error) {
-        console.error('Refunds fetch error:', error)
       } finally {
         setLoading(false)
       }

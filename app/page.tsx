@@ -21,7 +21,6 @@ export default function LandingPage() {
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (isChecking) {
-        console.warn('Page load timeout - forcing render')
         setIsChecking(false)
       }
     }, 15000)
@@ -84,7 +83,6 @@ export default function LandingPage() {
           if (isMounted) setIsChecking(false)
         }
       } catch (error) {
-        console.error('Auth check error:', error)
         if (isMounted) setIsChecking(false)
       }
     }
@@ -102,7 +100,6 @@ export default function LandingPage() {
 
         if (isMounted) {
           if (result.error) {
-            console.error('Cafeterias fetch error:', result.error)
             setRestaurants([])
           } else if (result.data) {
             const cafeList = result.data.map((cafe: any) => {
@@ -124,7 +121,6 @@ export default function LandingPage() {
           }
         }
       } catch (error) {
-        console.error('Cafeterias fetch error:', error)
         if (isMounted) setRestaurants([])
       }
     }
@@ -160,7 +156,6 @@ export default function LandingPage() {
         const playPromise = video.play()
         if (playPromise !== undefined) {
           playPromise.catch((error) => {
-            console.log('Video autoplay prevented:', error.name)
             // If autoplay fails, try again on first user interaction
             const playOnInteraction = () => {
               video.play().catch(() => {})

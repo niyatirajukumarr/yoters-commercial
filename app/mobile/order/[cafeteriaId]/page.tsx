@@ -534,7 +534,7 @@ export default function CafeteriaPage() {
         ) as any
         if (data) setCafeOrders(data as Order[])
       } catch (error) {
-        console.error('Cafe orders fetch error:', error)
+        // Error fetching orders - will retry
       } finally {
         setLoadingCafeOrders(false)
       }
@@ -544,7 +544,7 @@ export default function CafeteriaPage() {
     // Real-time subscription for cafe orders
     const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user?.phone}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, (payload) => {
-        console.log('Cafe order change detected:', payload)
+        // Order change detected - refetching
         fetch() // Refetch orders on any change
       })
       .subscribe()
@@ -566,7 +566,7 @@ export default function CafeteriaPage() {
           setPopularity({ byName: data.byName || {}, byId: data.byId || {}, max: data.max || 0 })
         }
       } catch (e) {
-        console.error('Popularity fetch error:', e)
+        // Popularity fetch failed - using defaults
       }
     }
     load()
@@ -624,7 +624,7 @@ export default function CafeteriaPage() {
       setDeliveryCharge(chargeInfo.charge)
       setDeliveryChargeError(chargeInfo.message || null)
     } catch (err) {
-      console.error('Error calculating delivery charge:', err)
+      // Error calculating delivery charge - using default
       setDeliveryChargeError('Error calculating delivery charge')
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
@@ -810,14 +810,14 @@ export default function CafeteriaPage() {
       const { data, error } = await Promise.race([orderPromise, timeoutPromise]) as any
 
       if (error) {
-        console.error('Order creation error:', error)
+        // Order creation failed - error handled
         alert('Failed to create order: ' + (error.message || 'Unknown error'))
         setIsPlacingOrder(false)
         return
       }
 
       if (data) {
-        console.log('Order created successfully:', data.id)
+        // Order created successfully
         setOrderId(data.id)
         updateUser({ name: formData.name, phone: formData.phone, email: formData.email })
         setIsPlacingOrder(false)
@@ -827,7 +827,7 @@ export default function CafeteriaPage() {
         setIsPlacingOrder(false)
       }
     } catch (error) {
-      console.error('Order creation failed:', error)
+      // Order creation failed
       alert('Error: ' + (error instanceof Error ? error.message : 'Failed to create order'))
       setIsPlacingOrder(false)
     }
@@ -852,7 +852,7 @@ export default function CafeteriaPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        console.error('Delete error:', data.error)
+        // Delete failed - error handled
         alert('Failed to delete order: ' + data.error)
       } else {
         // Server confirmed deletion — update UI
@@ -860,7 +860,7 @@ export default function CafeteriaPage() {
         alert('Order deleted successfully')
       }
     } catch (error) {
-      console.error('Delete failed:', error)
+      // Delete failed
       alert('Failed to delete order: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }

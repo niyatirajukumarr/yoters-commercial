@@ -50,7 +50,6 @@ export default function MobileOrders() {
           sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
         }
       } catch (error) {
-        console.error('Cafeterias fetch error:', error)
       }
     }
     fetch()
@@ -85,7 +84,6 @@ export default function MobileOrders() {
           sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
         }
       } catch (error) {
-        console.error('Orders fetch error:', error)
       } finally {
         setLoading(false)
       }

@@ -30,7 +30,6 @@ export default function SplashPage() {
 
         router.push(cafeteria ? '/vendor' : '/?splash=true')
       } catch (error) {
-        console.error('Splash redirect error:', error)
         router.push('/?splash=true')
       }
     }, 3500)

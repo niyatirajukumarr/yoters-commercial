@@ -71,7 +71,6 @@ export default function OrderTrackingPage() {
             })
           .subscribe()
       } catch (error) {
-        console.error('Order tracking fetch error:', error)
       } finally {
         setLoading(false)
       }
