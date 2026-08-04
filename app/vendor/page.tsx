@@ -46,6 +46,8 @@ export default function VendorDashboard() {
   const [approvalModal, setApprovalModal] = useState<Order | null>(null)
   const [denialReason, setDenialReason] = useState('')
   const [approveLoading, setApproveLoading] = useState(false)
+  const [deliveryAvailable, setDeliveryAvailable] = useState(true)
+  const [togglingDelivery, setTogglingDelivery] = useState(false)
   const [isDenying, setIsDenying] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
@@ -167,7 +169,7 @@ export default function VendorDashboard() {
           'Cafeteria fetch timed out'
         ) as any
         if (!caf) { router.push('/vendor/login'); return }
-        setCafeteria(caf); setIsOpen(caf.is_open); fetchOrders(caf.id)
+        setCafeteria(caf); setIsOpen(caf.is_open); setDeliveryAvailable(caf.delivery_available ?? true); fetchOrders(caf.id)
         const { data: menu } = await withTimeout(
           supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', caf.id).order('category'),
           8000,
@@ -301,6 +303,30 @@ export default function VendorDashboard() {
     const newState = !isOpen
     await supabase.from('cafeterias').update({ is_open: newState, is_closed: !newState }).eq('id', cafeteria.id)
     setIsOpen(newState)
+  }
+
+  async function toggleDelivery() {
+    if (!cafeteria) return
+    setTogglingDelivery(true)
+    try {
+      const newState = !deliveryAvailable
+      const res = await fetch('/api/admin/toggle-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cafeteriaId: cafeteria.id, delivery_available: newState }),
+      })
+      if (res.ok) {
+        setDeliveryAvailable(newState)
+        setMsg(`✅ Delivery ${newState ? 'enabled' : 'disabled'}`)
+        setTimeout(() => setMsg(''), 2000)
+      }
+    } catch (err) {
+      console.error('Toggle delivery error:', err)
+      setMsg('❌ Failed to toggle delivery')
+      setTimeout(() => setMsg(''), 2000)
+    } finally {
+      setTogglingDelivery(false)
+    }
   }
 
   async function updateWait() {
@@ -1408,6 +1434,10 @@ export default function VendorDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                   <div><div style={{ fontWeight: 600 }}>Restaurant Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Toggle open or close</div></div>
                   <motion.button {...hoverScale} onClick={toggleOpen} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: isOpen ? 'var(--green)' : 'var(--red)', color: 'white' }}>{isOpen ? 'Open' : 'Closed'}</motion.button>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+                  <div><div style={{ fontWeight: 600 }}>Delivery Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Enable or disable delivery</div></div>
+                  <motion.button {...(togglingDelivery ? {} : hoverScale)} onClick={toggleDelivery} disabled={togglingDelivery} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: togglingDelivery ? 'not-allowed' : 'pointer', background: deliveryAvailable ? 'var(--green)' : '#ccc', color: 'white', opacity: togglingDelivery ? 0.6 : 1 }}>{togglingDelivery ? '⏳' : deliveryAvailable ? '🛵' : '❌'} {deliveryAvailable ? 'Available' : 'Unavailable'}</motion.button>
                 </div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Email</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.vendor_email}</div></div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Location</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.location}</div></div>
