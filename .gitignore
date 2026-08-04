@@ -46,3 +46,9 @@ next-env.d.ts
 
 # committed env dump (removed) — never re-add
 env.download
+
+# Security & internal documentation (local development only)
+SECURITY_*.md
+progress.md
+SETUP_PAYOUTS.md
+TRANSFER.md
