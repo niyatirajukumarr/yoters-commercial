@@ -672,7 +672,7 @@ export default function VendorDashboard() {
         <div className="v-sidebar">
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3, color: 'var(--text)' }}>{cafeteria?.image_emoji} {cafeteria?.name}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{cafeteria?.location}</div>
-          {([['orders', '📋 Orders'], ['queue', '👥 Queue'], ['today', '📊 Today'], ['menu', '🍱 Menu'], ['settings', '⚙️ Settings']] as [Tab, string][]).map(([t, label]) => (
+          {([['orders', '📋 Orders'], ['queue', '👥 Queue'], ['today', '💰 Revenue'], ['menu', '🍱 Menu'], ['settings', '⚙️ Settings']] as [Tab, string][]).map(([t, label]) => (
             <motion.button key={t} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} onClick={() => setTab(t)} className="v-tab-btn" style={{ background: tab === t ? 'var(--accent-light)' : 'transparent', color: tab === t ? 'var(--text)' : 'var(--text2)', fontWeight: tab === t ? 600 : 400, borderLeft: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}` }}>{label}</motion.button>
           ))}
         </div>
@@ -1689,7 +1689,7 @@ export default function VendorDashboard() {
 
       {/* MOBILE BOTTOM NAV */}
       <div className="v-bottom-nav">
-        {([['orders', '📋', 'Orders'], ['queue', '👥', 'Queue'], ['today', '📊', 'Today'], ['menu', '🍱', 'Menu'], ['settings', '⚙️', 'Settings']] as [Tab, string, string][]).map(([t, icon, label]) => (
+        {([['orders', '📋', 'Orders'], ['queue', '👥', 'Queue'], ['today', '💰', 'Revenue'], ['menu', '🍱', 'Menu'], ['settings', '⚙️', 'Settings']] as [Tab, string, string][]).map(([t, icon, label]) => (
           <motion.button key={t} whileTap={{ scale: 0.9 }} onClick={() => setTab(t)} className={`v-bottom-nav-item ${tab === t ? 'active' : ''}`}>
             <span>{icon}</span>
             <span>{label}</span>
