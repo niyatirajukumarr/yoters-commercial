@@ -54,6 +54,7 @@ export default function VendorDashboard() {
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
   const [timerSeconds, setTimerSeconds] = useState<Record<string, number>>({})
+  const [menuSearchQuery, setMenuSearchQuery] = useState('')
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
@@ -1342,9 +1343,22 @@ export default function VendorDashboard() {
                 </div>
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Menu ({menuItems.length})</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>Menu ({menuItems.length})</div>
+                  <input
+                    type="text"
+                    placeholder="Search items..."
+                    value={menuSearchQuery}
+                    onChange={e => setMenuSearchQuery(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', width: 200, fontSize: 13 }}
+                  />
+                </div>
                 <motion.div initial="hidden" animate="visible" variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflow: 'auto' }}>
-                  {menuItems.map(item => (
+                  {menuItems.filter(item =>
+                    menuSearchQuery === '' ||
+                    item.name.toLowerCase().includes(menuSearchQuery.toLowerCase()) ||
+                    item.category.toLowerCase().includes(menuSearchQuery.toLowerCase())
+                  ).map(item => (
                     <motion.div key={item.id} variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
