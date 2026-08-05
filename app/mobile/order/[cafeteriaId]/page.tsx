@@ -1584,7 +1584,7 @@ export default function CafeteriaPage() {
                     paid:              { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
                     approved:          { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
                     preparing:         { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
-                    ready:             { label: '🔔 Ready for Pickup!',   color: '#2e9e6b', bg: '#edfaf3' },
+                    ready:             { label: order.order_type === 'delivery' ? '🚚 Out for Delivery' : '🔔 Ready for Pickup!', color: '#2e9e6b', bg: '#edfaf3' },
                     collected:         { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
                     cancelled:         { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
                   }
