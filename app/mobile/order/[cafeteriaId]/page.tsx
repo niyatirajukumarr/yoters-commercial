@@ -1525,6 +1525,7 @@ export default function CafeteriaPage() {
             ) : (
               <motion.div initial="hidden" animate="visible" variants={stagger}>
                 {cafeOrders.map(order => {
+                  const readyLabel = (order as any).order_type === 'delivery' ? '🚚 Out for Delivery' : '🔔 Ready for Pickup!'
                   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
                     pending_payment:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
                     payment_pending:   { label: '⏳ Awaiting Payment',    color: '#d4821a', bg: '#fff8ec' },
@@ -1533,7 +1534,7 @@ export default function CafeteriaPage() {
                     paid:              { label: '⏳ Awaiting Acceptance', color: '#2563eb', bg: '#eff6ff' },
                     approved:          { label: '✓ Order Accepted',       color: '#2563eb', bg: '#eff6ff' },
                     preparing:         { label: '👨‍🍳 Being Prepared',     color: '#7c5cfc', bg: '#f3f0ff' },
-                    ready:             { label: order.order_type === 'delivery' ? '🚚 Out for Delivery' : '🔔 Ready for Pickup!', color: '#2e9e6b', bg: '#edfaf3' },
+                    ready:             { label: readyLabel, color: '#2e9e6b', bg: '#edfaf3' },
                     collected:         { label: '✅ Collected',            color: '#8a90a8', bg: '#f5f5f5' },
                     cancelled:         { label: '❌ Cancelled',            color: '#E8334A', bg: '#fff0f2' },
                   }

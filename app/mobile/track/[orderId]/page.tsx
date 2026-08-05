@@ -215,7 +215,7 @@ export default function OrderTrackingPage() {
               boxShadow: `0 0 6px ${isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : '#E8334A'}`,
             }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? '#E8334A' : isReady ? '#2e9e6b' : 'white' }}>
-              {isCancelled ? 'Order Cancelled' : isReady ? (order.order_type === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup!') : order.status === 'collected' ? 'Order Collected ✓' : 'Order in Progress'}
+              {isCancelled ? 'Order Cancelled' : isReady ? ((order as any).order_type === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup!') : order.status === 'collected' ? 'Order Collected ✓' : 'Order in Progress'}
             </span>
           </div>
 
