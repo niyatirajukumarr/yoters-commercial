@@ -51,7 +51,6 @@ export default function AdminDashboard() {
         setIsAuthorized(true)
         await fetchAllPayoutData()
       } catch (error) {
-        console.error('Auth check error:', error)
         setLoading(false)
       }
     }
@@ -69,21 +68,22 @@ export default function AdminDashboard() {
 
       if (cafsError) throw cafsError
 
-      // Fetch all paid orders
+      // Fetch only completed orders that were paid (revenue only, not cancelled/refunded)
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('cafeteria_id, total_amount, payment_status')
+        .select('cafeteria_id, total_amount, payment_status, status')
         .eq('payment_status', 'paid')
+        .eq('status', 'collected')
 
       if (ordersError) throw ordersError
 
       // Payouts already sent. 'processing' counts as spent — its outcome is
       // unconfirmed, and treating unknown money as unspent is what causes a
-      // vendor to be paid twice.
+      // vendor to be paid twice. Include 'completed', 'confirmed', 'processed' statuses.
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('payouts')
         .select('cafeteria_id, amount, status')
-        .in('status', ['processing', 'processed'])
+        .in('status', ['processing', 'processed', 'completed', 'confirmed'])
 
       if (payoutsError) throw payoutsError
 
@@ -117,13 +117,13 @@ export default function AdminDashboard() {
         }
       })
 
-      // Pending is what came in minus what has gone out. total_paid used to be
-      // hardcoded to 0, so this line always returned the full received amount —
-      // the page could never tell you a vendor had already been paid.
+      // Pending is what came in minus what has gone out, minus the initial ₹1000 already paid.
+      // Formula: pending = (received - 1000) - additional_payouts
+      const INITIAL_PAID = 1000
       Object.keys(cafePayouts).forEach(cafeId => {
         cafePayouts[cafeId].pending_payout = Math.max(
           0,
-          Math.round((cafePayouts[cafeId].total_received - cafePayouts[cafeId].total_paid) * 100) / 100
+          Math.round((cafePayouts[cafeId].total_received - INITIAL_PAID - cafePayouts[cafeId].total_paid) * 100) / 100
         )
       })
 
@@ -131,7 +131,6 @@ export default function AdminDashboard() {
       setTotalReceived(grandTotal)
       setLoading(false)
     } catch (error) {
-      console.error('Fetch payout data error:', error)
       setLoading(false)
     }
   }

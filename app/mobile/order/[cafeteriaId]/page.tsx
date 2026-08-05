@@ -45,6 +45,7 @@ interface Cafeteria {
   location: string
   latitude?: number
   longitude?: number
+  delivery_available?: boolean
 }
 
 interface Order {
@@ -460,16 +461,6 @@ export default function CafeteriaPage() {
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
   const PARCEL_CHARGE = 5
-  const EXTRAS = [
-    { name: 'Mayo Dip', price: 10 },
-    { name: 'Egg', price: 10 },
-    { name: 'Cheese', price: 15 },
-  ]
-  const [selectedExtras, setSelectedExtras] = useState<{ [key: string]: number }>({
-    'Mayo Dip': 0,
-    'Egg': 0,
-    'Cheese': 0,
-  })
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -533,7 +524,7 @@ export default function CafeteriaPage() {
         ) as any
         if (data) setCafeOrders(data as Order[])
       } catch (error) {
-        console.error('Cafe orders fetch error:', error)
+        // Error fetching orders - will retry
       } finally {
         setLoadingCafeOrders(false)
       }
@@ -543,7 +534,7 @@ export default function CafeteriaPage() {
     // Real-time subscription for cafe orders
     const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user?.phone}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, (payload) => {
-        console.log('Cafe order change detected:', payload)
+        // Order change detected - refetching
         fetch() // Refetch orders on any change
       })
       .subscribe()
@@ -565,7 +556,7 @@ export default function CafeteriaPage() {
           setPopularity({ byName: data.byName || {}, byId: data.byId || {}, max: data.max || 0 })
         }
       } catch (e) {
-        console.error('Popularity fetch error:', e)
+        // Popularity fetch failed - using defaults
       }
     }
     load()
@@ -623,7 +614,7 @@ export default function CafeteriaPage() {
       setDeliveryCharge(chargeInfo.charge)
       setDeliveryChargeError(chargeInfo.message || null)
     } catch (err) {
-      console.error('Error calculating delivery charge:', err)
+      // Error calculating delivery charge - using default
       setDeliveryChargeError('Error calculating delivery charge')
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
@@ -780,11 +771,7 @@ export default function CafeteriaPage() {
       const tokenNumber = (count ?? 0) + 1
 
       const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-      const extrasTotal = Object.entries(selectedExtras).reduce((sum, [name, quantity]) => {
-        const extra = EXTRAS.find(e => e.name === name)
-        return sum + (extra ? extra.price * quantity : 0)
-      }, 0)
-      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge + extrasTotal : orderType === 'takeaway' ? total + PARCEL_CHARGE + extrasTotal : total + extrasTotal
+      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
 
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
@@ -809,14 +796,14 @@ export default function CafeteriaPage() {
       const { data, error } = await Promise.race([orderPromise, timeoutPromise]) as any
 
       if (error) {
-        console.error('Order creation error:', error)
+        // Order creation failed - error handled
         alert('Failed to create order: ' + (error.message || 'Unknown error'))
         setIsPlacingOrder(false)
         return
       }
 
       if (data) {
-        console.log('Order created successfully:', data.id)
+        // Order created successfully
         setOrderId(data.id)
         updateUser({ name: formData.name, phone: formData.phone, email: formData.email })
         setIsPlacingOrder(false)
@@ -826,7 +813,7 @@ export default function CafeteriaPage() {
         setIsPlacingOrder(false)
       }
     } catch (error) {
-      console.error('Order creation failed:', error)
+      // Order creation failed
       alert('Error: ' + (error instanceof Error ? error.message : 'Failed to create order'))
       setIsPlacingOrder(false)
     }
@@ -851,7 +838,7 @@ export default function CafeteriaPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        console.error('Delete error:', data.error)
+        // Delete failed - error handled
         alert('Failed to delete order: ' + data.error)
       } else {
         // Server confirmed deletion — update UI
@@ -859,7 +846,7 @@ export default function CafeteriaPage() {
         alert('Order deleted successfully')
       }
     } catch (error) {
-      console.error('Delete failed:', error)
+      // Delete failed
       alert('Failed to delete order: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
@@ -1485,35 +1472,8 @@ export default function CafeteriaPage() {
                     )}
                   </>
                 )}
-                <div style={{ marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 10, textTransform: 'uppercase' }}>Add Extras</div>
-                  {EXTRAS.map(extra => (
-                    <div key={extra.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0' }}>
-                      <div>
-                        <span style={{ fontSize: 14 }}>{extra.name}</span>
-                        <span style={{ color: 'var(--accent)', fontWeight: 600, marginLeft: 8 }}>+₹{extra.price}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', borderRadius: 6, padding: '4px 8px' }}>
-                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: Math.max(0, prev[extra.name] - 1) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>−</button>
-                        <span style={{ width: 24, textAlign: 'center', fontWeight: 600 }}>{selectedExtras[extra.name]}</span>
-                        <button onClick={() => setSelectedExtras(prev => ({ ...prev, [extra.name]: prev[extra.name] + 1 }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text)' }}>+</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{
-                    (() => {
-                      let totalWithExtras = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-                      Object.entries(selectedExtras).forEach(([name, quantity]) => {
-                        if (quantity > 0) {
-                          const extra = EXTRAS.find(e => e.name === name)
-                          if (extra) totalWithExtras += extra.price * quantity
-                        }
-                      })
-                      return totalWithExtras
-                    })()
-                  }</span>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
@@ -1542,18 +1502,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{
-                    (() => {
-                      let cartTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-                      Object.entries(selectedExtras).forEach(([name, quantity]) => {
-                        if (quantity > 0) {
-                          const extra = EXTRAS.find(e => e.name === name)
-                          if (extra) cartTotal += extra.price * quantity
-                        }
-                      })
-                      return cartTotal
-                    })()
-                  }</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
@@ -1798,33 +1747,9 @@ export default function CafeteriaPage() {
                 )}
               </>
             )}
-            {Object.entries(selectedExtras).some(([_, qty]) => qty > 0) && (
-              <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 8, textTransform: 'uppercase' }}>Extras</div>
-                {Object.entries(selectedExtras).map(([name, quantity]) =>
-                  quantity > 0 ? (
-                    <div key={name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>
-                      <span>{name} x{quantity}</span>
-                      <span>₹{EXTRAS.find(e => e.name === name)?.price || 0 * quantity}</span>
-                    </div>
-                  ) : null
-                )}
-              </div>
-            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{
-                (() => {
-                  let totalAmount = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-                  Object.entries(selectedExtras).forEach(([name, quantity]) => {
-                    if (quantity > 0) {
-                      const extra = EXTRAS.find(e => e.name === name)
-                      if (extra) totalAmount += extra.price * quantity
-                    }
-                  })
-                  return totalAmount
-                })()
-              }</span>
+              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
             </div>
           </div>
 
@@ -1843,18 +1768,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{
-            (() => {
-              let paymentTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
-              Object.entries(selectedExtras).forEach(([name, quantity]) => {
-                if (quantity > 0) {
-                  const extra = EXTRAS.find(e => e.name === name)
-                  if (extra) paymentTotal += extra.price * quantity
-                }
-              })
-              return paymentTotal
-            })()
-          }</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
@@ -1914,17 +1828,40 @@ export default function CafeteriaPage() {
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: PARCEL_CHARGE, emoji: '🥡' },
                 { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: PARCEL_CHARGE, emoji: '🛵' },
-              ].map(opt => (
-                <motion.button key={opt.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={() => { const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'; setOrderType(t); if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') } }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', border: `2px solid ${orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, background: orderType === opt.key ? 'var(--accent-light)' : 'white', cursor: 'pointer', textAlign: 'left' }}>
-                  <span style={{ fontSize: 32 }}>{opt.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}{opt.charge > 0 ? ` • +₹${opt.charge}` : ''}</div>
-                  </div>
-                  {orderType === opt.key && <span style={{ color: 'var(--accent)', fontSize: 18 }}>✓</span>}
-                </motion.button>
-              ))}
+              ].map(opt => {
+                const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
+                return (
+                  <motion.button
+                    key={opt.key}
+                    whileHover={!isDeliveryUnavailable ? { scale: 1.01 } : {}}
+                    whileTap={!isDeliveryUnavailable ? { scale: 0.98 } : {}}
+                    onClick={() => {
+                      if (isDeliveryUnavailable) return
+                      const t = opt.key as 'dine_in' | 'takeaway' | 'delivery'
+                      setOrderType(t)
+                      if (t === 'delivery') { setShowOrderTypeModal(false); setShowMapPicker(true) } else { setShowOrderTypeModal(false); setStep('details') }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      padding: '16px 18px',
+                      border: `2px solid ${isDeliveryUnavailable ? '#ddd' : orderType === opt.key ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: 14,
+                      background: isDeliveryUnavailable ? '#f9f9f9' : orderType === opt.key ? 'var(--accent-light)' : 'white',
+                      cursor: isDeliveryUnavailable ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                      opacity: isDeliveryUnavailable ? 0.5 : 1,
+                    }}>
+                    <span style={{ fontSize: 32 }}>{opt.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: isDeliveryUnavailable ? '#ccc' : orderType === opt.key ? 'var(--accent)' : 'var(--navy)' }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{isDeliveryUnavailable ? 'Not available now' : `${opt.desc}${opt.charge > 0 ? ` • +₹${opt.charge}` : ''}`}</div>
+                    </div>
+                    {orderType === opt.key && !isDeliveryUnavailable && <span style={{ color: 'var(--accent)', fontSize: 18 }}>✓</span>}
+                  </motion.button>
+                )
+              })}
             </div>
             {orderType === 'delivery' && (
               <div style={{ marginTop: 16 }}>

@@ -50,7 +50,6 @@ export default function MobileOrders() {
           sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
         }
       } catch (error) {
-        console.error('Cafeterias fetch error:', error)
       }
     }
     fetch()
@@ -85,7 +84,6 @@ export default function MobileOrders() {
           sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
         }
       } catch (error) {
-        console.error('Orders fetch error:', error)
       } finally {
         setLoading(false)
       }
@@ -280,7 +278,27 @@ export default function MobileOrders() {
                         borderTop: '1px solid rgba(26,31,46,0.08)'
                       }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1f2e' }}>₹{order.total_amount}</span>
-                        {!isPast && (
+                        {!isPast && order.payment_status === 'unpaid' ? (
+                          <motion.button
+                            {...hoverScale}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/payment?orderId=${order.id}&amount=${order.total_amount}&name=${encodeURIComponent(order.student_name || 'Customer')}`)
+                            }}
+                            style={{
+                              fontSize: 12,
+                              color: 'white',
+                              background: '#E8334A',
+                              border: 'none',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                              padding: '6px 12px'
+                            }}
+                          >
+                            💳 Retry Payment
+                          </motion.button>
+                        ) : !isPast ? (
                           <motion.button
                             whileHover={{ x: 2 }}
                             onClick={(e) => {
@@ -299,7 +317,7 @@ export default function MobileOrders() {
                           >
                             Track Order →
                           </motion.button>
-                        )}
+                        ) : null}
                         {isPast && (
                           <motion.button
                             {...(deleting !== order.id ? hoverScale : {})}

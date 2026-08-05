@@ -71,7 +71,6 @@ export default function OrderTrackingPage() {
             })
           .subscribe()
       } catch (error) {
-        console.error('Order tracking fetch error:', error)
       } finally {
         setLoading(false)
       }
@@ -103,11 +102,19 @@ export default function OrderTrackingPage() {
     }
   }
 
+  const getApprovedSub = () => {
+    if (!order?.prep_time_minutes) return 'Vendor confirmed'
+    if (order?.order_type === 'delivery' && order?.delivery_time_minutes) {
+      return `Prep: ~${order.prep_time_minutes}m, Delivery: ~${order.delivery_time_minutes}m`
+    }
+    return `Ready in ~${order.prep_time_minutes} min`
+  }
+
   const steps = [
     { id: 'paid',      emoji: '💳', label: 'Payment Done',     sub: '₹' + (order?.total_amount ?? '') + ' received',                                              done: (o: Order) => o.payment_status === 'paid' },
-    { id: 'approved',  emoji: '✅', label: 'Order Accepted',   sub: order?.prep_time_minutes ? `Ready in ~${order.prep_time_minutes} min` : 'Vendor confirmed',   done: (o: Order) => !!o.approved_at },
+    { id: 'approved',  emoji: '✅', label: 'Order Accepted',   sub: getApprovedSub(),                                                                             done: (o: Order) => !!o.approved_at },
     { id: 'preparing', emoji: '🍳', label: 'Being Cooked',     sub: 'Kitchen is on it!',                                                                          done: (o: Order) => ['preparing','ready','collected'].includes(o.status) },
-    { id: 'ready',     emoji: '🔔', label: 'Ready!',           sub: 'Pick up at the counter',                                                                     done: (o: Order) => !!o.ready_at || ['ready','collected'].includes(o.status) },
+    { id: 'ready',     emoji: '🔔', label: 'Ready!',           sub: order?.order_type === 'delivery' ? 'On the way to you!' : 'Pick up at the counter',          done: (o: Order) => !!o.ready_at || ['ready','collected'].includes(o.status) },
     { id: 'collected', emoji: '🎉', label: 'Collected',        sub: 'Enjoy your meal!',                                                                           done: (o: Order) => !!o.collected_at || o.status === 'collected' },
   ]
 
@@ -254,7 +261,10 @@ export default function OrderTrackingPage() {
             </div>
             {order.prep_time_minutes && (
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 20px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 12, color: '#555' }}>
-                Vendor estimated {order.prep_time_minutes} min total prep time
+                {order.order_type === 'delivery' && order.delivery_time_minutes
+                  ? `Prep: ${order.prep_time_minutes}m + Delivery: ${order.delivery_time_minutes}m = Total ~${order.prep_time_minutes + order.delivery_time_minutes}m`
+                  : `Vendor estimated ${order.prep_time_minutes} min total prep time`
+                }
               </div>
             )}
           </motion.div>

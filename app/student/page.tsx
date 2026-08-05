@@ -177,7 +177,6 @@ function StudentPageInner() {
         await supabase.from('cafeteria_menu').update({ stock_quantity: newStock }).eq('id', menuItemId)
       }
     } catch (err) {
-      console.error('Error decrementing stock:', err)
     }
   }
 

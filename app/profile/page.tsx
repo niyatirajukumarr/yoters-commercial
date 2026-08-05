@@ -57,12 +57,10 @@ export default function ProfilePage() {
           timeoutPromise
         ]) as any
         if (result.error) {
-          console.error('Cafeterias fetch error:', result.error)
         } else if (result.data) {
           setCafeterias(Object.fromEntries(result.data.map((c: any) => [c.id, c])))
         }
       } catch (error) {
-        console.error('Cafeterias fetch error:', error)
       }
     }
     fetchCafeterias()
@@ -86,12 +84,10 @@ export default function ProfilePage() {
           timeoutPromise
         ]) as any
         if (result.error) {
-          console.error('Orders fetch error:', result.error)
         } else if (result.data) {
           setOrders(result.data as Order[])
         }
       } catch (error) {
-        console.error('Orders fetch error:', error)
       } finally {
         setLoadingOrders(false)
       }
@@ -102,7 +98,6 @@ export default function ProfilePage() {
     // Real-time subscription for orders
     const channel = supabase.channel(`profile-orders-${user.phone}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, (payload) => {
-        console.log('Order change detected:', payload)
         fetch() // Refetch orders on any change
       })
       .subscribe()

@@ -59,7 +59,6 @@ function PaymentPageContent() {
       }
       return null
     } catch (err) {
-      console.error('Error getting cafe slug:', err)
       return null
     }
   }
@@ -74,8 +73,6 @@ function PaymentPageContent() {
       }
 
       try {
-        console.log('[Payment] Initializing payment for order')
-
         // Pull the real contact details captured when the order was placed.
         // These are validated below — no placeholder phone/email is ever sent to
         // Razorpay, so refunds, receipts and SMS reach the actual customer.
@@ -124,7 +121,6 @@ function PaymentPageContent() {
         }
 
         const data = await response.json()
-        console.log('[Payment] Razorpay order created:', data.razorpayOrderId)
         razorpayOrderIdRef.current = data.razorpayOrderId
 
         setLoading(false)
@@ -133,7 +129,6 @@ function PaymentPageContent() {
         // Start polling for payment confirmation
         startPaymentPolling(orderId)
       } catch (err: any) {
-        console.error('[Payment] Initialization error:', err)
         setError(err.message || 'Failed to initialize payment')
         setLoading(false)
       }
@@ -151,7 +146,6 @@ function PaymentPageContent() {
   // When SDK is loaded AND order is ready, open the modal
   useEffect(() => {
     if (sdkLoaded && processing && razorpayOrderIdRef.current) {
-      console.log('[Payment] Both SDK and order ready, opening modal')
       openRazorpayModal()
     }
   }, [sdkLoaded, processing])
@@ -188,7 +182,7 @@ function PaymentPageContent() {
           return
         }
       } catch (err) {
-        console.error('[Payment] Polling error:', err)
+        // Polling error - continue retrying
       }
 
       if (pollCount >= maxPolls) {
@@ -205,20 +199,16 @@ function PaymentPageContent() {
       const Razorpay = (window as RazorpayWindow).Razorpay
 
       if (!Razorpay) {
-        console.error('[Payment] Razorpay SDK not available')
         setError('Payment SDK failed to load')
         setProcessing(false)
         return
       }
 
       if (!razorpayOrderIdRef.current) {
-        console.error('[Payment] No Razorpay order ID')
         setError('Payment order not created')
         setProcessing(false)
         return
       }
-
-      console.log('[Payment] Creating Razorpay instance')
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -254,7 +244,6 @@ function PaymentPageContent() {
           })
 
           if (!verifyRes.ok) {
-            console.error('[Payment] Signature verification failed')
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setProcessing(false)
             setError('Payment verification failed. If money was deducted, contact support.')
@@ -274,7 +263,6 @@ function PaymentPageContent() {
         },
         modal: {
           ondismiss: function () {
-            console.log('[Payment] Modal closed/failed')
             setProcessing(false)
             setError('Payment failed or cancelled.')
             if (window.opener) {
@@ -285,10 +273,8 @@ function PaymentPageContent() {
       }
 
       const razorpayInstance = new Razorpay(options)
-      console.log('[Payment] Opening Razorpay modal')
       razorpayInstance.open()
     } catch (err: any) {
-      console.error('[Payment] Error opening modal:', err)
       setError(`Payment error: ${err.message}`)
       setProcessing(false)
     }
@@ -300,11 +286,9 @@ function PaymentPageContent() {
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="afterInteractive"
         onLoad={() => {
-          console.log('[Payment] Razorpay SDK script loaded')
           setSdkLoaded(true)
         }}
         onError={() => {
-          console.error('[Payment] Failed to load Razorpay SDK')
           setError('Failed to load payment SDK')
           setLoading(false)
         }}

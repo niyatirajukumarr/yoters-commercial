@@ -17,10 +17,12 @@ export async function GET(req: NextRequest) {
       .in('status', ['collected', 'cancelled', 'pending'])
 
     if (queryError) {
-      return NextResponse.json({ error: queryError.message }, { status: 500 })
+      console.error('[cleanup] Query failed:', queryError)
+      return NextResponse.json(
+        { error: 'Could not process request. Please try again.' },
+        { status: 500 }
+      )
     }
-
-    console.log('Found orders:', orders)
 
     if (orders && orders.length > 0) {
       // Delete all of them
@@ -31,7 +33,11 @@ export async function GET(req: NextRequest) {
         .in('id', ids)
 
       if (deleteError) {
-        return NextResponse.json({ error: deleteError.message }, { status: 500 })
+        console.error('[cleanup] Delete failed:', deleteError)
+        return NextResponse.json(
+          { error: 'Could not process request. Please try again.' },
+          { status: 500 }
+        )
       }
 
       return NextResponse.json({ success: true, deleted: ids.length, ids }, { status: 200 })
@@ -39,6 +45,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, deleted: 0 }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[cleanup] Error:', error)
+    return NextResponse.json(
+      { error: 'Could not process request. Please try again.' },
+      { status: 500 }
+    )
   }
 }

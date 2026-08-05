@@ -46,3 +46,26 @@ next-env.d.ts
 
 # committed env dump (removed) — never re-add
 env.download
+
+# Security & internal documentation (local development only)
+# Audit reports, security reviews, vulnerability assessments
+SECURITY_*.md
+AUDIT*.md
+*_AUDIT.md
+DATA_PRIVACY*.md
+DEPLOYMENT*.md
+
+# Internal work logs and setup guides
+progress.md
+SETUP_*.md
+TRANSFER.md
+IMPLEMENTATION*.md
+INVESTIGATION*.md
+
+# Sensitive operational docs (never commit)
+CREDENTIALS*.md
+SECRETS*.md
+TODO*.md
+NOTES*.md
+DEBUG*.md
+TEST*.md

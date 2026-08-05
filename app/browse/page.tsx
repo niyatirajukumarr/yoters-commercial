@@ -106,7 +106,6 @@ export default function StudentHome() {
         sessionStorage.setItem('browse-cache', JSON.stringify(combined))
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }

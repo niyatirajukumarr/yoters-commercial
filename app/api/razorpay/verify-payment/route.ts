@@ -42,7 +42,41 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Signature confirmed genuine -> safe to mark the order as pending approval
+    // FIX #1: Fetch order and verify razorpay_order_id matches (prevents IDOR)
+    const { data: order, error: fetchError } = await adminSupabase
+      .from('orders')
+      .select('id, razorpay_order_id, payment_status')
+      .eq('id', orderId)
+      .single()
+
+    if (fetchError || !order) {
+      logger.error('[Razorpay Verify] Order not found:', shortId(orderId))
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    // FIX #2: Verify the razorpay_order_id from DB matches what Razorpay sent
+    // This prevents signature replay attacks (using valid signature on wrong order)
+    if (order.razorpay_order_id !== razorpay_order_id) {
+      logger.error(
+        '[Razorpay Verify] Signature replay attack detected:',
+        `order=${shortId(orderId)}, expected=${shortId(order.razorpay_order_id)}, supplied=${shortId(razorpay_order_id)}`
+      )
+      return NextResponse.json(
+        { success: false, error: 'Payment signature does not match this order' },
+        { status: 400 }
+      )
+    }
+
+    // FIX #3: Prevent double-payment marking
+    if (order.payment_status === 'paid') {
+      logger.error('[Razorpay Verify] Double-payment attempt on order:', shortId(orderId))
+      return NextResponse.json(
+        { success: false, error: 'Order already marked as paid' },
+        { status: 400 }
+      )
+    }
+
+    // Signature confirmed genuine and matches this specific order -> safe to mark as pending approval
     const { error: updateError } = await adminSupabase
       .from('orders')
       .update({

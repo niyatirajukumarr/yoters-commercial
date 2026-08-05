@@ -46,11 +46,15 @@ export default function VendorDashboard() {
   const [approvalModal, setApprovalModal] = useState<Order | null>(null)
   const [denialReason, setDenialReason] = useState('')
   const [approveLoading, setApproveLoading] = useState(false)
+  const [deliveryAvailable, setDeliveryAvailable] = useState(true)
+  const [togglingDelivery, setTogglingDelivery] = useState(false)
   const [isDenying, setIsDenying] = useState(false)
   const [prepTime, setPrepTime] = useState('10')
+  const [deliveryTime, setDeliveryTime] = useState('5')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
   const [timerSeconds, setTimerSeconds] = useState<Record<string, number>>({})
+  const [menuSearchQuery, setMenuSearchQuery] = useState('')
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
   const prevOrderCount = useState({ count: 0 })
@@ -62,7 +66,13 @@ export default function VendorDashboard() {
   // figures can't be derived from it.
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  // Initialize to today's date in IST, not browser timezone
+  const getISTDateString = (date: Date = new Date()) => {
+    const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+    const istDate = new Date(date.getTime() + IST_OFFSET_MS)
+    return istDate.toISOString().split('T')[0]
+  }
+  const [selectedDate, setSelectedDate] = useState<string>(getISTDateString())
   const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
   const [loadingDate, setLoadingDate] = useState(false)
 
@@ -83,7 +93,6 @@ export default function VendorDashboard() {
       if (!res.ok) return
       setSummary(await res.json())
     } catch (error) {
-      console.error('Vendor summary fetch error:', error)
     }
   }, [])
 
@@ -101,7 +110,9 @@ export default function VendorDashboard() {
         8000,
         'Orders fetch timed out'
       )
-      if (!res.ok) return
+      if (!res.ok) {
+        return
+      }
       const json = await res.json()
       const data = json.orders
       if (data) {
@@ -119,7 +130,6 @@ export default function VendorDashboard() {
             try {
               const audio = new Audio('/sound beat.mp3')
               audio.volume = 1.0
-              audio.play().catch(err => console.log('Audio play error:', err))
             } catch {}
           }
 
@@ -136,7 +146,6 @@ export default function VendorDashboard() {
         }
       }
     } catch (error) {
-      console.error('Vendor orders fetch error:', error)
     }
   }, [])
 
@@ -157,7 +166,7 @@ export default function VendorDashboard() {
           'Cafeteria fetch timed out'
         ) as any
         if (!caf) { router.push('/vendor/login'); return }
-        setCafeteria(caf); setIsOpen(caf.is_open); fetchOrders(caf.id)
+        setCafeteria(caf); setIsOpen(caf.is_open); setDeliveryAvailable(caf.delivery_available ?? true); fetchOrders(caf.id)
         const { data: menu } = await withTimeout(
           supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', caf.id).order('category'),
           8000,
@@ -165,7 +174,6 @@ export default function VendorDashboard() {
         ) as any
         if (menu) setMenuItems(menu)
       } catch (error) {
-        console.error('Vendor dashboard init error:', error)
       } finally {
         setLoading(false)
       }
@@ -187,30 +195,45 @@ export default function VendorDashboard() {
     }
 
     channel = supabase.channel('vendor-realtime-' + cafeteria.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchOrdersRef.current?.(cafeteria.id, true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => {
+        // Only fetch without date param when in orders tab; in today tab, respect selected date
+        if (tab === 'today') {
+          fetchOrdersRef.current?.(cafeteria.id, true, selectedDate)
+        } else {
+          fetchOrdersRef.current?.(cafeteria.id, true)
+        }
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cafeteria_menu', filter: `cafeteria_id=eq.${cafeteria.id}` }, () => fetchMenuItems(cafeteria.id))
       .subscribe()
 
     return () => {
       channel?.unsubscribe()
     }
-  }, [cafeteria])
+  }, [cafeteria, tab, selectedDate])
+
+  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working
+  useEffect(() => {
+    if (!cafeteria) return
+    const interval = setInterval(() => {
+      if (tab === 'today') {
+        fetchOrdersRef.current?.(cafeteria.id, false, selectedDate)
+      } else {
+        fetchOrdersRef.current?.(cafeteria.id, false)
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [cafeteria, tab, selectedDate])
 
   // Fetch orders and summary for selected date when in "today" tab or date changes
   useEffect(() => {
     if (tab !== 'today' || !cafeteria) return
-    const isToday = selectedDate === new Date().toISOString().split('T')[0]
 
-    if (ordersCache[selectedDate]) {
-      setOrders(ordersCache[selectedDate])
-    } else {
-      setLoadingDate(true)
-      fetchOrders(cafeteria.id, false, selectedDate).finally(() => setLoadingDate(false))
-    }
-
-    // Fetch summary for selected date
-    fetchSummary(cafeteria.id, selectedDate)
-  }, [selectedDate, tab, cafeteria, ordersCache, fetchOrders, fetchSummary])
+    setLoadingDate(true)
+    Promise.all([
+      fetchOrders(cafeteria.id, false, selectedDate),
+      fetchSummary(cafeteria.id, selectedDate)
+    ]).finally(() => setLoadingDate(false))
+  }, [selectedDate, tab, cafeteria, fetchOrders, fetchSummary])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
@@ -276,6 +299,29 @@ export default function VendorDashboard() {
     const newState = !isOpen
     await supabase.from('cafeterias').update({ is_open: newState, is_closed: !newState }).eq('id', cafeteria.id)
     setIsOpen(newState)
+  }
+
+  async function toggleDelivery() {
+    if (!cafeteria) return
+    setTogglingDelivery(true)
+    try {
+      const newState = !deliveryAvailable
+      const res = await fetch('/api/admin/toggle-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cafeteriaId: cafeteria.id, delivery_available: newState }),
+      })
+      if (res.ok) {
+        setDeliveryAvailable(newState)
+        setMsg(`✅ Delivery ${newState ? 'enabled' : 'disabled'}`)
+        setTimeout(() => setMsg(''), 2000)
+      }
+    } catch (err) {
+      setMsg('❌ Failed to toggle delivery')
+      setTimeout(() => setMsg(''), 2000)
+    } finally {
+      setTogglingDelivery(false)
+    }
   }
 
   async function updateWait() {
@@ -379,10 +425,22 @@ export default function VendorDashboard() {
       setMsg('Please enter preparation time')
       return
     }
+    if (order.order_type === 'delivery' && !deliveryTime) {
+      setMsg('Please enter delivery time')
+      return
+    }
     setApproveLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) return
+
+      const body: any = {
+        orderId: order.id,
+        prepTimeMinutes: parseInt(prepTime),
+      }
+      if (order.order_type === 'delivery') {
+        body.deliveryTimeMinutes = parseInt(deliveryTime)
+      }
 
       const response = await fetch('/api/vendor/approve-order', {
         method: 'POST',
@@ -390,10 +448,7 @@ export default function VendorDashboard() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          orderId: order.id,
-          prepTimeMinutes: parseInt(prepTime),
-        }),
+        body: JSON.stringify(body),
       })
       const result = await response.json()
       if (response.ok) {
@@ -403,10 +458,14 @@ export default function VendorDashboard() {
           alertSoundIntervalRef.current = null
         }
         setShowMsg(true)
-        setMsg('✅ Order approved! Student notified of prep time.')
+        const msg = order.order_type === 'delivery'
+          ? `✅ Order approved! Prep: ${prepTime}m, Delivery: ${deliveryTime}m`
+          : '✅ Order approved! Student notified of prep time.'
+        setMsg(msg)
         setApprovalModal(null)
         setIsDenying(false)
         setPrepTime('10')
+        setDeliveryTime('5')
         if (cafeteria) fetchOrders(cafeteria.id)
       } else {
         setShowMsg(true)
@@ -473,7 +532,11 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       setShowMsg(true)
-      setMsg(response.ok ? '🔔 Payment reminder sent.' : `Error: ${result.error}`)
+      if (response.ok) {
+        setMsg(result.smsSent ? '✅ SMS sent to customer!' : '✅ Reminder queued (SMS pending)')
+      } else {
+        setMsg(`Error: ${result.error}`)
+      }
     } catch (err: any) {
       setShowMsg(true)
       setMsg(`Error: ${err.message}`)
@@ -515,7 +578,8 @@ export default function VendorDashboard() {
   const pendingCount = orders.filter(o => o.status === 'pending_approval').length
   const preparingCount = orders.filter(o => o.status === 'preparing').length
   const readyCount = orders.filter(o => o.status === 'ready').length
-  const todayRevenue = orders.filter(o => o.status === 'collected').reduce((s, o) => s + o.total_amount, 0)
+  // Use summary revenue for accurate real-time totals (orders array excludes collected/cancelled)
+  const todayRevenue = summary?.today?.revenue ?? 0
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
@@ -603,7 +667,7 @@ export default function VendorDashboard() {
         <div className="v-sidebar">
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3, color: 'var(--text)' }}>{cafeteria?.image_emoji} {cafeteria?.name}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{cafeteria?.location}</div>
-          {([['orders', '📋 Orders'], ['queue', '👥 Queue'], ['today', '📊 Today'], ['menu', '🍱 Menu'], ['settings', '⚙️ Settings']] as [Tab, string][]).map(([t, label]) => (
+          {([['orders', '📋 Orders'], ['queue', '👥 Queue'], ['today', '💰 Revenue'], ['menu', '🍱 Menu'], ['settings', '⚙️ Settings']] as [Tab, string][]).map(([t, label]) => (
             <motion.button key={t} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} onClick={() => setTab(t)} className="v-tab-btn" style={{ background: tab === t ? 'var(--accent-light)' : 'transparent', color: tab === t ? 'var(--text)' : 'var(--text2)', fontWeight: tab === t ? 600 : 400, borderLeft: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}` }}>{label}</motion.button>
           ))}
         </div>
@@ -723,6 +787,7 @@ export default function VendorDashboard() {
                             <div>
                               <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{order.student_name}</div>
                               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>📱 {order.student_phone}</div>
+                              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3 }}>🕐 {new Date(order.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                             </div>
                           </div>
                           <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>₹{order.total_amount}</div>
@@ -781,13 +846,27 @@ export default function VendorDashboard() {
                           </div>
                         )}
                         {order.order_type === 'takeaway' && (
-                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
-                            🥡 TAKEAWAY ORDER
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 10px', marginBottom: 8 }}>
+                              🥡 TAKEAWAY ORDER
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <a href={`tel:${order.student_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#059669', background: '#d1fae5', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                📞 Call {order.student_name}
+                              </a>
+                            </div>
                           </div>
                         )}
                         {order.order_type === 'dine_in' && (
-                          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 10px', marginBottom: 10 }}>
-                            🍽️ DINE-IN ORDER
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 10px', marginBottom: 8 }}>
+                              🍽️ DINE-IN ORDER
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <a href={`tel:${order.student_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#059669', background: '#d1fae5', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
+                                📞 Call {order.student_name}
+                              </a>
+                            </div>
                           </div>
                         )}
 
@@ -901,16 +980,20 @@ export default function VendorDashboard() {
 
           {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
-            // Filter orders by selected date
+            // Filter orders by selected date (handle IST timezone)
             const isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
             const filterByDate = (order: Order) => {
               if (summaryRange === 'allTime') return true
-              const orderDate = new Date(order.created_at).toISOString().split('T')[0]
-              return orderDate === selectedDate
+              // Convert UTC created_at to IST date for comparison
+              const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+              const createdAtUTC = new Date(order.created_at).getTime()
+              const createdAtIST = new Date(createdAtUTC + IST_OFFSET_MS)
+              const orderDateIST = createdAtIST.toISOString().split('T')[0]
+              return orderDateIST === selectedDate
             }
 
-            const collected = orders.filter(o => o.status === 'collected' && filterByDate(o))
-            const cancelled = orders.filter(o => o.status === 'cancelled' && filterByDate(o))
+            const collected = orders.filter(o => o.status === 'collected').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            const cancelled = orders.filter(o => o.status === 'cancelled').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status) && filterByDate(o))
 
             // Server figures once they land; until then fall back to today's
@@ -960,26 +1043,60 @@ export default function VendorDashboard() {
               </div>
             )
 
-            // Generate date options (today + yesterday only)
+            // Generate date options from start date to today (in IST)
             const dateOptions = []
-            const today = new Date()
-            for (let i = 0; i < 2; i++) {
-              const d = new Date(today)
-              d.setDate(d.getDate() - i)
-              const dateStr = d.toISOString().split('T')[0]
-              const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : ''
-              const dateLabel = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
+            const todayIST = new Date(new Date().getTime() + IST_OFFSET_MS)
+            const todayISTStr = todayIST.toISOString().split('T')[0]
+
+            let [year, month, day] = todayISTStr.split('-').map(Number)
+            let daysCount = 0
+            while (`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` >= '2026-07-29') {
+              const currentDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+              const dayLabel = daysCount === 0 ? 'Today' : daysCount === 1 ? 'Yesterday' : ''
+              const dateObj = new Date(year, month - 1, day)
+              const dateLabel = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
               dateOptions.push({
-                value: dateStr,
+                value: currentDateStr,
                 label: dayLabel ? `${dayLabel} ${dateLabel}` : dateLabel
               })
+              // Go back one day using date math
+              day--
+              if (day < 1) {
+                month--
+                if (month < 1) {
+                  year--
+                  month = 12
+                }
+                // Days in month (simplistic, but works for this date range)
+                day = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+                if (month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) day = 29
+              }
+              daysCount++
             }
 
             return (
               <div style={{ maxWidth: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
                   <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 700 }}>
-                    {isAll ? 'All-Time Summary' : "Today's Summary"}
+                    {isAll ? 'All-Time Summary' : (() => {
+                      const todayIST = getISTDateString()
+                      const yesterdayIST = (() => {
+                        const [y, m, d] = todayIST.split('-').map(Number)
+                        let day = d - 1, month = m, year = y
+                        if (day < 1) {
+                          month--
+                          if (month < 1) { year--; month = 12 }
+                          day = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+                          if (month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) day = 29
+                        }
+                        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                      })()
+                      if (selectedDate === todayIST) return "Today's Summary"
+                      if (selectedDate === yesterdayIST) return "Yesterday's Summary"
+                      const [y, m, d] = selectedDate.split('-').map(Number)
+                      return `${new Date(y, m - 1, d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} Summary`
+                    })()}
                   </div>
                   <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                     {!isAll && (
@@ -1034,7 +1151,10 @@ export default function VendorDashboard() {
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
                   {isAll
                     ? `Every order since launch — ${s?.orders ?? 0} in total.`
-                    : `${new Date(selectedDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+                    : (() => {
+                      const [y, m, d] = selectedDate.split('-').map(Number)
+                      return new Date(y, m - 1, d).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                    })()}
                 </div>
 
                 {/* Check if there are any orders for the selected date */}
@@ -1093,10 +1213,14 @@ export default function VendorDashboard() {
 
                     {/* Completed orders */}
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders Today ({collected.length})</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>✅ Completed Orders ({collected.length > 0 ? collected.length : (s?.completed || 0)})</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
-                        {collected.length === 0
-                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders yet</div>
+                        {collected.length === 0 && (s?.completed || 0) > 0
+                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>
+                              {loadingDate ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
+                            </div>
+                          : collected.length === 0
+                          ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders</div>
                           : collected.map(o => <OrderRow key={o.id} order={o} borderColor="var(--green)" />)
                         }
                       </div>
@@ -1149,7 +1273,7 @@ export default function VendorDashboard() {
                       onChange={e => editingItem ? setEditForm(m => ({ ...m, category: e.target.value })) : setMenuForm(m => ({ ...m, category: e.target.value }))}
                       style={inp}
                     >
-                      {['Combos', 'Fresh Juices', 'Mojitos', 'Hot Beverages', 'Fruit Milkshakes', 'Thick Shake', 'Sodas', 'Coffee Shake', 'Special Shakes', 'Ice Cream Shakes', 'Lassi', 'Delights', 'Club Sandwich', 'Strips', 'Sandwiches', 'Egg Bites', 'Loaded Fries', 'Rolls', 'Burgers', 'Buns', 'Wraps', 'Quick Bites', 'Maggies'].map(c => <option key={c}>{c}</option>)}
+                      {['Big Deals', 'Combos', 'Fresh Juices', 'Mojitos', 'Hot Beverages', 'Fruit Milkshakes', 'Thick Shake', 'Sodas', 'Coffee Shake', 'Special Shakes', 'Ice Cream Shakes', 'Lassi', 'Delights', 'Club Sandwich', 'Strips', 'Sandwiches', 'Egg Bites', 'Loaded Fries', 'Rolls', 'Burgers', 'Buns', 'Wraps', 'Quick Bites', 'Maggies'].map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
@@ -1220,9 +1344,22 @@ export default function VendorDashboard() {
                 </div>
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Menu ({menuItems.length})</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700 }}>Menu ({menuItems.length})</div>
+                  <input
+                    type="text"
+                    placeholder="Search items..."
+                    value={menuSearchQuery}
+                    onChange={e => setMenuSearchQuery(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', width: 200, fontSize: 13 }}
+                  />
+                </div>
                 <motion.div initial="hidden" animate="visible" variants={stagger} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflow: 'auto' }}>
-                  {menuItems.map(item => (
+                  {menuItems.filter(item =>
+                    menuSearchQuery === '' ||
+                    item.name.toLowerCase().includes(menuSearchQuery.toLowerCase()) ||
+                    item.category.toLowerCase().includes(menuSearchQuery.toLowerCase())
+                  ).map(item => (
                     <motion.div key={item.id} variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
@@ -1320,6 +1457,10 @@ export default function VendorDashboard() {
                   <div><div style={{ fontWeight: 600 }}>Restaurant Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Toggle open or close</div></div>
                   <motion.button {...hoverScale} onClick={toggleOpen} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: isOpen ? 'var(--green)' : 'var(--red)', color: 'white' }}>{isOpen ? 'Open' : 'Closed'}</motion.button>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+                  <div><div style={{ fontWeight: 600 }}>Delivery Status</div><div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Enable or disable delivery</div></div>
+                  <motion.button {...(togglingDelivery ? {} : hoverScale)} onClick={toggleDelivery} disabled={togglingDelivery} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: 14, cursor: togglingDelivery ? 'not-allowed' : 'pointer', background: deliveryAvailable ? 'var(--green)' : '#ccc', color: 'white', opacity: togglingDelivery ? 0.6 : 1 }}>{togglingDelivery ? '⏳' : deliveryAvailable ? '🛵' : '❌'} {deliveryAvailable ? 'Available' : 'Unavailable'}</motion.button>
+                </div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Email</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.vendor_email}</div></div>
                 <div><div style={{ fontWeight: 600, marginBottom: 3 }}>Location</div><div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria?.location}</div></div>
                 <motion.button {...hoverScale} onClick={logout} style={{ padding: '10px 20px', borderRadius: 9, border: '1px solid var(--red-bg)', background: 'var(--red-bg)', color: 'var(--red)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Sign Out</motion.button>
@@ -1414,6 +1555,34 @@ export default function VendorDashboard() {
               />
               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>Student will see: "Ready in ~{prepTime} minutes"</div>
             </div>
+
+            {/* Delivery Time Section - Only for delivery orders */}
+            {approvalModal.order_type === 'delivery' && (
+              <div style={{ marginBottom: 18, padding: 14, background: '#fbbf2415', borderRadius: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8, display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>🛵 Delivery Time (minutes) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={deliveryTime}
+                  onChange={e => setDeliveryTime(e.target.value)}
+                  placeholder="e.g., 5 for nearby, 15 for far"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: '1px solid #fbbf24',
+                    borderRadius: 8,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                  ⏰ Total ETA: ~{parseInt(prepTime) + parseInt(deliveryTime)} minutes (Prep {prepTime}m + Delivery {deliveryTime}m)
+                </div>
+              </div>
+            )}
 
             {/* Decision Section */}
             <div>
@@ -1528,7 +1697,7 @@ export default function VendorDashboard() {
 
       {/* MOBILE BOTTOM NAV */}
       <div className="v-bottom-nav">
-        {([['orders', '📋', 'Orders'], ['queue', '👥', 'Queue'], ['today', '📊', 'Today'], ['menu', '🍱', 'Menu'], ['settings', '⚙️', 'Settings']] as [Tab, string, string][]).map(([t, icon, label]) => (
+        {([['orders', '📋', 'Orders'], ['queue', '👥', 'Queue'], ['today', '💰', 'Revenue'], ['menu', '🍱', 'Menu'], ['settings', '⚙️', 'Settings']] as [Tab, string, string][]).map(([t, icon, label]) => (
           <motion.button key={t} whileTap={{ scale: 0.9 }} onClick={() => setTab(t)} className={`v-bottom-nav-item ${tab === t ? 'active' : ''}`}>
             <span>{icon}</span>
             <span>{label}</span>

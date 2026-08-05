@@ -46,7 +46,6 @@ export default function MobileHome() {
         sessionStorage.setItem('home-cache', JSON.stringify(dataWithQueues))
       }
     } catch (error) {
-      console.error('Fetch error:', error)
     } finally {
       setLoading(false)
     }
