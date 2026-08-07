@@ -460,9 +460,7 @@ export default function CafeteriaPage() {
   const [deliveryCharge, setDeliveryCharge] = useState(0)
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
-  // Skip parcel charge for test items (₹1)
-  const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
-  const PARCEL_CHARGE = isTestOrder ? 0 : 5
+  const PARCEL_CHARGE = 5
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -649,6 +647,10 @@ export default function CafeteriaPage() {
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
 
+  // Skip parcel charge for test items (₹1)
+  const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
+  const dynamicParcelCharge = isTestOrder ? 0 : 5
+
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
     if (categories.length > 0 && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
@@ -772,8 +774,8 @@ export default function CafeteriaPage() {
         .gte('created_at', todayStart.toISOString())
       const tokenNumber = (count ?? 0) + 1
 
-      const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+      const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+      const orderTotal = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
 
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
@@ -786,7 +788,7 @@ export default function CafeteriaPage() {
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
           delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
-          parcel_charge: orderType !== 'dine_in' ? PARCEL_CHARGE : 0,
+          parcel_charge: orderType !== 'dine_in' ? dynamicParcelCharge : 0,
         }])
         .select()
         .single()
@@ -873,8 +875,8 @@ export default function CafeteriaPage() {
 
   // Payment modal handler
   function handleOpenUPI() {
-    const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-    const paymentAmount = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+    const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+    const paymentAmount = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
     const paymentUrl = `/payment?orderId=${orderId}&amount=${paymentAmount}&name=${encodeURIComponent(formData.name)}`
     const isMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
@@ -1464,7 +1466,7 @@ export default function CafeteriaPage() {
                     </div>
                     {orderType !== 'dine_in' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Parcel Charge</span><span>₹{PARCEL_CHARGE}</span>
+                        <span>Parcel Charge</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
                     {orderType === 'delivery' && deliveryCharge > 0 && (
@@ -1475,7 +1477,7 @@ export default function CafeteriaPage() {
                   </>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</span>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
@@ -1504,7 +1506,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
@@ -1752,7 +1754,7 @@ export default function CafeteriaPage() {
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</span>
             </div>
           </div>
 
@@ -1771,7 +1773,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
@@ -1829,8 +1831,8 @@ export default function CafeteriaPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
-                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: PARCEL_CHARGE, emoji: '🥡' },
-                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: PARCEL_CHARGE, emoji: '🛵' },
+                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: dynamicParcelCharge, emoji: '🥡' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: dynamicParcelCharge, emoji: '🛵' },
               ].map(opt => {
                 const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
                 return (
