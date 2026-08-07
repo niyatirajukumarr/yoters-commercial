@@ -60,18 +60,15 @@ export async function POST(req: NextRequest) {
     // it is only promoted to `refund_successful` when the `refund.processed`
     // webhook confirms settlement (see app/api/razorpay/webhook/route.ts).
     if (order.payment_status === 'paid' && order.razorpay_payment_id) {
+      await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
       try {
         const refundResult = await refundPayment(order.razorpay_payment_id, order.total_amount)
-        await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
         logger.debug('[deny-order] Refund requested for order', shortId(orderId), 'refund_id:', refundResult.id)
       } catch (refundError: any) {
-        logger.error('[deny-order] Refund request failed for order', shortId(orderId), ':', refundError?.message || refundError)
-        // Update order status to cancelled but keep payment_status as 'paid' since refund failed
-        // This allows manual retry or investigation
-        return NextResponse.json(
-          { error: `Order cancelled but refund failed: ${refundError?.message || 'Unknown error'}. Contact support.` },
-          { status: 500 }
-        )
+        const errorMsg = refundError?.message || String(refundError)
+        logger.error('[deny-order] Refund request failed for order', shortId(orderId), '— will retry:', errorMsg)
+        // Keep as refund_initiated so webhook can retry when settlement completes.
+        // Log error but don't block the deny operation.
       }
     }
 
