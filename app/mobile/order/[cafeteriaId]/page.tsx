@@ -1204,28 +1204,9 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg flip card */}
-              <motion.button
-                onClick={() => setShowVegFront(!showVegFront)}
-                style={{ marginLeft: 'auto', perspective: '1000px', position: 'relative', width: '110px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
-                <motion.div
-                  animate={{ rotateX: showVegFront ? 0 : 180 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
-                    Veg
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateX(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
-                    <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '11px solid #fff', flexShrink: 0 }} />
-                    Non-veg
-                  </div>
-                </motion.div>
-              </motion.button>
             </div>
 
-            {/* Filter + Search */}
-            {/* FLIP_ANIMATION_V2_DEPLOYED */}
+            {/* Filter + Veg/Non-veg toggle + Search */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
               <motion.button
                 {...hoverScale}
@@ -1241,7 +1222,45 @@ export default function CafeteriaPage() {
                 <SlidersHorizontal size={18} color={filtersActive ? '#E8334A' : 'var(--text2)'} />
                 {filtersActive && <span style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: '50%', background: '#E8334A' }} />}
               </motion.button>
-              <div className="menu-search-bar" style={{ flex: 1, margin: 0 }}>
+
+              {/* Veg button */}
+              <motion.button
+                {...hoverScale}
+                onClick={() => setShowVegFront(true)}
+                style={{
+                  width: 48, height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  border: 'none',
+                  background: showVegFront ? '#22c55e' : '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  boxShadow: showVegFront ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                }}
+              >
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: showVegFront ? '#fff' : '#22c55e', flexShrink: 0 }} />
+              </motion.button>
+
+              {/* Non-veg button */}
+              <motion.button
+                {...hoverScale}
+                onClick={() => setShowVegFront(false)}
+                style={{
+                  width: 48, height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  border: 'none',
+                  background: !showVegFront ? '#ef4444' : '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  boxShadow: !showVegFront ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
+                }}
+              >
+                <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '9px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
+              </motion.button>
+
+              {/* Glass effect search bar */}
+              <div className="menu-search-bar" style={{
+                flex: 1, margin: 0,
+                background: 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+              }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
                   data-app-search
