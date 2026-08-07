@@ -1246,18 +1246,22 @@ export default function CafeteriaPage() {
                     backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255, 255, 255, 0.6)',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                    padding: '0 12px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    minHeight: 50,
                   }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     <input
                       ref={searchInputRef}
                       placeholder="Search food or drink..."
                       value={menuSearch}
                       onChange={e => setMenuSearch(e.target.value)}
-                      style={{ border: 'none', background: 'none', outline: 'none', flex: 1, padding: 0, fontSize: 14 }}
+                      style={{ border: 'none', background: 'none', outline: 'none', flex: 1, padding: 0, fontSize: 16, fontFamily: 'inherit' }}
                     />
                     {menuSearch && (
-                      <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</motion.button>
+                      <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 18, padding: 0, flexShrink: 0 }}>✕</motion.button>
                     )}
                   </div>
                 </motion.div>
