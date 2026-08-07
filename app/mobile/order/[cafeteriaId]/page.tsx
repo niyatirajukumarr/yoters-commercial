@@ -374,6 +374,8 @@ export default function CafeteriaPage() {
   const [othersOpen, setOthersOpen] = useState(false)
   const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
+  const [showSearchBar, setShowSearchBar] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
   const [priceRange, setPriceRange] = useState<'all' | 'under200' | 'mid' | 'above400'>('all')
   const [collection, setCollection] = useState<'all' | 'previous' | 'new'>('all')
@@ -618,6 +620,13 @@ export default function CafeteriaPage() {
       setDeliveryChargeError('Error calculating delivery charge')
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
+
+  // Auto-focus search input when search bar opens
+  useEffect(() => {
+    if (showSearchBar && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [showSearchBar])
 
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
@@ -1207,7 +1216,7 @@ export default function CafeteriaPage() {
               {/* Glass effect search icon button */}
               <motion.button
                 {...hoverScale}
-                onClick={() => focusPageSearch()}
+                onClick={() => setShowSearchBar(!showSearchBar)}
                 aria-label="Search"
                 style={{
                   marginLeft: 'auto', width: 44, height: 36, flexShrink: 0, borderRadius: 10, cursor: 'pointer',
@@ -1221,6 +1230,39 @@ export default function CafeteriaPage() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </motion.button>
             </div>
+
+            {/* Expanding search bar */}
+            <AnimatePresence>
+              {showSearchBar && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ overflow: 'hidden', margin: '8px 16px 0' }}
+                >
+                  <div className="menu-search-bar" style={{
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    padding: '0 12px',
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input
+                      ref={searchInputRef}
+                      placeholder="Search food or drink..."
+                      value={menuSearch}
+                      onChange={e => setMenuSearch(e.target.value)}
+                      style={{ border: 'none', background: 'none', outline: 'none', flex: 1, padding: 0, fontSize: 14 }}
+                    />
+                    {menuSearch && (
+                      <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Filter + Veg/Non-veg toggle */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
