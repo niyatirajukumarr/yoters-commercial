@@ -1244,14 +1244,16 @@ export default function CafeteriaPage() {
                 {...hoverScale}
                 onClick={() => setShowVegFront(true)}
                 style={{
-                  width: 48, height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
                   border: 'none',
                   background: showVegFront ? '#22c55e' : '#f5f5f7',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   boxShadow: showVegFront ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: showVegFront ? '#fff' : '#666',
                 }}
               >
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: showVegFront ? '#fff' : '#22c55e', flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: showVegFront ? '#fff' : '#22c55e', flexShrink: 0 }} />
+                Veg
               </motion.button>
 
               {/* Non-veg button */}
@@ -1259,14 +1261,16 @@ export default function CafeteriaPage() {
                 {...hoverScale}
                 onClick={() => setShowVegFront(false)}
                 style={{
-                  width: 48, height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
                   border: 'none',
                   background: !showVegFront ? '#ef4444' : '#f5f5f7',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   boxShadow: !showVegFront ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: !showVegFront ? '#fff' : '#666',
                 }}
               >
-                <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '9px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
+                <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: '7px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
+                Non-Veg
               </motion.button>
             </div>
 
