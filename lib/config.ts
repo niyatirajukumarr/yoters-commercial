@@ -31,21 +31,15 @@ const MANAGER_EMAILS = parseEmails(
     process.env.ADMIN_EMAILS
 )
 
-// Historical fallback so a deploy without the new env vars does not lock the
-// owner out. Set NEXT_PUBLIC_ADMIN_EMAILS in production to override.
-const FALLBACK_OWNER = 'niyati.rajukumar@gmail.com'
-
 export function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false
   const e = email.toLowerCase()
-  if (ADMIN_EMAILS.length === 0) return e === FALLBACK_OWNER
   return ADMIN_EMAILS.includes(e)
 }
 
 export function isManager(email: string | null | undefined): boolean {
   if (!email) return false
   const e = email.toLowerCase()
-  if (MANAGER_EMAILS.length === 0) return e === FALLBACK_OWNER
   return MANAGER_EMAILS.includes(e)
 }
 
