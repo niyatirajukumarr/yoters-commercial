@@ -647,9 +647,22 @@ export default function CafeteriaPage() {
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
 
-  // Skip parcel charge for test items (₹1)
+  // Categories that require parcel charge
+  const parcelChargeCategories = [
+    'Fresh juices', 'Mojitos', 'Hot beverages', 'Fruit milkshake', 'Thick shake',
+    'Coffee shake', 'Soda\'s', 'Special shakes', 'Lassi', 'Ice cream shakes',
+    'Delights', 'Quick bites', 'Maggie', 'Loaded fries', 'Strips', 'Combo', 'Big deals'
+  ]
+
+  // Check if any cart item is from parcel charge categories
+  const hasParcelChargeItems = cartItem.length > 0 && cartItem.some(cartItemObj => {
+    const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
+    return menuItem && parcelChargeCategories.includes(menuItem.category)
+  })
+
+  // Skip parcel charge for test items (₹1) or if no items from parcel charge categories
   const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
-  const dynamicParcelCharge = isTestOrder ? 0 : 5
+  const dynamicParcelCharge = (isTestOrder || !hasParcelChargeItems) ? 0 : 5
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
