@@ -460,7 +460,9 @@ export default function CafeteriaPage() {
   const [deliveryCharge, setDeliveryCharge] = useState(0)
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
-  const PARCEL_CHARGE = 5
+  // Skip parcel charge for test items (₹1)
+  const isTestOrder = cart.length > 0 && cart.every(item => item.price === 1)
+  const PARCEL_CHARGE = isTestOrder ? 0 : 5
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
