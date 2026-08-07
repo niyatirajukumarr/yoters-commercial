@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to mark payment as verified' }, { status: 500 })
     }
 
-    logger.warn('[admin/verify-stuck-payment] MANUAL PAYMENT VERIFICATION by', user.email, {
+    logger.error('[admin/verify-stuck-payment] MANUAL PAYMENT VERIFICATION by', user.email, {
       orderId: shortId(orderId),
       amount: order.total_amount,
       razorpayPaymentId: shortId(razorpay_payment_id),

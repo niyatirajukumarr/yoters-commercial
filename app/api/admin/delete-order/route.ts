@@ -34,6 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
   }
 
-  logger.warn('[admin/delete-order] Order deleted by admin', user.email, 'orderId:', shortId(orderId))
+  logger.error('[admin/delete-order] Order deleted by admin', user.email, 'orderId:', shortId(orderId))
   return NextResponse.json({ success: true })
 }
