@@ -2020,10 +2020,7 @@ export default function CafeteriaPage() {
               setNavSearchActive(true)
               setActiveTab('home')
               setStep('menu')
-              // Focus in the tap handler itself where possible — deferring it
-              // past the gesture stops mobile keyboards from opening. Only
-              // fall back to waiting if the menu view isn't mounted yet.
-              if (!focusPageSearch()) setTimeout(() => focusPageSearch(), 60)
+              setShowSearchBar(true)
             },
           },
           { label: 'orders', icon: ShoppingBag, onSelect: () => { setNavSearchActive(false); setActiveTab('orders') } },
