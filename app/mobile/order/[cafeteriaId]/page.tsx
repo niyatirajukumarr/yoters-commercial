@@ -1492,6 +1492,10 @@ export default function CafeteriaPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
                   <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</span>
                 </div>
+                <div style={{ padding: '14px', background: '#f0f4f8', border: '1px solid #d0dce6', borderRadius: 12, marginBottom: 16, fontSize: 13, color: '#334155', lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>📌 Important: Wait for Confirmation</div>
+                  <div style={{ fontWeight: 500 }}>Complete payment from your desired app and return back to this page. Keep this tab open to receive your order token and track your order in real-time.</div>
+                </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
                 </motion.button>
