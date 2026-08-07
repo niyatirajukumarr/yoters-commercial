@@ -1204,9 +1204,25 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
+              {/* Glass effect search icon button */}
+              <motion.button
+                {...hoverScale}
+                onClick={() => focusPageSearch()}
+                aria-label="Search"
+                style={{
+                  marginLeft: 'auto', width: 44, height: 36, flexShrink: 0, borderRadius: 10, cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
+                  background: 'rgba(255, 255, 255, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </motion.button>
             </div>
 
-            {/* Filter + Veg/Non-veg toggle + Search */}
+            {/* Filter + Veg/Non-veg toggle */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
               <motion.button
                 {...hoverScale}
@@ -1252,26 +1268,6 @@ export default function CafeteriaPage() {
               >
                 <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '9px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
               </motion.button>
-
-              {/* Glass effect search bar */}
-              <div className="menu-search-bar" style={{
-                flex: 1, margin: 0,
-                background: 'rgba(255, 255, 255, 0.4)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input
-                  data-app-search
-                  placeholder="Search food or drink..."
-                  value={menuSearch}
-                  onChange={e => setMenuSearch(e.target.value)}
-                />
-                {menuSearch && (
-                  <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</motion.button>
-                )}
-              </div>
             </div>
 
             {/* Category pills */}
