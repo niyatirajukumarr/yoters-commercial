@@ -75,13 +75,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // FIX #3: Prevent double-payment marking
+    // FIX #3: If already marked paid (webhook ran first), just ensure payment ID is saved
     if (order.payment_status === 'paid') {
-      logger.error('[Razorpay Verify] Double-payment attempt on order:', shortId(orderId))
-      return NextResponse.json(
-        { success: false, error: 'Order already marked as paid' },
-        { status: 400 }
-      )
+      logger.debug('[Razorpay Verify] Order already paid, ensuring payment ID is saved:', shortId(orderId))
+      // Still update to make sure razorpay_payment_id is set (webhook might have failed to save it)
+      const { error: updateError } = await adminSupabase
+        .from('orders')
+        .update({ razorpay_payment_id })
+        .eq('id', orderId)
+
+      if (updateError) {
+        logger.error('[Razorpay Verify] Failed to update payment ID on already-paid order:', updateError)
+        return NextResponse.json({ success: true, message: 'Already paid' }, { status: 200 })
+      }
+      return NextResponse.json({ success: true, message: 'Already paid, payment ID updated' }, { status: 200 })
     }
 
     // Signature confirmed genuine and matches this specific order -> safe to mark as pending approval
