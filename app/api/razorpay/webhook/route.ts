@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Update order status to pending approval (payment confirmed, awaiting vendor approval)
-      // Only update if payment_status is still 'unpaid' to prevent race conditions
+      // Always save razorpay_payment_id even if payment_status is already 'paid' (verify-payment may have run first)
       const { error: updateError } = await supabase
         .from('orders')
         .update({
@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
           razorpay_payment_id: payment_id,
         })
         .eq('id', order.id)
-        .eq('payment_status', 'unpaid')
 
       if (updateError) {
         logger.error('[Razorpay Webhook] Error updating order:', updateError)
