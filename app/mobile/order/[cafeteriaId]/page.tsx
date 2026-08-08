@@ -36,6 +36,7 @@ interface MenuItem {
   is_veg?: boolean
   image_url?: string
   stock_quantity?: number | null
+  variants?: Array<{ name: string; price: number }>
 }
 
 interface Cafeteria {
@@ -386,6 +387,7 @@ export default function CafeteriaPage() {
   const [heroImgErrors, setHeroImgErrors] = useState<Set<string>>(new Set())
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set())
   const [popularity, setPopularity] = useState<{ byName: Record<string, number>; byId: Record<string, number>; max: number }>({ byName: {}, byId: {}, max: 0 })
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery' | null>(null)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -744,7 +746,25 @@ export default function CafeteriaPage() {
       router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
       return
     }
-    addItem(cafeteriaId, { menuId: item.id, name: item.name, price: item.price, quantity: 1 })
+
+    // Check if item has variants and if one is selected
+    let finalPrice = item.price
+    let itemName = item.name
+
+    if (item.variants && item.variants.length > 0) {
+      const selectedVariant = selectedVariants[item.id]
+      if (!selectedVariant) {
+        alert('Please select a size (Half/Full)')
+        return
+      }
+      const variant = item.variants.find(v => v.name === selectedVariant)
+      if (variant) {
+        finalPrice = variant.price
+        itemName = `${item.name} (${selectedVariant})`
+      }
+    }
+
+    addItem(cafeteriaId, { menuId: item.id, name: itemName, price: finalPrice, quantity: 1 })
   }
 
   // Liking a food item also requires auth, same as add-to-cart. Send them to
@@ -1024,7 +1044,36 @@ export default function CafeteriaPage() {
             </div>
           )}
 
-          <div className="dish-price2">₹{item.price}</div>
+          <div className="dish-price2">
+            {item.variants && item.variants.length > 0 ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                {item.variants.map((v, idx) => {
+                  const selected = selectedVariants[item.id] === v.name
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedVariants(prev => ({ ...prev, [item.id]: v.name }))}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        border: `1.5px solid ${selected ? '#E8334A' : '#ddd'}`,
+                        background: selected ? '#E8334A' : 'white',
+                        color: selected ? 'white' : '#333',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {v.name} ₹{v.price}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              `₹${item.price}`
+            )}
+          </div>
 
           {item.description && (
             <div className={`dish-desc2 ${descExpanded ? '' : 'clamped'}`} onClick={toggleDesc}>
