@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyWebhookSignature } from '@/lib/razorpay'
+import { verifyWebhookSignature, getPaymentDetails } from '@/lib/razorpay'
 import { logger, shortId } from '@/lib/logger'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       // Use the payment_id from webhook, or fall back to fetching from Razorpay if missing
       let paymentIdToSave = payment_id
       if (!paymentIdToSave) {
-        logger.warn('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API')
+        logger.info('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API')
         try {
           const paymentDetails = await getPaymentDetails(order.razorpay_payment_id)
           paymentIdToSave = paymentDetails.id
