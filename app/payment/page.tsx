@@ -66,8 +66,8 @@ function PaymentPageContent() {
   // Initialize payment on mount
   useEffect(() => {
     const initializePayment = async () => {
-      if (!orderId || !amount || !name) {
-        setError('Missing payment information')
+      if (!orderId) {
+        setError('Missing order information')
         setLoading(false)
         return
       }
@@ -82,13 +82,19 @@ function PaymentPageContent() {
           'Order fetch timed out'
         ) as any
 
+        if (!order) {
+          setError('Order not found')
+          setLoading(false)
+          return
+        }
+
         setOrderDetails(order)
 
         // Fall back to the authenticated session email if the order has none.
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
-        const email = order?.student_email || session?.user?.email || ''
-        const phone = order?.student_phone || ''
-        const contactName = order?.student_name || name || ''
+        const email = order.student_email || session?.user?.email || ''
+        const phone = order.student_phone || ''
+        const contactName = order.student_name || name || 'Customer'
 
         if (!isValidEmail(email) || !isValidPhone(phone)) {
           setError('This order is missing valid contact details. Please re-place your order with a valid phone and email.')
@@ -105,7 +111,7 @@ function PaymentPageContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               orderId,
-              amount: parseInt(amount),
+              amount: order.total_amount,
               studentEmail: email,
               studentPhone: phone,
               studentName: contactName,
@@ -141,7 +147,7 @@ function PaymentPageContent() {
         clearInterval(pollIntervalRef.current)
       }
     }
-  }, [orderId, amount, name])
+  }, [orderId])
 
   // When SDK is loaded AND order is ready, open the modal
   useEffect(() => {
