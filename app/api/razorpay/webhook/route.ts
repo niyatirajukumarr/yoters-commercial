@@ -61,12 +61,25 @@ export async function POST(req: NextRequest) {
 
       // Update order status to pending approval (payment confirmed, awaiting vendor approval)
       // Always save razorpay_payment_id even if payment_status is already 'paid' (verify-payment may have run first)
+      // Use the payment_id from webhook, or fall back to fetching from Razorpay if missing
+      let paymentIdToSave = payment_id
+      if (!paymentIdToSave) {
+        logger.warn('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API')
+        try {
+          const paymentDetails = await getPaymentDetails(order.razorpay_payment_id)
+          paymentIdToSave = paymentDetails.id
+          logger.debug('[Razorpay Webhook] Fetched payment_id from API:', shortId(paymentIdToSave))
+        } catch (fetchErr) {
+          logger.error('[Razorpay Webhook] Failed to fetch payment details:', fetchErr)
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'pending_approval',
-          razorpay_payment_id: payment_id,
+          razorpay_payment_id: paymentIdToSave,
         })
         .eq('id', order.id)
 
