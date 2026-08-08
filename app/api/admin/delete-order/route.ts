@@ -1,31 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+import { getAuthedUser, getAdminClient } from '@/lib/auth-server'
+import { isAdmin } from '@/lib/config'
+import { logger, shortId } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
-  const { orderId } = await req.json()
+  const limited = enforceRateLimit(req, 'admin-delete-order', 10, 60_000)
+  if (limited) return limited
 
+  // SECURITY: Authenticate user
+  const user = await getAuthedUser(req)
+  if (!user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // SECURITY: Verify admin role
+  if (!isAdmin(user.email)) {
+    logger.error('[admin/delete-order] Unauthorized attempt by', shortId(user.email))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { orderId } = await req.json()
   if (!orderId) {
     return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from('orders')
-    .delete()
-    .eq('id', orderId)
+  // Execute with audit log
+  const admin = getAdminClient()
+  const { error } = await admin.from('orders').delete().eq('id', orderId)
 
   if (error) {
-    console.error('[delete-order] Delete failed:', error)
-    return NextResponse.json(
-      { error: 'Could not delete order. Please try again.' },
-      { status: 500 }
-    )
+    logger.error('[admin/delete-order] Delete failed:', error)
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true }, { status: 200 })
+  logger.error('[admin/delete-order] Order deleted by admin', user.email, 'orderId:', shortId(orderId))
+  return NextResponse.json({ success: true })
 }

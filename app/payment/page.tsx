@@ -66,8 +66,8 @@ function PaymentPageContent() {
   // Initialize payment on mount
   useEffect(() => {
     const initializePayment = async () => {
-      if (!orderId || !amount || !name) {
-        setError('Missing payment information')
+      if (!orderId) {
+        setError('Missing order information')
         setLoading(false)
         return
       }
@@ -82,13 +82,19 @@ function PaymentPageContent() {
           'Order fetch timed out'
         ) as any
 
+        if (!order) {
+          setError('Order not found')
+          setLoading(false)
+          return
+        }
+
         setOrderDetails(order)
 
         // Fall back to the authenticated session email if the order has none.
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
-        const email = order?.student_email || session?.user?.email || ''
-        const phone = order?.student_phone || ''
-        const contactName = order?.student_name || name || ''
+        const email = order.student_email || session?.user?.email || ''
+        const phone = order.student_phone || ''
+        const contactName = order.student_name || name || 'Customer'
 
         if (!isValidEmail(email) || !isValidPhone(phone)) {
           setError('This order is missing valid contact details. Please re-place your order with a valid phone and email.')
@@ -105,7 +111,7 @@ function PaymentPageContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               orderId,
-              amount: parseInt(amount),
+              amount: order.total_amount,
               studentEmail: email,
               studentPhone: phone,
               studentName: contactName,
@@ -141,7 +147,7 @@ function PaymentPageContent() {
         clearInterval(pollIntervalRef.current)
       }
     }
-  }, [orderId, amount, name])
+  }, [orderId])
 
   // When SDK is loaded AND order is ready, open the modal
   useEffect(() => {
@@ -231,6 +237,13 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
+          console.log('[Razorpay Handler] Payment completed, response:', response)
+          console.log('[Razorpay Handler] Calling verify-payment with:', {
+            orderId,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature ? 'present' : 'MISSING',
+          })
           // Verify signature server-side before trusting the payment, then mark order as paid
           const verifyRes = await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
@@ -243,13 +256,19 @@ function PaymentPageContent() {
             }),
           })
 
+          console.log('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
+          const verifyData = await verifyRes.json()
+          console.log('[Razorpay Handler] verify-payment response data:', verifyData)
+
           if (!verifyRes.ok) {
+            console.error('[Razorpay Handler] Verification failed:', verifyData)
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setProcessing(false)
             setError('Payment verification failed. If money was deducted, contact support.')
             return
           }
 
+          console.log('[Razorpay Handler] Payment verified successfully!')
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)
           setPaymentConfirmed(true)

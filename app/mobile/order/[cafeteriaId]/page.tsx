@@ -374,6 +374,8 @@ export default function CafeteriaPage() {
   const [othersOpen, setOthersOpen] = useState(false)
   const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
+  const [showSearchBar, setShowSearchBar] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [sortBy, setSortBy] = useState<'relevance' | 'cost_low' | 'cost_high'>('relevance')
   const [priceRange, setPriceRange] = useState<'all' | 'under200' | 'mid' | 'above400'>('all')
   const [collection, setCollection] = useState<'all' | 'previous' | 'new'>('all')
@@ -619,6 +621,13 @@ export default function CafeteriaPage() {
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
 
+  // Auto-focus search input when search bar opens
+  useEffect(() => {
+    if (showSearchBar && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [showSearchBar])
+
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
   const visibleItems = menuItems.filter(m => (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m)))
@@ -646,6 +655,23 @@ export default function CafeteriaPage() {
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
   const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
+
+  // Categories that require parcel charge
+  const parcelChargeCategories = [
+    'Fresh juices', 'Mojitos', 'Hot beverages', 'Fruit milkshake', 'Thick shake',
+    'Coffee shake', 'Soda\'s', 'Special shakes', 'Lassi', 'Ice cream shakes',
+    'Delights', 'Quick bites', 'Maggie', 'Loaded fries', 'Strips', 'Combo', 'Big deals'
+  ]
+
+  // Check if any cart item is from parcel charge categories
+  const hasParcelChargeItems = cartItem.length > 0 && cartItem.some(cartItemObj => {
+    const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
+    return menuItem && parcelChargeCategories.includes(menuItem.category)
+  })
+
+  // Skip parcel charge for test items (₹1) or if no items from parcel charge categories
+  const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
+  const dynamicParcelCharge = (isTestOrder || !hasParcelChargeItems) ? 0 : 5
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
@@ -770,8 +796,8 @@ export default function CafeteriaPage() {
         .gte('created_at', todayStart.toISOString())
       const tokenNumber = (count ?? 0) + 1
 
-      const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-      const orderTotal = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+      const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+      const orderTotal = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
 
       // Add 10-second timeout to prevent infinite loading
       const orderPromise = supabase
@@ -784,7 +810,7 @@ export default function CafeteriaPage() {
           delivery_latitude: orderType === 'delivery' ? deliveryCoords?.lat ?? null : null,
           delivery_longitude: orderType === 'delivery' ? deliveryCoords?.lng ?? null : null,
           delivery_charge: orderType === 'delivery' ? deliveryCharge : 0,
-          parcel_charge: orderType !== 'dine_in' ? PARCEL_CHARGE : 0,
+          parcel_charge: orderType !== 'dine_in' ? dynamicParcelCharge : 0,
         }])
         .select()
         .single()
@@ -871,8 +897,8 @@ export default function CafeteriaPage() {
 
   // Payment modal handler
   function handleOpenUPI() {
-    const parcelChargeAmount = orderType !== 'dine_in' ? PARCEL_CHARGE : 0
-    const paymentAmount = orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total
+    const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+    const paymentAmount = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
     const paymentUrl = `/payment?orderId=${orderId}&amount=${paymentAmount}&name=${encodeURIComponent(formData.name)}`
     const isMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
@@ -1187,28 +1213,62 @@ export default function CafeteriaPage() {
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
-              {/* Veg / Non-veg flip card */}
+              {/* Glass effect search icon button */}
               <motion.button
-                onClick={() => setShowVegFront(!showVegFront)}
-                style={{ marginLeft: 'auto', perspective: '1000px', position: 'relative', width: '110px', height: '36px', padding: 0, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}>
-                <motion.div
-                  animate={{ rotateX: showVegFront ? 0 : 180 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, transformStyle: 'preserve-3d' }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#22c55e', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
-                    Veg
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, backfaceVisibility: 'hidden', transform: 'rotateX(180deg)', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}>
-                    <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '11px solid #fff', flexShrink: 0 }} />
-                    Non-veg
-                  </div>
-                </motion.div>
+                {...hoverScale}
+                onClick={() => setShowSearchBar(!showSearchBar)}
+                aria-label="Search"
+                style={{
+                  marginLeft: 'auto', width: 44, height: 36, flexShrink: 0, borderRadius: 10, cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
+                  background: 'rgba(255, 255, 255, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </motion.button>
             </div>
 
-            {/* Filter + Search */}
-            {/* FLIP_ANIMATION_V2_DEPLOYED */}
+            {/* Expanding search bar */}
+            <AnimatePresence>
+              {showSearchBar && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  style={{ overflow: 'hidden', margin: '8px 16px 0' }}
+                >
+                  <div className="menu-search-bar" style={{
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    minHeight: 50,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input
+                      ref={searchInputRef}
+                      placeholder="Search food or drink..."
+                      value={menuSearch}
+                      onChange={e => setMenuSearch(e.target.value)}
+                      style={{ border: 'none', background: 'none', outline: 'none', flex: 1, padding: 0, fontSize: 16, fontFamily: 'inherit' }}
+                    />
+                    {menuSearch && (
+                      <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 18, padding: 0, flexShrink: 0 }}>✕</motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Filter + Veg/Non-veg toggle */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 16px 0' }}>
               <motion.button
                 {...hoverScale}
@@ -1224,18 +1284,40 @@ export default function CafeteriaPage() {
                 <SlidersHorizontal size={18} color={filtersActive ? '#E8334A' : 'var(--text2)'} />
                 {filtersActive && <span style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: '50%', background: '#E8334A' }} />}
               </motion.button>
-              <div className="menu-search-bar" style={{ flex: 1, margin: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input
-                  data-app-search
-                  placeholder="Search food or drink..."
-                  value={menuSearch}
-                  onChange={e => setMenuSearch(e.target.value)}
-                />
-                {menuSearch && (
-                  <motion.button {...hoverScale} onClick={() => setMenuSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, padding: 0 }}>✕</motion.button>
-                )}
-              </div>
+
+              {/* Veg button */}
+              <motion.button
+                {...hoverScale}
+                onClick={() => setShowVegFront(true)}
+                style={{
+                  padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  border: 'none',
+                  background: showVegFront ? '#22c55e' : '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  boxShadow: showVegFront ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: showVegFront ? '#fff' : '#666',
+                }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: showVegFront ? '#fff' : '#22c55e', flexShrink: 0 }} />
+                Veg
+              </motion.button>
+
+              {/* Non-veg button */}
+              <motion.button
+                {...hoverScale}
+                onClick={() => setShowVegFront(false)}
+                style={{
+                  padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                  border: 'none',
+                  background: !showVegFront ? '#ef4444' : '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  boxShadow: !showVegFront ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: !showVegFront ? '#fff' : '#666',
+                }}
+              >
+                <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: '7px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
+                Non-Veg
+              </motion.button>
             </div>
 
             {/* Category pills */}
@@ -1462,7 +1544,7 @@ export default function CafeteriaPage() {
                     </div>
                     {orderType !== 'dine_in' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Parcel Charge</span><span>₹{PARCEL_CHARGE}</span>
+                        <span>Parcel Charge</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
                     {orderType === 'delivery' && deliveryCharge > 0 && (
@@ -1473,7 +1555,11 @@ export default function CafeteriaPage() {
                   </>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--border)' }}>
-                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+                  <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</span>
+                </div>
+                <div style={{ padding: '14px', background: '#f0f4f8', border: '1px solid #d0dce6', borderRadius: 12, marginBottom: 16, fontSize: 13, color: '#334155', lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>📌 Important: Wait for Confirmation</div>
+                  <div style={{ fontWeight: 500 }}>Complete payment from your desired app and return back to this page. Keep this tab open to receive your order token and track your order in real-time.</div>
                 </div>
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
@@ -1502,7 +1588,7 @@ export default function CafeteriaPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, opacity: 0.85 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>View Cart →</span>
               </motion.button>
@@ -1750,7 +1836,7 @@ export default function CafeteriaPage() {
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</span>
+              <span style={{ color: 'var(--accent)' }}>₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</span>
             </div>
           </div>
 
@@ -1769,7 +1855,7 @@ export default function CafeteriaPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>💳</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Complete Payment</div>
-          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + PARCEL_CHARGE + deliveryCharge : orderType === 'takeaway' ? total + PARCEL_CHARGE : total}</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 32 }}>Amount: ₹{orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total}</div>
           <motion.button
             {...hoverScale}
             onClick={handleOpenUPI}
@@ -1827,8 +1913,8 @@ export default function CafeteriaPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
-                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: PARCEL_CHARGE, emoji: '🥡' },
-                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: PARCEL_CHARGE, emoji: '🛵' },
+                { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: dynamicParcelCharge, emoji: '🥡' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: dynamicParcelCharge, emoji: '🛵' },
               ].map(opt => {
                 const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
                 return (
@@ -1938,10 +2024,7 @@ export default function CafeteriaPage() {
               setNavSearchActive(true)
               setActiveTab('home')
               setStep('menu')
-              // Focus in the tap handler itself where possible — deferring it
-              // past the gesture stops mobile keyboards from opening. Only
-              // fall back to waiting if the menu view isn't mounted yet.
-              if (!focusPageSearch()) setTimeout(() => focusPageSearch(), 60)
+              setShowSearchBar(true)
             },
           },
           { label: 'orders', icon: ShoppingBag, onSelect: () => { setNavSearchActive(false); setActiveTab('orders') } },

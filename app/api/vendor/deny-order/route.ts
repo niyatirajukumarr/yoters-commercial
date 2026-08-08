@@ -62,11 +62,13 @@ export async function POST(req: NextRequest) {
     if (order.payment_status === 'paid' && order.razorpay_payment_id) {
       await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
       try {
-        await refundPayment(order.razorpay_payment_id, order.total_amount)
-        logger.debug('Refund requested for order', shortId(orderId))
+        const refundResult = await refundPayment(order.razorpay_payment_id, order.total_amount)
+        logger.debug('[deny-order] Refund requested for order', shortId(orderId), 'refund_id:', refundResult.id)
       } catch (refundError: any) {
-        logger.error('Refund request error:', refundError)
-        // Keep as refund_initiated so it can be retried; do not mark successful.
+        const errorMsg = refundError?.message || String(refundError)
+        logger.error('[deny-order] Refund request failed for order', shortId(orderId), '— will retry:', errorMsg)
+        // Keep as refund_initiated so webhook can retry when settlement completes.
+        // Log error but don't block the deny operation.
       }
     }
 

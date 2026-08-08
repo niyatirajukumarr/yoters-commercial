@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
       const { payment_id, order_id } = event.payload.payment.entity
 
       logger.debug('[Razorpay Webhook] Payment authorized:', {
-        paymentId: shortId(payment_id),
+        paymentId: payment_id ? shortId(payment_id) : 'NULL!',
         orderId: shortId(order_id),
+        fullPaymentId: payment_id,
       })
 
       // Find order by razorpay_order_id
@@ -59,24 +60,46 @@ export async function POST(req: NextRequest) {
       }
 
       // Update order status to pending approval (payment confirmed, awaiting vendor approval)
+      // Always save razorpay_payment_id even if payment_status is already 'paid' (verify-payment may have run first)
+      // Use the payment_id from webhook, or fall back to fetching from Razorpay if missing
+      let paymentIdToSave = payment_id
+      if (!paymentIdToSave) {
+        logger.warn('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API')
+        try {
+          const paymentDetails = await getPaymentDetails(order.razorpay_payment_id)
+          paymentIdToSave = paymentDetails.id
+          logger.debug('[Razorpay Webhook] Fetched payment_id from API:', shortId(paymentIdToSave))
+        } catch (fetchErr) {
+          logger.error('[Razorpay Webhook] Failed to fetch payment details:', fetchErr)
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'pending_approval',
-          razorpay_payment_id: payment_id,
+          razorpay_payment_id: paymentIdToSave,
         })
         .eq('id', order.id)
 
       if (updateError) {
         logger.error('[Razorpay Webhook] Error updating order:', updateError)
+        logger.error('[Razorpay Webhook] Failed to update with:', {
+          orderId: shortId(order.id),
+          payment_id: payment_id ? shortId(payment_id) : 'NULL',
+          payment_status: 'paid',
+        })
         return NextResponse.json(
           { error: 'Failed to update order' },
           { status: 500 }
         )
       }
 
-      logger.debug('[Razorpay Webhook] Order updated to paid:', shortId(order.id))
+      logger.debug('[Razorpay Webhook] Order updated to paid:', {
+        orderId: shortId(order.id),
+        paymentId: payment_id ? shortId(payment_id) : 'NULL',
+      })
 
       // TODO: Implement vendor payouts when Razorpay setup is complete
       // For now, payouts are paused - will be implemented later
