@@ -18,7 +18,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = body
 
+    logger.debug('[Razorpay Verify] Request received:', {
+      orderId: orderId ? shortId(orderId) : 'missing',
+      razorpay_order_id: razorpay_order_id ? shortId(razorpay_order_id) : 'missing',
+      razorpay_payment_id: razorpay_payment_id ? shortId(razorpay_payment_id) : 'MISSING',
+      razorpay_signature: razorpay_signature ? 'present' : 'missing',
+    })
+
     if (!orderId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      logger.error('[Razorpay Verify] Missing fields:', { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature })
       return NextResponse.json(
         {
           error:
