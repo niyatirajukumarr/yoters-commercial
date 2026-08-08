@@ -237,6 +237,13 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
+          console.log('[Razorpay Handler] Payment completed, response:', response)
+          console.log('[Razorpay Handler] Calling verify-payment with:', {
+            orderId,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature ? 'present' : 'MISSING',
+          })
           // Verify signature server-side before trusting the payment, then mark order as paid
           const verifyRes = await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
@@ -249,13 +256,19 @@ function PaymentPageContent() {
             }),
           })
 
+          console.log('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
+          const verifyData = await verifyRes.json()
+          console.log('[Razorpay Handler] verify-payment response data:', verifyData)
+
           if (!verifyRes.ok) {
+            console.error('[Razorpay Handler] Verification failed:', verifyData)
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setProcessing(false)
             setError('Payment verification failed. If money was deducted, contact support.')
             return
           }
 
+          console.log('[Razorpay Handler] Payment verified successfully!')
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)
           setPaymentConfirmed(true)
