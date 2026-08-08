@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
       const { payment_id, order_id } = event.payload.payment.entity
 
       logger.debug('[Razorpay Webhook] Payment authorized:', {
-        paymentId: shortId(payment_id),
+        paymentId: payment_id ? shortId(payment_id) : 'NULL!',
         orderId: shortId(order_id),
+        fullPaymentId: payment_id,
       })
 
       // Find order by razorpay_order_id
@@ -71,13 +72,21 @@ export async function POST(req: NextRequest) {
 
       if (updateError) {
         logger.error('[Razorpay Webhook] Error updating order:', updateError)
+        logger.error('[Razorpay Webhook] Failed to update with:', {
+          orderId: shortId(order.id),
+          payment_id: payment_id ? shortId(payment_id) : 'NULL',
+          payment_status: 'paid',
+        })
         return NextResponse.json(
           { error: 'Failed to update order' },
           { status: 500 }
         )
       }
 
-      logger.debug('[Razorpay Webhook] Order updated to paid:', shortId(order.id))
+      logger.debug('[Razorpay Webhook] Order updated to paid:', {
+        orderId: shortId(order.id),
+        paymentId: payment_id ? shortId(payment_id) : 'NULL',
+      })
 
       // TODO: Implement vendor payouts when Razorpay setup is complete
       // For now, payouts are paused - will be implemented later
