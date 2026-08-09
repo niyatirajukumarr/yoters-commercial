@@ -535,11 +535,15 @@ export default function CafeteriaPage() {
     }
     fetch()
 
-    // Real-time subscription for cafe orders
-    const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user?.phone}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, (payload) => {
-        // Order change detected - refetching
-        fetch() // Refetch orders on any change
+    // Filtered to this customer's own orders, which is all this screen shows.
+    // Subscribing to the whole cafeteria meant every stranger's order woke
+    // every open menu and triggered a refetch — at 300 customers and 300
+    // orders over a lunch rush that is ~90,000 needless queries.
+    if (!user?.phone) return
+
+    const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user.phone}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, () => {
+        fetch()
       })
       .subscribe()
 
@@ -564,10 +568,14 @@ export default function CafeteriaPage() {
       }
     }
     load()
-    const ch = supabase.channel(`menu-pop-${cafeteriaId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, load)
-      .subscribe()
-    return () => { active = false; supabase.removeChannel(ch) }
+    // Polled rather than subscribed. "Highly ordered" is a soft signal that
+    // nobody notices going stale for a minute, but as a realtime subscription
+    // it was the worst kind of load: every order at the cafeteria pushed every
+    // open menu to refetch an endpoint that scans the whole order history.
+    // A poll also lets the response be CDN-cached, so a restaurant's viewers
+    // share one origin query per minute instead of one each per order.
+    const timer = setInterval(load, 60_000)
+    return () => { active = false; clearInterval(timer) }
   }, [cafeteriaId])
 
   // Populate form with user data
