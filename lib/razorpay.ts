@@ -140,13 +140,13 @@ export async function getPaymentByOrderId(orderId: string): Promise<any> {
   const razorpay = getRazorpayInstance()
 
   try {
-    const payments = await razorpay.payments.all({ order_id: orderId, count: 1 })
+    const payments = await (razorpay.orders as any).fetchPayments(orderId)
 
-    if (!payments.items || payments.items.length === 0) {
+    if (!payments || payments.length === 0) {
       throw new Error(`No payments found for order ${orderId}`)
     }
 
-    return payments.items[0]
+    return payments[0]
   } catch (error: any) {
     logger.error('Razorpay payment fetch by order error:', error)
     throw error
