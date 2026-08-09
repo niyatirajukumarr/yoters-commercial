@@ -25,6 +25,24 @@ type RangeSummary = {
 }
 type VendorSummary = { today: RangeSummary; allTime: RangeSummary; dayStart: string }
 
+// Blank state for the add/edit menu form. Kept as one constant because the
+// form is reset from several places and the fields drifted apart when each
+// reset spelled the object out itself.
+const EMPTY_MENU_FORM = {
+  name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true,
+  // Half/Full dishes carry a price per portion instead of a single price.
+  has_variants: false, half_price: '', full_price: '',
+  image_file: null as File | null,
+}
+
+// A dish is Half/Full when it has a variants array; the customer menu reads
+// the same shape (see lib/hooks/useCart.ts and the order page).
+type Variant = { name: string; price: number }
+const itemVariants = (item: { variants?: unknown }): Variant[] =>
+  Array.isArray(item.variants) ? (item.variants as Variant[]) : []
+const variantPrice = (variants: Variant[], name: string) =>
+  variants.find(v => v.name === name)?.price
+
 export default function VendorDashboard() {
   const router = useRouter()
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
@@ -36,10 +54,10 @@ export default function VendorDashboard() {
   const [msg, setMsg] = useState('')
   const [showMsg, setShowMsg] = useState(true)
   const [waitOverride, setWaitOverride] = useState('')
-  const [menuForm, setMenuForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null as File | null })
+  const [menuForm, setMenuForm] = useState({ ...EMPTY_MENU_FORM })
   const [isOpen, setIsOpen] = useState(true)
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, has_variants: false, half_price: '', full_price: '' })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -354,8 +372,44 @@ export default function VendorDashboard() {
     }
   }
 
+  /**
+   * Turns the portion fields into the columns the menu tables expect.
+   * `price` stays populated for Half/Full dishes — it's the Half price, and
+   * it's what sorting, filters and any older reader still fall back to.
+   */
+  function pricingColumns(form: { price: string; stock_quantity: string; has_variants: boolean; half_price: string; full_price: string }) {
+    if (!form.has_variants) {
+      return {
+        price: parseFloat(form.price),
+        variants: null,
+        stock_quantity: form.stock_quantity ? parseInt(form.stock_quantity) : null,
+      }
+    }
+    const half = parseFloat(form.half_price)
+    const full = parseFloat(form.full_price)
+    return {
+      price: half,
+      variants: [{ name: 'Half', price: half }, { name: 'Full', price: full }],
+      stock_quantity: null,
+    }
+  }
+
+  // Half/Full dishes are priced per portion, so the single price field is
+  // hidden and the two portion prices take its place as what's required.
+  function pricingError(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
+    if (form.has_variants) {
+      if (!(parseFloat(form.half_price) > 0) || !(parseFloat(form.full_price) > 0)) {
+        return 'Enter both the Half and Full price.'
+      }
+      return null
+    }
+    return parseFloat(form.price) > 0 ? null : 'Name and price required.'
+  }
+
   async function updateMenuItem() {
-    if (!editingItem || !editForm.name || !editForm.price) { setMsg('Name and price required.'); return }
+    if (!editingItem || !editForm.name) { setMsg('Name and price required.'); return }
+    const invalid = pricingError(editForm)
+    if (invalid) { setMsg(invalid); return }
     let imageUrl = editingItem.image_url
     if (menuForm.image_file) {
       imageUrl = await uploadMenuItemImage(menuForm.image_file)
@@ -364,16 +418,15 @@ export default function VendorDashboard() {
     const { error } = await supabase.from('cafeteria_menu').update({
       name: editForm.name,
       description: editForm.description || null,
-      price: parseFloat(editForm.price),
       category: editForm.category,
-      stock_quantity: editForm.stock_quantity ? parseInt(editForm.stock_quantity) : null,
       is_veg: editForm.is_veg,
-      image_url: imageUrl
+      image_url: imageUrl,
+      ...pricingColumns(editForm),
     }).eq('id', editingItem.id)
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item updated!')
     setEditingItem(null)
-    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
+    setMenuForm({ ...EMPTY_MENU_FORM })
     setImagePreview(null)
     if (cafeteria) {
       const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteria.id).order('category')
@@ -393,7 +446,9 @@ export default function VendorDashboard() {
   }
 
   async function addMenuItem() {
-    if (!cafeteria || !menuForm.name || !menuForm.price) { setMsg('Name and price required.'); return }
+    if (!cafeteria || !menuForm.name) { setMsg('Name and price required.'); return }
+    const invalid = pricingError(menuForm)
+    if (invalid) { setMsg(invalid); return }
     let imageUrl: string | null = null
     if (menuForm.image_file) {
       imageUrl = await uploadMenuItemImage(menuForm.image_file)
@@ -403,15 +458,14 @@ export default function VendorDashboard() {
       cafeteria_id: cafeteria.id,
       name: menuForm.name,
       description: menuForm.description || null,
-      price: parseFloat(menuForm.price),
       category: menuForm.category,
-      stock_quantity: menuForm.stock_quantity ? parseInt(menuForm.stock_quantity) : null,
       is_veg: menuForm.is_veg,
-      image_url: imageUrl
+      image_url: imageUrl,
+      ...pricingColumns(menuForm),
     })
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item added!')
-    setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
+    setMenuForm({ ...EMPTY_MENU_FORM })
     setImagePreview(null)
     const { data } = await supabase.from('cafeteria_menu').select('*').eq('cafeteria_id', cafeteria.id).order('category')
     if (data) setMenuItems(data)
@@ -1252,12 +1306,11 @@ export default function VendorDashboard() {
                   {[
                     { key: 'name', label: 'Item Name *', placeholder: 'Veg Thali' },
                     { key: 'description', label: 'Description', placeholder: 'Rice, dal, sabzi...' },
-                    { key: 'price', label: 'Price (₹) *', placeholder: '80', type: 'number' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={lbl}>{f.label}</label>
                       <input
-                        type={f.type || 'text'}
+                        type="text"
                         placeholder={f.placeholder}
                         value={(editingItem ? editForm[f.key as keyof typeof editForm] : menuForm[f.key as keyof typeof menuForm]) as string || ''}
                         onChange={e => editingItem ? setEditForm(m => ({ ...m, [f.key]: e.target.value })) : setMenuForm(m => ({ ...m, [f.key]: e.target.value }))}
@@ -1266,31 +1319,65 @@ export default function VendorDashboard() {
                     </div>
                   ))}
                   {(() => {
-                    const currentName = editingItem ? editForm.name : menuForm.name
-                    const isHalfFull = / - (Half|Full)$/.test(currentName)
-                    const sizeMatch = currentName.match(/ - (Half|Full)$/)
-                    const size = sizeMatch ? sizeMatch[1] : null
-                    if (isHalfFull) {
-                      return (
-                        <div>
-                          <label style={lbl}>Size Variant</label>
-                          <div style={{ ...inp, background: 'var(--surface2)', display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--accent)' }}>
-                            {size === 'Half' ? '½ Half' : '🍽️ Full'}
-                          </div>
-                        </div>
-                      )
-                    }
-                    return (
-                      <div>
-                        <label style={lbl}>Stock Quantity (leave empty for unlimited)</label>
+                    // One price, or a price per portion. Restaurants like
+                    // Bombay Dine charge differently for Half and Full, and the
+                    // customer menu turns the two into selectable buttons.
+                    const form = editingItem ? editForm : menuForm
+                    const setForm = (patch: Record<string, unknown>) =>
+                      editingItem ? setEditForm(m => ({ ...m, ...patch })) : setMenuForm(m => ({ ...m, ...patch }))
+                    const priceField = (label: string, key: 'price' | 'half_price' | 'full_price', placeholder: string) => (
+                      <div style={{ flex: 1 }}>
+                        <label style={lbl}>{label}</label>
                         <input
                           type="number"
-                          placeholder="50"
-                          value={(editingItem ? editForm.stock_quantity : menuForm.stock_quantity) as string || ''}
-                          onChange={e => editingItem ? setEditForm(m => ({ ...m, stock_quantity: e.target.value })) : setMenuForm(m => ({ ...m, stock_quantity: e.target.value }))}
+                          placeholder={placeholder}
+                          value={form[key] || ''}
+                          onChange={e => setForm({ [key]: e.target.value })}
                           style={inp}
                         />
                       </div>
+                    )
+                    return (
+                      <>
+                        <div>
+                          <label style={lbl}>Portion Pricing</label>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {([[false, 'Single price'], [true, 'Half / Full']] as const).map(([on, label]) => {
+                              const active = form.has_variants === on
+                              return (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => setForm({ has_variants: on })}
+                                  style={{ flex: 1, padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? 'var(--accent)' : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
+                                >
+                                  {label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        {form.has_variants ? (
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {priceField('Half Price (₹) *', 'half_price', '100')}
+                            {priceField('Full Price (₹) *', 'full_price', '160')}
+                          </div>
+                        ) : (
+                          <>
+                            {priceField('Price (₹) *', 'price', '80')}
+                            <div>
+                              <label style={lbl}>Stock Quantity (leave empty for unlimited)</label>
+                              <input
+                                type="number"
+                                placeholder="50"
+                                value={form.stock_quantity || ''}
+                                onChange={e => setForm({ stock_quantity: e.target.value })}
+                                style={inp}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </>
                     )
                   })()}
                   <div>
@@ -1364,7 +1451,7 @@ export default function VendorDashboard() {
                         {...hoverScale}
                         onClick={() => {
                           setEditingItem(null)
-                          setMenuForm({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, image_file: null })
+                          setMenuForm({ ...EMPTY_MENU_FORM })
                           setImagePreview(null)
                         }}
                         style={{ padding: '13px 20px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
@@ -1392,8 +1479,7 @@ export default function VendorDashboard() {
                     item.name.toLowerCase().includes(menuSearchQuery.toLowerCase()) ||
                     item.category.toLowerCase().includes(menuSearchQuery.toLowerCase())
                   ).map(item => {
-                    const sizeMatch = item.name.match(/ - (Half|Full)$/)
-                    const sizeVariant = sizeMatch?.[1]
+                    const variants = itemVariants(item)
                     return (
                     <motion.div key={item.id} variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 0 }}>
@@ -1401,15 +1487,24 @@ export default function VendorDashboard() {
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: 14, fontWeight: 500, color: item.is_available ? 'var(--text)' : 'var(--muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
                             {item.name}
-                            {sizeVariant && (
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: sizeVariant === 'Half' ? 'rgba(124,92,252,0.15)' : 'rgba(46,158,107,0.15)', color: sizeVariant === 'Half' ? '#7c5cfc' : 'var(--green)' }}>
-                                {sizeVariant === 'Half' ? '½' : '🍽️'}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span>{item.category}</span>
+                            {variants.length > 0 ? (
+                              variants.map(v => (
+                                <span
+                                  key={v.name}
+                                  style={{ fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: v.name === 'Half' ? 'rgba(124,92,252,0.15)' : 'rgba(46,158,107,0.15)', color: v.name === 'Half' ? '#7c5cfc' : 'var(--green)' }}
+                                >
+                                  {v.name} ₹{v.price}
+                                </span>
+                              ))
+                            ) : (
+                              <span>
+                                · ₹{item.price}
+                                {item.stock_quantity ? ` · ${item.stock_quantity} left` : ''}
                               </span>
                             )}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                            {item.category} · ₹{item.price}
-                            {item.stock_quantity && ` · ${item.stock_quantity} left`}
                           </div>
                         </div>
                       </div>
@@ -1424,7 +1519,10 @@ export default function VendorDashboard() {
                               price: item.price.toString(),
                               category: item.category,
                               stock_quantity: item.stock_quantity?.toString() || '',
-                              is_veg: item.is_veg ?? true
+                              is_veg: item.is_veg ?? true,
+                              has_variants: variants.length > 0,
+                              half_price: variantPrice(variants, 'Half')?.toString() ?? '',
+                              full_price: variantPrice(variants, 'Full')?.toString() ?? '',
                             })
                             setImagePreview(item.image_url || null)
                           }}

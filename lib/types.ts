@@ -33,6 +33,12 @@ export interface MenuItem {
   image_url?: string
   stock_quantity?: number | null
   max_stock?: number
+  /**
+   * Portion pricing for dishes sold as Half/Full. Absent for single-price
+   * items. `price` mirrors the Half price so anything reading `price` alone
+   * still gets a sensible number.
+   */
+  variants?: Array<{ name: string; price: number }> | null
 }
 
 export interface OrderItem {
