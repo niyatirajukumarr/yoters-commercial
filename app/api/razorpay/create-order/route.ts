@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createRazorpayOrder } from '@/lib/razorpay'
 import { logger } from '@/lib/logger'
 import { isValidEmail, isValidPhone, isValidAmount, isNonEmptyString } from '@/lib/validation'
-import { enforceRateLimit } from '@/lib/rate-limit'
+import { enforceSharedNetworkRateLimit } from '@/lib/rate-limit'
 
 // Service-role client: this route reads the order and writes the Razorpay order
 // id, which must work even once RLS is tightened to owner-scoped policies.
@@ -15,11 +15,17 @@ const adminSupabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const limited = enforceRateLimit(req, 'create-order', 15, 60_000)
-    if (limited) return limited
-
     const body = await req.json()
     const { orderId, amount, studentEmail, studentPhone, studentName } = body
+
+    // Limit per checkout, not per IP: a whole campus shares one public address
+    // at lunch, and an IP-only cap would stop everyone after the first handful
+    // of orders. The IP tier stays as a backstop, sized for a crowded network.
+    const limited = enforceSharedNetworkRateLimit(req, 'create-order', orderId, {
+      perIdentity: 10,
+      perIp: 600,
+    })
+    if (limited) return limited
 
     if (!orderId || !amount || !studentEmail || !studentPhone || !studentName) {
       return NextResponse.json(
