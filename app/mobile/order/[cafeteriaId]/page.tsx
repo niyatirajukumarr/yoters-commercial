@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { useCart } from '@/lib/hooks/useCart'
+import { useCart, cartLineKey } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
@@ -656,7 +656,13 @@ export default function CafeteriaPage() {
     : topLevelCategories
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
-  const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
+  // A dish with Half/Full sits in the cart as one line per size, so the card's
+  // stepper has to follow whichever size is currently selected — otherwise
+  // adding Full leaves no way to also add Half (the ADD button never returns).
+  const itemInCart = (item: MenuItem) => {
+    const key = cartLineKey({ menuId: item.id, variant: selectedVariants[item.id] })
+    return cartItem.find(i => cartLineKey(i) === key)
+  }
 
   // Categories that require parcel charge
   const parcelChargeCategories = [
@@ -750,6 +756,7 @@ export default function CafeteriaPage() {
     // Check if item has variants and if one is selected
     let finalPrice = item.price
     let itemName = item.name
+    let variantName: string | undefined
 
     if (item.variants && item.variants.length > 0) {
       const selectedVariant = selectedVariants[item.id]
@@ -761,10 +768,11 @@ export default function CafeteriaPage() {
       if (variant) {
         finalPrice = variant.price
         itemName = `${item.name} (${selectedVariant})`
+        variantName = selectedVariant
       }
     }
 
-    addItem(cafeteriaId, { menuId: item.id, name: itemName, price: finalPrice, quantity: 1 })
+    addItem(cafeteriaId, { menuId: item.id, name: itemName, price: finalPrice, quantity: 1, variant: variantName })
   }
 
   // Liking a food item also requires auth, same as add-to-cart. Send them to
@@ -999,7 +1007,7 @@ export default function CafeteriaPage() {
 
   // Helper to render a single menu item card (inlined, not a component)
   const renderMenuCard = (item: MenuItem) => {
-    const inCart = itemInCart(item.id)
+    const inCart = itemInCart(item)
     const fav = isFavourite(item.id)
     const isVeg = itemIsVeg(item)
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
@@ -1102,9 +1110,9 @@ export default function CafeteriaPage() {
           <div className="dish-add-float">
             {inCart ? (
               <div className="qty-box2">
-                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</motion.button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(inCart), inCart.quantity - 1)}>−</motion.button>
                 <span>{inCart.quantity}</span>
-                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</motion.button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(inCart), inCart.quantity + 1)}>+</motion.button>
               </div>
             ) : (
               <motion.button {...hoverScale} className="add-btn2" onClick={() => handleAddItem(item)}>ADD +</motion.button>
@@ -1575,14 +1583,14 @@ export default function CafeteriaPage() {
                 <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Your Cart 🛒</div>
                 {cartItem.map(item => (
-                  <div key={item.menuId} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
+                  <div key={cartLineKey(item)} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
                     <div style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{item.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', minWidth: 42, textAlign: 'right' }}>₹{item.price * item.quantity}</span>
-                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</motion.button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(item), item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</motion.button>
                       <span style={{ fontSize: 14, fontWeight: 700, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
-                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</motion.button>
-                      <motion.button {...hoverScale} onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</motion.button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(item), item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</motion.button>
+                      <motion.button {...hoverScale} onClick={() => removeItem(cartLineKey(item))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</motion.button>
                     </div>
                   </div>
                 ))}
@@ -1825,7 +1833,7 @@ export default function CafeteriaPage() {
               {cartItem.map(item => {
                 const menuItem = menuItems.find(m => m.id === item.menuId)
                 return (
-                  <motion.div key={item.menuId} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <motion.div key={cartLineKey(item)} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
                     <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
                       🍱
                     </div>
@@ -1835,7 +1843,7 @@ export default function CafeteriaPage() {
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <motion.button
                           {...hoverScale}
-                          onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
+                          onClick={() => updateQuantity(cartLineKey(item), item.quantity - 1)}
                           style={{ width: 24, height: 24, borderRadius: 4, background: '#ccc', color: '#333', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
                         >
                           −
@@ -1843,7 +1851,7 @@ export default function CafeteriaPage() {
                         <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{item.quantity}</span>
                         <motion.button
                           {...hoverScale}
-                          onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                          onClick={() => updateQuantity(cartLineKey(item), item.quantity + 1)}
                           style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
                         >
                           +

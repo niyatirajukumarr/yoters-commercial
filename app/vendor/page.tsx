@@ -1253,7 +1253,6 @@ export default function VendorDashboard() {
                     { key: 'name', label: 'Item Name *', placeholder: 'Veg Thali' },
                     { key: 'description', label: 'Description', placeholder: 'Rice, dal, sabzi...' },
                     { key: 'price', label: 'Price (₹) *', placeholder: '80', type: 'number' },
-                    { key: 'stock_quantity', label: 'Stock Quantity (leave empty for unlimited)', placeholder: '50', type: 'number' }
                   ].map(f => (
                     <div key={f.key}>
                       <label style={lbl}>{f.label}</label>
@@ -1266,6 +1265,34 @@ export default function VendorDashboard() {
                       />
                     </div>
                   ))}
+                  {(() => {
+                    const currentName = editingItem ? editForm.name : menuForm.name
+                    const isHalfFull = / - (Half|Full)$/.test(currentName)
+                    const sizeMatch = currentName.match(/ - (Half|Full)$/)
+                    const size = sizeMatch ? sizeMatch[1] : null
+                    if (isHalfFull) {
+                      return (
+                        <div>
+                          <label style={lbl}>Size Variant</label>
+                          <div style={{ ...inp, background: 'var(--surface2)', display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--accent)' }}>
+                            {size === 'Half' ? '½ Half' : '🍽️ Full'}
+                          </div>
+                        </div>
+                      )
+                    }
+                    return (
+                      <div>
+                        <label style={lbl}>Stock Quantity (leave empty for unlimited)</label>
+                        <input
+                          type="number"
+                          placeholder="50"
+                          value={(editingItem ? editForm.stock_quantity : menuForm.stock_quantity) as string || ''}
+                          onChange={e => editingItem ? setEditForm(m => ({ ...m, stock_quantity: e.target.value })) : setMenuForm(m => ({ ...m, stock_quantity: e.target.value }))}
+                          style={inp}
+                        />
+                      </div>
+                    )
+                  })()}
                   <div>
                     <label style={lbl}>Category</label>
                     <select
@@ -1273,7 +1300,12 @@ export default function VendorDashboard() {
                       onChange={e => editingItem ? setEditForm(m => ({ ...m, category: e.target.value })) : setMenuForm(m => ({ ...m, category: e.target.value }))}
                       style={inp}
                     >
-                      {['Big Deals', 'Combos', 'Fresh Juices', 'Mojitos', 'Hot Beverages', 'Fruit Milkshakes', 'Thick Shake', 'Sodas', 'Coffee Shake', 'Special Shakes', 'Ice Cream Shakes', 'Lassi', 'Delights', 'Club Sandwich', 'Strips', 'Sandwiches', 'Egg Bites', 'Loaded Fries', 'Rolls', 'Burgers', 'Buns', 'Wraps', 'Quick Bites', 'Maggies'].map(c => <option key={c}>{c}</option>)}
+                      {(() => {
+                        const categories = [...new Set(menuItems.map(item => item.category))]
+                        return categories.length > 0
+                          ? categories.sort().map(c => <option key={c}>{c}</option>)
+                          : ['Indian Gravy', 'Veg Curry', 'Tandoori Special', 'Biryani', 'test-ignore'].map(c => <option key={c}>{c}</option>)
+                      })()}
                     </select>
                   </div>
                   <div>
@@ -1359,12 +1391,22 @@ export default function VendorDashboard() {
                     menuSearchQuery === '' ||
                     item.name.toLowerCase().includes(menuSearchQuery.toLowerCase()) ||
                     item.category.toLowerCase().includes(menuSearchQuery.toLowerCase())
-                  ).map(item => (
+                  ).map(item => {
+                    const sizeMatch = item.name.match(/ - (Half|Full)$/)
+                    const sizeVariant = sizeMatch?.[1]
+                    return (
                     <motion.div key={item.id} variants={staggerItem} {...hoverLift} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 500, color: item.is_available ? 'var(--text)' : 'var(--muted)' }}>{item.name}</div>
+                          <div style={{ fontSize: 14, fontWeight: 500, color: item.is_available ? 'var(--text)' : 'var(--muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {item.name}
+                            {sizeVariant && (
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: sizeVariant === 'Half' ? 'rgba(124,92,252,0.15)' : 'rgba(46,158,107,0.15)', color: sizeVariant === 'Half' ? '#7c5cfc' : 'var(--green)' }}>
+                                {sizeVariant === 'Half' ? '½' : '🍽️'}
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                             {item.category} · ₹{item.price}
                             {item.stock_quantity && ` · ${item.stock_quantity} left`}
@@ -1406,7 +1448,8 @@ export default function VendorDashboard() {
                         </motion.button>
                       </div>
                     </motion.div>
-                  ))}
+                    )
+                  })}
                 </motion.div>
               </div>
 
