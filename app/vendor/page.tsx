@@ -1652,12 +1652,12 @@ export default function VendorDashboard() {
                     padding: 14,
                     borderRadius: 10,
                     border: 'none',
-                    background: 'var(--green)',
+                    background: isDenying ? '#999' : 'var(--green)',
                     color: 'white',
                     fontSize: 14,
                     fontWeight: 700,
-                    cursor: approveLoading ? 'default' : 'pointer',
-                    opacity: approveLoading ? 0.6 : 1,
+                    cursor: (approveLoading || isDenying) ? 'default' : 'pointer',
+                    opacity: (approveLoading || isDenying) ? 0.6 : 1,
                   }}
                 >
                   ✓ APPROVE
