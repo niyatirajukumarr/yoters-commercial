@@ -29,7 +29,7 @@ type VendorSummary = { today: RangeSummary; allTime: RangeSummary; dayStart: str
 // form is reset from several places and the fields drifted apart when each
 // reset spelled the object out itself.
 const EMPTY_MENU_FORM = {
-  name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true,
+  name: '', description: '', price: '', category: 'Main', is_veg: true,
   // Half/Full dishes carry a price per portion instead of a single price.
   has_variants: false, half_price: '', full_price: '',
   image_file: null as File | null,
@@ -57,7 +57,7 @@ export default function VendorDashboard() {
   const [menuForm, setMenuForm] = useState({ ...EMPTY_MENU_FORM })
   const [isOpen, setIsOpen] = useState(true)
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', stock_quantity: '', is_veg: true, has_variants: false, half_price: '', full_price: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', is_veg: true, has_variants: false, half_price: '', full_price: '' })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -377,13 +377,12 @@ export default function VendorDashboard() {
    * `price` stays populated for Half/Full dishes — it's the Half price, and
    * it's what sorting, filters and any older reader still fall back to.
    */
-  function pricingColumns(form: { price: string; stock_quantity: string; has_variants: boolean; half_price: string; full_price: string }) {
+  function pricingColumns(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
+    // stock_quantity is always cleared: nobody tracks per-item stock here, and
+    // a leftover count is a live hazard — the order flow decrements it and
+    // hides the item at zero (app/student/page.tsx). null means unlimited.
     if (!form.has_variants) {
-      return {
-        price: parseFloat(form.price),
-        variants: null,
-        stock_quantity: form.stock_quantity ? parseInt(form.stock_quantity) : null,
-      }
+      return { price: parseFloat(form.price), variants: null, stock_quantity: null }
     }
     const half = parseFloat(form.half_price)
     const full = parseFloat(form.full_price)
@@ -1363,19 +1362,7 @@ export default function VendorDashboard() {
                             {priceField('Full Price (₹) *', 'full_price', '160')}
                           </div>
                         ) : (
-                          <>
-                            {priceField('Price (₹) *', 'price', '80')}
-                            <div>
-                              <label style={lbl}>Stock Quantity (leave empty for unlimited)</label>
-                              <input
-                                type="number"
-                                placeholder="50"
-                                value={form.stock_quantity || ''}
-                                onChange={e => setForm({ stock_quantity: e.target.value })}
-                                style={inp}
-                              />
-                            </div>
-                          </>
+                          priceField('Price (₹) *', 'price', '80')
                         )}
                       </>
                     )
@@ -1500,10 +1487,7 @@ export default function VendorDashboard() {
                                 </span>
                               ))
                             ) : (
-                              <span>
-                                · ₹{item.price}
-                                {item.stock_quantity ? ` · ${item.stock_quantity} left` : ''}
-                              </span>
+                              <span>· ₹{item.price}</span>
                             )}
                           </div>
                         </div>
@@ -1518,7 +1502,6 @@ export default function VendorDashboard() {
                               description: item.description || '',
                               price: item.price.toString(),
                               category: item.category,
-                              stock_quantity: item.stock_quantity?.toString() || '',
                               is_veg: item.is_veg ?? true,
                               has_variants: variants.length > 0,
                               half_price: variantPrice(variants, 'Half')?.toString() ?? '',
