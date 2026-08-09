@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyWebhookSignature, getPaymentDetails } from '@/lib/razorpay'
+import { verifyWebhookSignature, getPaymentByOrderId } from '@/lib/razorpay'
 import { logger, shortId } from '@/lib/logger'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
@@ -61,12 +61,12 @@ export async function POST(req: NextRequest) {
 
       // Update order status to pending approval (payment confirmed, awaiting vendor approval)
       // Always save razorpay_payment_id even if payment_status is already 'paid' (verify-payment may have run first)
-      // Use the payment_id from webhook, or fall back to fetching from Razorpay if missing
+      // Use the payment_id from webhook, or fall back to fetching from Razorpay using order_id if missing
       let paymentIdToSave = payment_id
       if (!paymentIdToSave) {
-        logger.info('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API')
+        logger.info('[Razorpay Webhook] payment_id missing from webhook, fetching from Razorpay API using order_id')
         try {
-          const paymentDetails = await getPaymentDetails(order.razorpay_payment_id)
+          const paymentDetails = await getPaymentByOrderId(order_id)
           paymentIdToSave = paymentDetails.id
           logger.debug('[Razorpay Webhook] Fetched payment_id from API:', shortId(paymentIdToSave))
         } catch (fetchErr) {
