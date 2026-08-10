@@ -385,7 +385,7 @@ export default function StudentHome() {
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
                             <RestaurantMapLoader
-                              restaurant={c.name === 'LETHAFI' ? getLethafiLocation() : c.name === 'Bombay Dine' ? getBombayDineLocation() : null}
+                              restaurant={c.name === 'LETHAFI' ? getLethafiLocation() : c.name === 'Bombay Dine' ? getBombayDineLocation() : undefined}
                               showRoute
                             />
                           </div>
