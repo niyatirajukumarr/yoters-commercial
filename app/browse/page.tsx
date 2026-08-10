@@ -208,6 +208,12 @@ export default function StudentHome() {
         .cafe-info { display:flex; flex-direction:column; justify-content:center; padding:20px; }
         .cafe-name { font-family:'Allura', cursive; font-size:64px; font-weight:400; color:var(--accent); margin-bottom:12px; line-height:1; }
         .cafe-location { font-size:14px; color:var(--muted); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
+        /* The map toggle is a button wearing this class. It used to reset the
+           UA button font with an inline "font: inherit", and an inline style
+           beats any stylesheet rule — so it silently ignored the smaller
+           font-size the phone layout sets here. Reset it in CSS instead, where
+           the cascade can still reach it. */
+        button.cafe-location { font-family:inherit; font-weight:inherit; }
         .cafe-description { font-size:15px; color:var(--text2); line-height:1.7; margin-bottom:24px; }
         .cafe-see-menu-btn { display:inline-block; padding:12px 28px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; text-decoration:none; }
 
@@ -252,7 +258,11 @@ export default function StudentHome() {
              would again on any longer name, or if Allura falls back to a wider
              system cursive). */
           .cafe-name { font-size:clamp(20px, 5.5vw, 26px); line-height:1.05; margin-bottom:4px; }
-          .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; }
+          /* The address and the "See map" prompt are two flex items. Side by
+             side in a ~200px column they each got half the width and both
+             wrapped mid-phrase, so give the prompt its own line underneath. */
+          .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; flex-wrap:wrap; }
+          .cafe-location span { flex-basis:100%; }
           /* Two lines, then ellipsis: the tagline should not decide the card's
              height when the photo beside it is only 116px tall. */
           .cafe-description {
@@ -392,7 +402,7 @@ export default function StudentHome() {
                           type="button"
                           className="cafe-location"
                           onClick={() => toggleMap(c.id)}
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
                         >
                           📍 {c.location}
                           <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
