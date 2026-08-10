@@ -16,6 +16,8 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { AppTabBar } from '@/components/AppTabBar'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
+import { getLethafiLocation } from '@/lib/utils/lethafiLocation'
+import { getBombayDineLocation } from '@/lib/utils/bombayDineLocation'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -353,30 +355,39 @@ export default function StudentHome() {
                     {/* Restaurant Info */}
                     <div className="cafe-info">
                       <h2 className="cafe-name">{c.name}</h2>
-                      {c.name === 'LETHAFI' ? (
-                        <button
-                          type="button"
-                          className="cafe-location"
-                          onClick={() => toggleMap(c.id)}
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
-                        >
-                          📍 {c.location}
-                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                            · How far is this from you? 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
-                          </span>
-                        </button>
-                      ) : (
-                        <div className="cafe-location">
-                          📍 {c.location}
-                        </div>
-                      )}
+                      <div className="cafe-location">
+                        📍 {c.location}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleMap(c.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          font: 'inherit',
+                          textAlign: 'left',
+                          color: '#e8334a',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          marginTop: 8,
+                          display: 'block',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        · How far is this from you? 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
+                      </button>
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      {c.name === 'LETHAFI' && expandedMaps.has(c.id) && (
+                      {expandedMaps.has(c.id) && (
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
-                            <RestaurantMapLoader showRoute />
+                            <RestaurantMapLoader
+                              restaurant={c.name === 'LETHAFI' ? getLethafiLocation() : c.name === 'Bombay Dine' ? getBombayDineLocation() : null}
+                              showRoute
+                            />
                           </div>
                         </div>
                       )}
