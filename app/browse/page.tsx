@@ -227,6 +227,35 @@ export default function StudentHome() {
           .cafe-info { padding:0; }
           .h1-browse { font-size:26px !important; }
         }
+
+        /* Phones only. A full-width 220px photo stacked above the text meant one
+           restaurant filled the whole screen, so browsing was all scrolling and
+           you could never compare two. Phones get a compact row instead —
+           thumbnail on the left, everything else beside it. 640px keeps this
+           clear of tablets and desktop, which are untouched.
+           Last in the sheet on purpose: it overrides the 900px and 480px blocks,
+           which also match at phone widths. */
+        @media (max-width: 640px) {
+          .newspaper-grid { gap:20px; }
+          .cafe-newspaper-card { grid-template-columns:116px 1fr; gap:14px; align-items:center; }
+
+          .cafe-menu-image { height:116px; border-radius:14px; box-shadow:0 6px 14px rgba(0,0,0,0.10); }
+          /* Nothing hovers on a touch screen, and the tilt on a small tile just
+             clips the corners. */
+          .cafe-menu-image:hover { transform:none; box-shadow:0 6px 14px rgba(0,0,0,0.10); }
+          .cafe-menu-image-logo img { padding:8px; }
+
+          .cafe-info { padding:0; }
+          .cafe-name { font-size:30px; margin-bottom:2px; }
+          .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; }
+          /* Two lines, then ellipsis: the tagline should not decide the card's
+             height when the photo beside it is only 116px tall. */
+          .cafe-description {
+            font-size:12px; line-height:1.45; margin-bottom:10px;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+          }
+          .cafe-see-menu-btn { padding:8px 16px; font-size:12px; }
+        }
       `}</style>
 
       {/* NAV */}
