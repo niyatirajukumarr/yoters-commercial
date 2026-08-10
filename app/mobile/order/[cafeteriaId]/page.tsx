@@ -464,7 +464,6 @@ export default function CafeteriaPage() {
   const [deliveryCharge, setDeliveryCharge] = useState(0)
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
-  const PARCEL_CHARGE = 5
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -679,10 +678,20 @@ export default function CafeteriaPage() {
     'Delights', 'Quick bites', 'Maggie', 'Loaded fries', 'Strips', 'Combo', 'Big deals'
   ]
 
+  // These are compared against categories a vendor typed into the dashboard, so
+  // an exact match is far too strict: the list said 'Thick shake' while the menu
+  // said 'Thick Shake', and one capital letter meant 22 items shipped without a
+  // parcel charge. Same story for Sodas / Soda's and Combo / Combos. Fold case,
+  // punctuation and a trailing plural before comparing.
+  const normalizeCategory = (c: string) =>
+    c.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, ' ').trim().replace(/s$/, '')
+
+  const parcelChargeKeys = new Set(parcelChargeCategories.map(normalizeCategory))
+
   // Check if any cart item is from parcel charge categories
   const hasParcelChargeItems = cartItem.length > 0 && cartItem.some(cartItemObj => {
     const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
-    return menuItem && parcelChargeCategories.includes(menuItem.category)
+    return !!menuItem?.category && parcelChargeKeys.has(normalizeCategory(menuItem.category))
   })
 
   // Skip parcel charge for test items (₹1) or if no items from parcel charge categories
@@ -1882,10 +1891,14 @@ export default function CafeteriaPage() {
                   <span>Subtotal</span>
                   <span>₹{total}</span>
                 </div>
-                {orderType !== 'dine_in' && (
+                {/* Must be dynamicParcelCharge — the one the total actually adds.
+                    This row used to print a flat ₹5 from a separate constant even
+                    when nothing was charged, so the breakdown did not sum to the
+                    total. The constant is gone; there is only one number now. */}
+                {orderType !== 'dine_in' && dynamicParcelCharge > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
                     <span>Parcel Charge</span>
-                    <span>₹{PARCEL_CHARGE}</span>
+                    <span>₹{dynamicParcelCharge}</span>
                   </div>
                 )}
                 {orderType === 'delivery' && deliveryCharge > 0 && (
