@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { useCart } from '@/lib/hooks/useCart'
+import { useCart, cartLineKey } from '@/lib/hooks/useCart'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
@@ -464,7 +464,6 @@ export default function CafeteriaPage() {
   const [deliveryCharge, setDeliveryCharge] = useState(0)
   const [deliveryDistance, setDeliveryDistance] = useState(0)
   const [deliveryChargeError, setDeliveryChargeError] = useState<string | null>(null)
-  const PARCEL_CHARGE = 5
 
   // Fetch cafeteria & menu — loads from cache instantly, fetches fresh in background
   useEffect(() => {
@@ -535,11 +534,15 @@ export default function CafeteriaPage() {
     }
     fetch()
 
-    // Real-time subscription for cafe orders
-    const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user?.phone}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, (payload) => {
-        // Order change detected - refetching
-        fetch() // Refetch orders on any change
+    // Filtered to this customer's own orders, which is all this screen shows.
+    // Subscribing to the whole cafeteria meant every stranger's order woke
+    // every open menu and triggered a refetch — at 300 customers and 300
+    // orders over a lunch rush that is ~90,000 needless queries.
+    if (!user?.phone) return
+
+    const channel = supabase.channel(`cafe-orders-${cafeteriaId}-${user.phone}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, () => {
+        fetch()
       })
       .subscribe()
 
@@ -564,10 +567,14 @@ export default function CafeteriaPage() {
       }
     }
     load()
-    const ch = supabase.channel(`menu-pop-${cafeteriaId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cafeteria_id=eq.${cafeteriaId}` }, load)
-      .subscribe()
-    return () => { active = false; supabase.removeChannel(ch) }
+    // Polled rather than subscribed. "Highly ordered" is a soft signal that
+    // nobody notices going stale for a minute, but as a realtime subscription
+    // it was the worst kind of load: every order at the cafeteria pushed every
+    // open menu to refetch an endpoint that scans the whole order history.
+    // A poll also lets the response be CDN-cached, so a restaurant's viewers
+    // share one origin query per minute instead of one each per order.
+    const timer = setInterval(load, 60_000)
+    return () => { active = false; clearInterval(timer) }
   }, [cafeteriaId])
 
   // Populate form with user data
@@ -656,7 +663,13 @@ export default function CafeteriaPage() {
     : topLevelCategories
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
-  const itemInCart = (menuId: string) => cartItem.find(i => i.menuId === menuId)
+  // A dish with Half/Full sits in the cart as one line per size, so the card's
+  // stepper has to follow whichever size is currently selected — otherwise
+  // adding Full leaves no way to also add Half (the ADD button never returns).
+  const itemInCart = (item: MenuItem) => {
+    const key = cartLineKey({ menuId: item.id, variant: selectedVariants[item.id] })
+    return cartItem.find(i => cartLineKey(i) === key)
+  }
 
   // Categories that require parcel charge
   const parcelChargeCategories = [
@@ -665,15 +678,33 @@ export default function CafeteriaPage() {
     'Delights', 'Quick bites', 'Maggie', 'Loaded fries', 'Strips', 'Combo', 'Big deals'
   ]
 
-  // Check if any cart item is from parcel charge categories
-  const hasParcelChargeItems = cartItem.length > 0 && cartItem.some(cartItemObj => {
-    const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
-    return menuItem && parcelChargeCategories.includes(menuItem.category)
-  })
+  // These are compared against categories a vendor typed into the dashboard, so
+  // an exact match is far too strict: the list said 'Thick shake' while the menu
+  // said 'Thick Shake', and one capital letter meant 22 items shipped without a
+  // parcel charge. Same story for Sodas / Soda's and Combo / Combos. Fold case,
+  // punctuation and a trailing plural before comparing.
+  const normalizeCategory = (c: string) =>
+    c.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, ' ').trim().replace(/s$/, '')
 
-  // Skip parcel charge for test items (₹1) or if no items from parcel charge categories
+  const parcelChargeKeys = new Set(parcelChargeCategories.map(normalizeCategory))
+
+  const needsParcel = (cartItemObj: { menuId: string }) => {
+    const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
+    return !!menuItem?.category && parcelChargeKeys.has(normalizeCategory(menuItem.category))
+  }
+
+  // Every unit gets its own cup or box, so the charge counts quantity rather
+  // than being one flat ₹5 for the order: two shakes is two containers. Items
+  // outside the categories above still add nothing.
+  const PARCEL_CHARGE_PER_ITEM = 5
+  const parcelChargeUnits = cartItem.reduce(
+    (n, item) => (needsParcel(item) ? n + item.quantity : n),
+    0
+  )
+
+  // Skip parcel charge for test items (₹1)
   const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
-  const dynamicParcelCharge = (isTestOrder || !hasParcelChargeItems) ? 0 : 5
+  const dynamicParcelCharge = isTestOrder ? 0 : parcelChargeUnits * PARCEL_CHARGE_PER_ITEM
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
@@ -750,6 +781,7 @@ export default function CafeteriaPage() {
     // Check if item has variants and if one is selected
     let finalPrice = item.price
     let itemName = item.name
+    let variantName: string | undefined
 
     if (item.variants && item.variants.length > 0) {
       const selectedVariant = selectedVariants[item.id]
@@ -761,10 +793,11 @@ export default function CafeteriaPage() {
       if (variant) {
         finalPrice = variant.price
         itemName = `${item.name} (${selectedVariant})`
+        variantName = selectedVariant
       }
     }
 
-    addItem(cafeteriaId, { menuId: item.id, name: itemName, price: finalPrice, quantity: 1 })
+    addItem(cafeteriaId, { menuId: item.id, name: itemName, price: finalPrice, quantity: 1, variant: variantName })
   }
 
   // Liking a food item also requires auth, same as add-to-cart. Send them to
@@ -999,7 +1032,7 @@ export default function CafeteriaPage() {
 
   // Helper to render a single menu item card (inlined, not a component)
   const renderMenuCard = (item: MenuItem) => {
-    const inCart = itemInCart(item.id)
+    const inCart = itemInCart(item)
     const fav = isFavourite(item.id)
     const isVeg = itemIsVeg(item)
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
@@ -1102,9 +1135,9 @@ export default function CafeteriaPage() {
           <div className="dish-add-float">
             {inCart ? (
               <div className="qty-box2">
-                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity - 1)}>−</motion.button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(inCart), inCart.quantity - 1)}>−</motion.button>
                 <span>{inCart.quantity}</span>
-                <motion.button {...hoverScale} onClick={() => updateQuantity(item.id, inCart.quantity + 1)}>+</motion.button>
+                <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(inCart), inCart.quantity + 1)}>+</motion.button>
               </div>
             ) : (
               <motion.button {...hoverScale} className="add-btn2" onClick={() => handleAddItem(item)}>ADD +</motion.button>
@@ -1575,14 +1608,14 @@ export default function CafeteriaPage() {
                 <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 18px' }} />
                 <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Your Cart 🛒</div>
                 {cartItem.map(item => (
-                  <div key={item.menuId} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
+                  <div key={cartLineKey(item)} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
                     <div style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{item.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', minWidth: 42, textAlign: 'right' }}>₹{item.price * item.quantity}</span>
-                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</motion.button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(item), item.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 16, cursor: 'pointer' }}>−</motion.button>
                       <span style={{ fontSize: 14, fontWeight: 700, minWidth: 16, textAlign: 'center' }}>{item.quantity}</span>
-                      <motion.button {...hoverScale} onClick={() => updateQuantity(item.menuId, item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</motion.button>
-                      <motion.button {...hoverScale} onClick={() => removeItem(item.menuId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</motion.button>
+                      <motion.button {...hoverScale} onClick={() => updateQuantity(cartLineKey(item), item.quantity + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'white', fontSize: 16, cursor: 'pointer' }}>+</motion.button>
+                      <motion.button {...hoverScale} onClick={() => removeItem(cartLineKey(item))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: '0 2px' }}>✕</motion.button>
                     </div>
                   </div>
                 ))}
@@ -1591,9 +1624,9 @@ export default function CafeteriaPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
                       <span>Subtotal</span><span>₹{total}</span>
                     </div>
-                    {orderType !== 'dine_in' && (
+                    {orderType !== 'dine_in' && dynamicParcelCharge > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Parcel Charge</span><span>₹{dynamicParcelCharge}</span>
+                        <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
                     {orderType === 'delivery' && deliveryCharge > 0 && (
@@ -1825,7 +1858,7 @@ export default function CafeteriaPage() {
               {cartItem.map(item => {
                 const menuItem = menuItems.find(m => m.id === item.menuId)
                 return (
-                  <motion.div key={item.menuId} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <motion.div key={cartLineKey(item)} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
                     <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
                       🍱
                     </div>
@@ -1835,7 +1868,7 @@ export default function CafeteriaPage() {
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <motion.button
                           {...hoverScale}
-                          onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
+                          onClick={() => updateQuantity(cartLineKey(item), item.quantity - 1)}
                           style={{ width: 24, height: 24, borderRadius: 4, background: '#ccc', color: '#333', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
                         >
                           −
@@ -1843,7 +1876,7 @@ export default function CafeteriaPage() {
                         <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{item.quantity}</span>
                         <motion.button
                           {...hoverScale}
-                          onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                          onClick={() => updateQuantity(cartLineKey(item), item.quantity + 1)}
                           style={{ width: 24, height: 24, borderRadius: 4, background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
                         >
                           +
@@ -1866,10 +1899,14 @@ export default function CafeteriaPage() {
                   <span>Subtotal</span>
                   <span>₹{total}</span>
                 </div>
-                {orderType !== 'dine_in' && (
+                {/* Must be dynamicParcelCharge — the one the total actually adds.
+                    This row used to print a flat ₹5 from a separate constant even
+                    when nothing was charged, so the breakdown did not sum to the
+                    total. The constant is gone; there is only one number now. */}
+                {orderType !== 'dine_in' && dynamicParcelCharge > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
-                    <span>Parcel Charge</span>
-                    <span>₹{PARCEL_CHARGE}</span>
+                    <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span>
+                    <span>₹{dynamicParcelCharge}</span>
                   </div>
                 )}
                 {orderType === 'delivery' && deliveryCharge > 0 && (

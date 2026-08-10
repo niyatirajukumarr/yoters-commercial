@@ -7,6 +7,8 @@ export interface CartItem {
   name: string
   price: number
   quantity: number
+  /** Size/portion picked on the menu card, e.g. "Half" / "Full". */
+  variant?: string
 }
 
 export interface MobileCart {
@@ -16,6 +18,15 @@ export interface MobileCart {
 }
 
 const CART_KEY = 'yoters-cart'
+
+/**
+ * A cart line is identified by the menu item *and* the chosen variant — Half
+ * and Full of the same dish are two separate lines at two different prices.
+ * Items without variants key on menuId alone, so callers that only have an id
+ * (favourites, reorder) keep working unchanged.
+ */
+export const cartLineKey = (i: { menuId: string; variant?: string }) =>
+  i.variant ? `${i.menuId}::${i.variant}` : i.menuId
 
 export function useCart() {
   const [cart, setCart] = useState<MobileCart | null>(null)
@@ -42,9 +53,10 @@ export function useCart() {
         createdAt: new Date().toISOString()
       }
 
-      const existing = newCart.items.find(i => i.menuId === item.menuId)
+      const key = cartLineKey(item)
+      const existing = newCart.items.find(i => cartLineKey(i) === key)
       const items = existing
-        ? newCart.items.map(i => i.menuId === item.menuId ? { ...i, quantity: i.quantity + item.quantity } : i)
+        ? newCart.items.map(i => cartLineKey(i) === key ? { ...i, quantity: i.quantity + item.quantity } : i)
         : [...newCart.items, item]
 
       const updated = { ...newCart, items }
@@ -53,12 +65,13 @@ export function useCart() {
     })
   }
 
-  const updateQuantity = (menuId: string, quantity: number) => {
+  // `key` is a cartLineKey — a bare menuId for items without variants.
+  const updateQuantity = (key: string, quantity: number) => {
     setCart(prev => {
       if (!prev) return null
       const items = quantity <= 0
-        ? prev.items.filter(i => i.menuId !== menuId)
-        : prev.items.map(i => i.menuId === menuId ? { ...i, quantity } : i)
+        ? prev.items.filter(i => cartLineKey(i) !== key)
+        : prev.items.map(i => cartLineKey(i) === key ? { ...i, quantity } : i)
 
       const updated = items.length === 0 ? null : { ...prev, items }
       if (updated) {
@@ -70,10 +83,10 @@ export function useCart() {
     })
   }
 
-  const removeItem = (menuId: string) => {
+  const removeItem = (key: string) => {
     setCart(prev => {
       if (!prev) return null
-      const items = prev.items.filter(i => i.menuId !== menuId)
+      const items = prev.items.filter(i => cartLineKey(i) !== key)
       const updated = items.length === 0 ? null : { ...prev, items }
       if (updated) {
         sessionStorage.setItem(CART_KEY, JSON.stringify(updated))

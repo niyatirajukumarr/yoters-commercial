@@ -68,6 +68,19 @@ export function clientKey(req: Request, scope: string): string {
   return `${scope}:${ip}`
 }
 
+function tooManyRequests(retryAfterSec: number): Response {
+  return new Response(
+    JSON.stringify({ error: 'Too many requests. Please slow down and try again shortly.' }),
+    {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(retryAfterSec),
+      },
+    }
+  )
+}
+
 // Convenience: enforce a limit and return a ready-made 429 Response if exceeded,
 // or null to proceed.
 export function enforceRateLimit(
@@ -77,15 +90,37 @@ export function enforceRateLimit(
   windowMs: number
 ): Response | null {
   const result = rateLimit(clientKey(req, scope), limit, windowMs)
-  if (result.ok) return null
-  return new Response(
-    JSON.stringify({ error: 'Too many requests. Please slow down and try again shortly.' }),
-    {
-      status: 429,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': String(result.retryAfterSec),
-      },
-    }
-  )
+  return result.ok ? null : tooManyRequests(result.retryAfterSec)
+}
+
+/**
+ * Two-tier limit for endpoints where many people legitimately share one IP.
+ *
+ * A campus or office puts hundreds of customers behind a single NAT address,
+ * so an IP-only limit means one person's allowance is the whole building's:
+ * at lunch the sixteenth student to check out gets a 429 and cannot pay. The
+ * strict bucket is therefore keyed on `identity` — something that identifies
+ * the one checkout, like the order id — and the IP bucket is kept only as a
+ * loose backstop against a single host hammering the endpoint.
+ *
+ * `identity` must be server-verifiable. An order id qualifies: the route
+ * looks it up and 404s if it does not exist, so it cannot be invented freely.
+ */
+export function enforceSharedNetworkRateLimit(
+  req: Request,
+  scope: string,
+  identity: string | null | undefined,
+  opts: { perIdentity: number; perIp: number; windowMs?: number }
+): Response | null {
+  const windowMs = opts.windowMs ?? 60_000
+
+  // No identity (malformed body) — fall back to the IP bucket alone so the
+  // endpoint is never left unprotected.
+  if (identity) {
+    const byIdentity = rateLimit(`${scope}:id:${identity}`, opts.perIdentity, windowMs)
+    if (!byIdentity.ok) return tooManyRequests(byIdentity.retryAfterSec)
+  }
+
+  const byIp = rateLimit(clientKey(req, scope), opts.perIp, windowMs)
+  return byIp.ok ? null : tooManyRequests(byIp.retryAfterSec)
 }

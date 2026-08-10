@@ -118,7 +118,7 @@ export function verifyWebhookSignature(
 }
 
 /**
- * Get payment details from Razorpay
+ * Get payment details from Razorpay by payment ID
  */
 export async function getPaymentDetails(paymentId: string): Promise<any> {
   const razorpay = getRazorpayInstance()
@@ -128,6 +128,27 @@ export async function getPaymentDetails(paymentId: string): Promise<any> {
     return payment
   } catch (error: any) {
     logger.error('Razorpay payment fetch error:', error)
+    throw error
+  }
+}
+
+/**
+ * Get payment details from Razorpay by order ID
+ * Fetches all payments for an order and returns the first one (most recent)
+ */
+export async function getPaymentByOrderId(orderId: string): Promise<any> {
+  const razorpay = getRazorpayInstance()
+
+  try {
+    const payments = await (razorpay.orders as any).fetchPayments(orderId)
+
+    if (!payments || payments.length === 0) {
+      throw new Error(`No payments found for order ${orderId}`)
+    }
+
+    return payments[0]
+  } catch (error: any) {
+    logger.error('Razorpay payment fetch by order error:', error)
     throw error
   }
 }

@@ -21,10 +21,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
     }
 
+    // Bounded to the last 30 days. Unbounded, this query grew with the order
+    // table forever — at 300 orders a day per restaurant it was scanning
+    // months of history to decide which dishes get a "Highly ordered" tag.
+    // A month is also a better signal: what sold last summer is not what is
+    // popular now. Cancelled orders are excluded in SQL rather than in JS so
+    // they never cross the wire.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const { data, error } = await supabase
       .from('orders')
-      .select('items, status')
+      .select('items')
       .eq('cafeteria_id', cafeteriaId)
+      .gte('created_at', since)
+      .neq('status', 'cancelled')
 
     if (error) {
       logger.error('Menu popularity query error:', error)
@@ -35,7 +44,6 @@ export async function GET(req: NextRequest) {
     const byId: Record<string, number> = {}
 
     ;(data || []).forEach((o: any) => {
-      if (o.status === 'cancelled') return
       ;(o.items || []).forEach((it: any) => {
         const qty = Number(it?.quantity) || 1
         if (it?.name) {
@@ -51,7 +59,18 @@ export async function GET(req: NextRequest) {
     const values = Object.values(byName)
     const max = values.length ? Math.max(...values) : 0
 
-    return NextResponse.json({ byName, byId, max }, { status: 200 })
+    // Cached at the edge: every viewer of a restaurant asks for the same
+    // numbers, so they share one origin query per minute however many of them
+    // there are. stale-while-revalidate means a rush never waits on a refresh.
+    return NextResponse.json(
+      { byName, byId, max },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (e: any) {
     logger.error('Menu popularity error:', e)
     return NextResponse.json({ error: 'Failed to load menu popularity.' }, { status: 500 })

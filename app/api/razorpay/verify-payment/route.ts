@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyPaymentSignature } from '@/lib/razorpay'
 import { logger, shortId } from '@/lib/logger'
-import { enforceRateLimit } from '@/lib/rate-limit'
+import { enforceSharedNetworkRateLimit } from '@/lib/rate-limit'
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,11 +12,17 @@ const adminSupabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const limited = enforceRateLimit(req, 'verify-payment', 30, 60_000)
-    if (limited) return limited
-
     const body = await req.json()
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = body
+
+    // Per checkout rather than per IP — see create-order. Confirming a payment
+    // is the last thing that must never fail because a stranger on the same
+    // carrier NAT happened to check out first.
+    const limited = enforceSharedNetworkRateLimit(req, 'verify-payment', orderId, {
+      perIdentity: 20,
+      perIp: 1200,
+    })
+    if (limited) return limited
 
     logger.debug('[Razorpay Verify] Request received:', {
       orderId: orderId ? shortId(orderId) : 'missing',
