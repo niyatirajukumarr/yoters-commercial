@@ -47,6 +47,14 @@ next-env.d.ts
 # committed env dump (removed) — never re-add
 env.download
 
+# Load-test scripts that point at production (yoters.site) and their output.
+# load-test-read.mjs is committed on purpose: it is reads-only and safe. These
+# drive the write/payment path at 2400 concurrent users — not something that
+# should sit in a public repo ready to run.
+load-test.js
+load-test-simple.js
+load-test-results.txt
+
 # Security & internal documentation (local development only)
 # Audit reports, security reviews, vulnerability assessments
 SECURITY_*.md
