@@ -688,15 +688,23 @@ export default function CafeteriaPage() {
 
   const parcelChargeKeys = new Set(parcelChargeCategories.map(normalizeCategory))
 
-  // Check if any cart item is from parcel charge categories
-  const hasParcelChargeItems = cartItem.length > 0 && cartItem.some(cartItemObj => {
+  const needsParcel = (cartItemObj: { menuId: string }) => {
     const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
     return !!menuItem?.category && parcelChargeKeys.has(normalizeCategory(menuItem.category))
-  })
+  }
 
-  // Skip parcel charge for test items (₹1) or if no items from parcel charge categories
+  // Every unit gets its own cup or box, so the charge counts quantity rather
+  // than being one flat ₹5 for the order: two shakes is two containers. Items
+  // outside the categories above still add nothing.
+  const PARCEL_CHARGE_PER_ITEM = 5
+  const parcelChargeUnits = cartItem.reduce(
+    (n, item) => (needsParcel(item) ? n + item.quantity : n),
+    0
+  )
+
+  // Skip parcel charge for test items (₹1)
   const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
-  const dynamicParcelCharge = (isTestOrder || !hasParcelChargeItems) ? 0 : 5
+  const dynamicParcelCharge = isTestOrder ? 0 : parcelChargeUnits * PARCEL_CHARGE_PER_ITEM
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
@@ -1616,9 +1624,9 @@ export default function CafeteriaPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
                       <span>Subtotal</span><span>₹{total}</span>
                     </div>
-                    {orderType !== 'dine_in' && (
+                    {orderType !== 'dine_in' && dynamicParcelCharge > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Parcel Charge</span><span>₹{dynamicParcelCharge}</span>
+                        <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
                     {orderType === 'delivery' && deliveryCharge > 0 && (
@@ -1897,7 +1905,7 @@ export default function CafeteriaPage() {
                     total. The constant is gone; there is only one number now. */}
                 {orderType !== 'dine_in' && dynamicParcelCharge > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
-                    <span>Parcel Charge</span>
+                    <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span>
                     <span>₹{dynamicParcelCharge}</span>
                   </div>
                 )}
