@@ -246,7 +246,12 @@ export default function StudentHome() {
           .cafe-menu-image-logo img { padding:8px; }
 
           .cafe-info { padding:0; }
-          .cafe-name { font-size:30px; margin-bottom:2px; }
+          /* Scales with the viewport rather than sitting at a fixed size: the
+             text column is only about 200px next to the thumbnail, and a fixed
+             30px wrapped 'Bombay Dine' onto two lines on a narrow phone (and
+             would again on any longer name, or if Allura falls back to a wider
+             system cursive). */
+          .cafe-name { font-size:clamp(20px, 5.5vw, 26px); line-height:1.05; margin-bottom:4px; }
           .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; }
           /* Two lines, then ellipsis: the tagline should not decide the card's
              height when the photo beside it is only 116px tall. */
