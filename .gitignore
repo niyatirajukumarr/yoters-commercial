@@ -77,3 +77,6 @@ TODO*.md
 NOTES*.md
 DEBUG*.md
 TEST*.md
+
+# Stale worktree checkouts of this repo — 200MB+, and test runners walk them
+.claude/worktrees/
