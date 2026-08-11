@@ -12,6 +12,7 @@ import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
+import { getRestaurantLocation } from '@/lib/utils/restaurantLocations'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { AppTabBar } from '@/components/AppTabBar'
@@ -258,11 +259,14 @@ export default function StudentHome() {
              would again on any longer name, or if Allura falls back to a wider
              system cursive). */
           .cafe-name { font-size:clamp(20px, 5.5vw, 26px); line-height:1.05; margin-bottom:4px; }
-          /* The address and the "See map" prompt are two flex items. Side by
-             side in a ~200px column they each got half the width and both
-             wrapped mid-phrase, so give the prompt its own line underneath. */
+          /* Both restaurants sit on the same street, so the address earns no
+             room in a ~200px column — the name and tagline already say which
+             is which. Dropped on phones only; desktop still shows it.
+             The map prompt stays: it is the only way to open the map. */
           .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; flex-wrap:wrap; }
           .cafe-location span { flex-basis:100%; }
+          div.cafe-location { display:none; }
+          button.cafe-location .cafe-address { display:none; }
           /* Two lines, then ellipsis: the tagline should not decide the card's
              height when the photo beside it is only 116px tall. */
           .cafe-description {
@@ -360,7 +364,9 @@ export default function StudentHome() {
               <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No restaurants found for &quot;{search}&quot;</div>
             ) : (
               <div className="newspaper-grid">
-                {filtered.map((c, idx) => (
+                {filtered.map((c, idx) => {
+                  const restaurantLocation = getRestaurantLocation(c.name)
+                  return (
                   <motion.div
                     key={c.id}
                     className={`cafe-newspaper-card ${idx % 2 === 1 ? 'reversed' : ''}`}
@@ -397,14 +403,22 @@ export default function StudentHome() {
                     {/* Restaurant Info */}
                     <div className="cafe-info">
                       <h2 className="cafe-name">{c.name}</h2>
-                      {c.name === 'LETHAFI' ? (
+                      {/* The map prompt is offered to any restaurant with
+                          coordinates on file, rather than to one hardcoded
+                          name. A restaurant without them shows a plain
+                          address instead of a toggle that opens someone
+                          else's pin. */}
+                      {restaurantLocation ? (
                         <button
                           type="button"
                           className="cafe-location"
                           onClick={() => toggleMap(c.id)}
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
                         >
-                          📍 {c.location}
+                          {/* Wrapped so the phone layout can drop the address on
+                              its own — a bare text node cannot be targeted by a
+                              selector — while keeping the map prompt. */}
+                          <span className="cafe-address">📍 {c.location}</span>
                           <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
                             · How far is this from you? 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
                           </span>
@@ -417,10 +431,10 @@ export default function StudentHome() {
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      {c.name === 'LETHAFI' && expandedMaps.has(c.id) && (
+                      {restaurantLocation && expandedMaps.has(c.id) && (
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
-                            <RestaurantMapLoader showRoute />
+                            <RestaurantMapLoader restaurant={restaurantLocation} showRoute />
                           </div>
                         </div>
                       )}
@@ -436,7 +450,8 @@ export default function StudentHome() {
                       </Link>
                     </div>
                   </motion.div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </>
