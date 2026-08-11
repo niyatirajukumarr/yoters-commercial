@@ -28,7 +28,17 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [locating, setLocating] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
+  // The typed address is looked up as it is written and the marker moved to it,
+  // so the customer sees where their words landed instead of trusting that the
+  // text alone got through. Tracks which query the marker currently reflects.
+  const [manualResolvedFor, setManualResolvedFor] = useState<string | null>(null)
+  const [manualLocating, setManualLocating] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const manualDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The Leaflet handlers below are bound once, so they would otherwise close
+  // over the empty first-render value of manualAddress forever.
+  const manualAddressRef = useRef('')
+  useEffect(() => { manualAddressRef.current = manualAddress }, [manualAddress])
 
   /** Resolve typed text to a point, so a manual address can still be delivered to. */
   const geocodeAddress = async (q: string): Promise<{ lat: number; lng: number } | null> => {
@@ -104,6 +114,18 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         }, () => {})
       }
 
+      // Moving the pin is the customer correcting what they typed, so the box
+      // has to follow it. Otherwise the order records the words they wrote
+      // while the driver is sent to the point they dragged to — and whichever
+      // of the two is wrong, nobody finds out until the food is late.
+      const syncManualBox = (addr: string) => {
+        if (!manualAddressRef.current.trim()) return
+        setManualAddress(addr)
+        // Marks the box as already matching the pin, so the lookup below does
+        // not fire and jump the pin back to the geocoder's guess.
+        setManualResolvedFor(addr)
+      }
+
       map.on('click', async (e: any) => {
         const { lat, lng } = e.latlng
         marker.setLatLng([lat, lng])
@@ -111,6 +133,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         setAddress(addr)
         setCoords({ lat, lng })
         setSuggestions([])
+        syncManualBox(addr)
       })
 
       marker.on('dragend', async () => {
@@ -118,6 +141,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         const addr = await reverseGeocode(lat, lng)
         setAddress(addr)
         setCoords({ lat, lng })
+        syncManualBox(addr)
       })
     }
 
@@ -139,6 +163,45 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     }
   }
 
+  // Show the typed address on the map as it is written. Confirming used to be
+  // the first moment anything was resolved, so a customer could type a place
+  // the geocoder had never heard of and only find out at the very end. Now the
+  // marker moves to it — and they can drag it from there to correct it.
+  useEffect(() => {
+    const q = manualAddress.trim()
+    if (manualDebounceRef.current) clearTimeout(manualDebounceRef.current)
+
+    if (!q) {
+      setManualResolvedFor(null)
+      setConfirmError(null)
+      return
+    }
+    // Below this a query is mostly noise, and Nominatim asks for at most one
+    // request a second — the wait keeps a burst of keystrokes to one lookup.
+    if (q.length < 4) return
+    // Already matches where the pin is — either this text put it there, or the
+    // customer dragged the pin and the box was updated to follow. Looking it up
+    // again would drag the pin back off their correction.
+    if (manualResolvedFor === q) return
+
+    manualDebounceRef.current = setTimeout(async () => {
+      setManualLocating(true)
+      const hit = await geocodeAddress(q)
+      setManualLocating(false)
+
+      if (hit) {
+        setManualResolvedFor(q)
+        setConfirmError(null)
+        flyTo(hit.lat, hit.lng, q, false)
+      } else {
+        setManualResolvedFor(null)
+      }
+    }, 800)
+
+    return () => {
+      if (manualDebounceRef.current) clearTimeout(manualDebounceRef.current)
+    }
+  }, [manualAddress])
 
   return (
     <motion.div
@@ -229,6 +292,24 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
         />
 
+        {/* Tells the customer their words were understood, and where they
+            landed, while they can still do something about it. */}
+        {manualAddress.trim().length >= 4 && (
+          <div style={{ fontSize: 12, lineHeight: 1.5, marginTop: -4 }}>
+            {manualLocating ? (
+              <span style={{ color: 'var(--muted)' }}>Finding this on the map…</span>
+            ) : manualResolvedFor === manualAddress.trim() ? (
+              <span style={{ color: 'var(--green, #2e9e6b)' }}>
+                📍 Pinned on the map above — drag the pin if it is not quite right.
+              </span>
+            ) : (
+              <span style={{ color: 'var(--muted)' }}>
+                Not found yet — try adding the area, or tap your spot on the map above.
+              </span>
+            )}
+          </div>
+        )}
+
         {confirmError && (
           <div style={{ fontSize: 13, color: 'var(--red, #e8334a)', lineHeight: 1.5 }}>
             {confirmError}
@@ -245,6 +326,14 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
             // Picked on the map: the marker already carries the point.
             if (!typed) {
               onConfirm(final, coords ?? undefined)
+              return
+            }
+
+            // Already pinned while they were typing. Use that point rather than
+            // looking the text up again — they may have dragged the pin since,
+            // and a fresh lookup would throw that correction away.
+            if (coords && manualResolvedFor === typed) {
+              onConfirm(final, coords)
               return
             }
 
