@@ -6,8 +6,10 @@ import { motion } from 'framer-motion'
 import { hoverScale } from '@/lib/motion'
 
 interface Props {
-  // coords is omitted when the final address came from manual text entry —
-  // there's no map point behind it to report.
+  // Always called with coordinates: a map point when one was picked, or the
+  // result of geocoding the typed address. Checkout rejects a delivery order
+  // without them, so confirming here without any was only ever a failure
+  // deferred to the payment step.
   onConfirm: (address: string, coords?: { lat: number; lng: number }) => void
   onClose: () => void
 }
@@ -24,7 +26,21 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [loadingSearch, setLoadingSearch] = useState(false)
   const [manualAddress, setManualAddress] = useState('')
   const [locating, setLocating] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /** Resolve typed text to a point, so a manual address can still be delivered to. */
+  const geocodeAddress = async (q: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const d = await res.json()
+      if (typeof d?.lat === 'number' && typeof d?.lng === 'number') {
+        return { lat: d.lat, lng: d.lng }
+      }
+    } catch {}
+    return null
+  }
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
@@ -213,17 +229,44 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
           style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
         />
 
+        {confirmError && (
+          <div style={{ fontSize: 13, color: 'var(--red, #e8334a)', lineHeight: 1.5 }}>
+            {confirmError}
+          </div>
+        )}
+
         <motion.button
-          {...((address || manualAddress) ? hoverScale : {})}
-          onClick={() => {
-            const usingManual = !!manualAddress.trim()
-            const final = manualAddress.trim() || address.trim()
-            if (final) onConfirm(final, usingManual ? undefined : (coords ?? undefined))
+          {...((address || manualAddress) && !confirming ? hoverScale : {})}
+          onClick={async () => {
+            const typed = manualAddress.trim()
+            const final = typed || address.trim()
+            if (!final || confirming) return
+
+            // Picked on the map: the marker already carries the point.
+            if (!typed) {
+              onConfirm(final, coords ?? undefined)
+              return
+            }
+
+            // Typed by hand. Resolve it to a point rather than handing back an
+            // address with no coordinates, which checkout refuses.
+            setConfirming(true)
+            setConfirmError(null)
+            const resolved = await geocodeAddress(typed)
+            setConfirming(false)
+
+            if (resolved) {
+              onConfirm(final, resolved)
+              return
+            }
+            setConfirmError(
+              "We couldn't find that address on the map. Try adding the area or a nearby landmark, or tap your spot on the map above."
+            )
           }}
-          disabled={!address.trim() && !manualAddress.trim()}
-          style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
+          disabled={(!address.trim() && !manualAddress.trim()) || confirming}
+          style={{ width: '100%', padding: 15, background: (address || manualAddress) && !confirming ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) && !confirming ? 'pointer' : 'not-allowed' }}
         >
-          Confirm Delivery Location →
+          {confirming ? 'Finding address…' : 'Confirm Delivery Location →'}
         </motion.button>
       </motion.div>
     </motion.div>
