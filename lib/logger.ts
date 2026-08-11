@@ -46,6 +46,12 @@ export const logger = {
     if (IS_PROD) return
     console.log(...args.map(scrub))
   },
+  // Warnings and errors are always emitted (needed for observability) but
+  // scrubbed of PII. A warning is something that did not stop the request and
+  // still wants looking at — a payment priced against an incomplete menu, say.
+  warn(...args: unknown[]) {
+    console.warn(...args.map(scrub))
+  },
   // Errors are always emitted (needed for observability) but scrubbed of PII.
   error(...args: unknown[]) {
     console.error(...args.map(scrub))
