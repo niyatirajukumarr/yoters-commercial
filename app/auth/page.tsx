@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { validatePassword, isValidEmail, isValidPhone } from '@/lib/validation'
 import { CONSENT_VERSION } from '@/lib/config'
+import { logger } from '@/lib/logger'
 import PenguinFace from '@/components/PenguinFace'
 
 type AuthMode = 'login' | 'signup' | 'forgot'
@@ -133,9 +134,13 @@ export default function AuthPage() {
         redirectTo: resetUrl,
       })
       // Do not reveal whether the email exists — show the same confirmation
-      // regardless (prevents account enumeration). We intentionally swallow the
-      // error and never log any credential material.
-      void resetError
+      // regardless (prevents account enumeration). The error is still logged:
+      // Supabase returns success here whether or not the address is registered,
+      // so what lands in this branch is configuration or rate limiting, not a
+      // hint about the account. Swallowing it outright is how a reset link
+      // pointing at localhost went unnoticed — the redirect was being rejected
+      // and nothing said so.
+      if (resetError) logger.error('Password reset request failed:', resetError.message)
       setForgotSent(true)
       setSuccess("If that email is registered, you'll receive a reset link")
       setLoading(false)
