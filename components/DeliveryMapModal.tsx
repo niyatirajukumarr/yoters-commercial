@@ -12,9 +12,14 @@ interface Props {
   // `address` carries the landmark appended when one was given.
   onConfirm: (address: string, coords?: { lat: number; lng: number }) => void
   onClose: () => void
+  // Where to open the map when the customer's own location is unavailable.
+  // Deliveries are capped at 5km from the restaurant, so this has to be the
+  // restaurant — the previous fixed default was Hyderabad, ~500km from both
+  // of them, which put every tap out of range.
+  center?: { lat: number; lng: number }
 }
 
-export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
+export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
@@ -84,7 +89,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
 
-      const defaultCenter: [number, number] = [17.385, 78.4867]
+      const defaultCenter: [number, number] = center ? [center.lat, center.lng] : [17.385, 78.4867]
       map = L.map(containerRef.current, { zoomControl: true, attributionControl: true })
       mapInstanceRef.current = map
 

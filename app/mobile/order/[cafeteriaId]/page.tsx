@@ -630,6 +630,13 @@ export default function CafeteriaPage() {
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
 
+  // The same two conditions handlePlaceOrder refuses on, hoisted so the details
+  // screen can say so up front instead of letting the customer fill everything
+  // in and discover it at the payment button.
+  const deliveryBlocked =
+    orderType === 'delivery' &&
+    (!!deliveryChargeError || !deliveryCoords || !cafeteria?.latitude || !cafeteria?.longitude)
+
   // Auto-focus search input when search bar opens
   useEffect(() => {
     if (showSearchBar && searchInputRef.current) {
@@ -1926,11 +1933,30 @@ export default function CafeteriaPage() {
             </div>
           </div>
 
+          {/* An out-of-range address used to be invisible here: the delivery
+              row hides itself when the charge is ₹0, so the total looked
+              ordinary and the refusal only arrived as an alert on tapping
+              Proceed — quoting a reason last shown in the order-type sheet the
+              customer had already dismissed. Say it where they are, next to
+              the button it blocks, with the way to fix it. */}
+          {orderType === 'delivery' && deliveryBlocked && (
+            <div style={{ padding: '12px 14px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 10, fontSize: 13, color: '#92400e', marginBottom: 12, lineHeight: 1.5 }}>
+              ⚠️ {deliveryChargeError ?? 'We need a delivery location before you can pay.'}
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(true)}
+                style={{ display: 'block', marginTop: 8, background: 'none', border: 'none', padding: 0, color: '#92400e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
+              >
+                Change delivery location
+              </button>
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
@@ -2079,6 +2105,11 @@ export default function CafeteriaPage() {
 
       {showMapPicker && (
         <DeliveryMapModal
+          center={
+            cafeteria?.latitude && cafeteria?.longitude
+              ? { lat: cafeteria.latitude, lng: cafeteria.longitude }
+              : undefined
+          }
           onConfirm={(addr, coords) => {
             setDeliveryAddress(addr)
             setDeliveryCoords(coords ?? null)
