@@ -12,11 +12,12 @@ import { generateSlug } from '@/lib/utils/slug'
 import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
-import { getRestaurantLocation } from '@/lib/utils/restaurantLocations'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { AppTabBar } from '@/components/AppTabBar'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
+import { getLethafiLocation } from '@/lib/utils/lethafiLocation'
+import { getBombayDineLocation } from '@/lib/utils/bombayDineLocation'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -209,12 +210,6 @@ export default function StudentHome() {
         .cafe-info { display:flex; flex-direction:column; justify-content:center; padding:20px; }
         .cafe-name { font-family:'Allura', cursive; font-size:64px; font-weight:400; color:var(--accent); margin-bottom:12px; line-height:1; }
         .cafe-location { font-size:14px; color:var(--muted); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
-        /* The map toggle is a button wearing this class. It used to reset the
-           UA button font with an inline "font: inherit", and an inline style
-           beats any stylesheet rule — so it silently ignored the smaller
-           font-size the phone layout sets here. Reset it in CSS instead, where
-           the cascade can still reach it. */
-        button.cafe-location { font-family:inherit; font-weight:inherit; }
         .cafe-description { font-size:15px; color:var(--text2); line-height:1.7; margin-bottom:24px; }
         .cafe-see-menu-btn { display:inline-block; padding:12px 28px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; text-decoration:none; }
 
@@ -260,13 +255,11 @@ export default function StudentHome() {
              system cursive). */
           .cafe-name { font-size:clamp(20px, 5.5vw, 26px); line-height:1.05; margin-bottom:4px; }
           /* Both restaurants sit on the same street, so the address earns no
-             room in a ~200px column — the name and tagline already say which
-             is which. Dropped on phones only; desktop still shows it.
-             The map prompt stays: it is the only way to open the map. */
-          .cafe-location { font-size:12px; margin-bottom:6px; align-items:flex-start; flex-wrap:wrap; }
-          .cafe-location span { flex-basis:100%; }
-          div.cafe-location { display:none; }
-          button.cafe-location .cafe-address { display:none; }
+             room in a ~200px column — the name and tagline already say which is
+             which. Dropped on phones only; desktop still shows it. The map
+             toggle below it stays: it is the only way to open the map. */
+          .cafe-location { display:none; }
+          .cafe-map-toggle { font-size:12px !important; margin-top:0 !important; margin-bottom:6px; }
           /* Two lines, then ellipsis: the tagline should not decide the card's
              height when the photo beside it is only 116px tall. */
           .cafe-description {
@@ -364,9 +357,7 @@ export default function StudentHome() {
               <div style={{ textAlign: 'center', padding: 60, color: 'var(--muted)' }}>No restaurants found for &quot;{search}&quot;</div>
             ) : (
               <div className="newspaper-grid">
-                {filtered.map((c, idx) => {
-                  const restaurantLocation = getRestaurantLocation(c.name)
-                  return (
+                {filtered.map((c, idx) => (
                   <motion.div
                     key={c.id}
                     className={`cafe-newspaper-card ${idx % 2 === 1 ? 'reversed' : ''}`}
@@ -403,38 +394,40 @@ export default function StudentHome() {
                     {/* Restaurant Info */}
                     <div className="cafe-info">
                       <h2 className="cafe-name">{c.name}</h2>
-                      {/* The map prompt is offered to any restaurant with
-                          coordinates on file, rather than to one hardcoded
-                          name. A restaurant without them shows a plain
-                          address instead of a toggle that opens someone
-                          else's pin. */}
-                      {restaurantLocation ? (
-                        <button
-                          type="button"
-                          className="cafe-location"
-                          onClick={() => toggleMap(c.id)}
-                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                        >
-                          {/* Wrapped so the phone layout can drop the address on
-                              its own — a bare text node cannot be targeted by a
-                              selector — while keeping the map prompt. */}
-                          <span className="cafe-address">📍 {c.location}</span>
-                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                            · How far is this from you? 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
-                          </span>
-                        </button>
-                      ) : (
-                        <div className="cafe-location">
-                          📍 {c.location}
-                        </div>
-                      )}
+                      <div className="cafe-location">
+                        📍 {c.location}
+                      </div>
+                      <button
+                        type="button"
+                        className="cafe-map-toggle"
+                        onClick={() => toggleMap(c.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          font: 'inherit',
+                          textAlign: 'left',
+                          color: '#e8334a',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          marginTop: 8,
+                          display: 'block',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        · How far is this from you? 🗺️ {expandedMaps.has(c.id) ? 'Hide map' : 'See map'}
+                      </button>
                       <p className="cafe-description">
                         {c.description || 'Discover delicious meals and skip the queue. Pre-order your favorites now!'}
                       </p>
-                      {restaurantLocation && expandedMaps.has(c.id) && (
+                      {expandedMaps.has(c.id) && (
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
-                            <RestaurantMapLoader restaurant={restaurantLocation} showRoute />
+                            <RestaurantMapLoader
+                              restaurant={c.name === 'LETHAFI' ? (getLethafiLocation() ?? undefined) : c.name === 'Bombay Dine' ? (getBombayDineLocation() ?? undefined) : undefined}
+                              showRoute
+                            />
                           </div>
                         </div>
                       )}
@@ -450,8 +443,7 @@ export default function StudentHome() {
                       </Link>
                     </div>
                   </motion.div>
-                  )
-                })}
+                ))}
               </div>
             )}
           </>
