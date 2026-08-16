@@ -230,6 +230,45 @@ export default function StudentHome() {
           .cafe-info { padding:0; }
           .h1-browse { font-size:26px !important; }
         }
+
+        /* Phones only. A full-width 220px photo stacked above the text meant one
+           restaurant filled the whole screen, so browsing was all scrolling and
+           you could never compare two. Phones get a compact row instead —
+           thumbnail on the left, everything else beside it. 640px keeps this
+           clear of tablets and desktop, which are untouched.
+           Last in the sheet on purpose: it overrides the 900px and 480px blocks,
+           which also match at phone widths. */
+        @media (max-width: 640px) {
+          .newspaper-grid { gap:20px; }
+          .cafe-newspaper-card { grid-template-columns:116px 1fr; gap:14px; align-items:center; }
+
+          .cafe-menu-image { height:116px; border-radius:14px; box-shadow:0 6px 14px rgba(0,0,0,0.10); }
+          /* Nothing hovers on a touch screen, and the tilt on a small tile just
+             clips the corners. */
+          .cafe-menu-image:hover { transform:none; box-shadow:0 6px 14px rgba(0,0,0,0.10); }
+          .cafe-menu-image-logo img { padding:8px; }
+
+          .cafe-info { padding:0; }
+          /* Scales with the viewport rather than sitting at a fixed size: the
+             text column is only about 200px next to the thumbnail, and a fixed
+             30px wrapped 'Bombay Dine' onto two lines on a narrow phone (and
+             would again on any longer name, or if Allura falls back to a wider
+             system cursive). */
+          .cafe-name { font-size:clamp(20px, 5.5vw, 26px); line-height:1.05; margin-bottom:4px; }
+          /* Both restaurants sit on the same street, so the address earns no
+             room in a ~200px column — the name and tagline already say which is
+             which. Dropped on phones only; desktop still shows it. The map
+             toggle below it stays: it is the only way to open the map. */
+          .cafe-location { display:none; }
+          .cafe-map-toggle { font-size:12px !important; margin-top:0 !important; margin-bottom:6px; }
+          /* Two lines, then ellipsis: the tagline should not decide the card's
+             height when the photo beside it is only 116px tall. */
+          .cafe-description {
+            font-size:12px; line-height:1.45; margin-bottom:10px;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+          }
+          .cafe-see-menu-btn { padding:8px 16px; font-size:12px; }
+        }
       `}</style>
 
       {/* NAV */}
@@ -361,6 +400,7 @@ export default function StudentHome() {
                       </div>
                       <button
                         type="button"
+                        className="cafe-map-toggle"
                         onClick={() => toggleMap(c.id)}
                         style={{
                           background: 'none',

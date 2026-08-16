@@ -292,7 +292,13 @@ describe('RestaurantMap driving time omitted on routing failure (Req 8.5)', () =
     emitPosition(13.09, 77.5, 20)
 
     // Distance panel shows km + walking time.
-    const walking = await screen.findByText(/🚶/)
+    //
+    // The wait has to outlast the recompute throttle (Req 8.8, 1/s). The mount
+    // pass already spent this second's budget, so the recompute this position
+    // triggers is scheduled ~995ms out — against findByText's default 1000ms
+    // timeout. That is a photo finish, and it loses on a loaded machine, which
+    // is what made this test flaky rather than wrong.
+    const walking = await screen.findByText(/🚶/, {}, { timeout: 5000 })
     expect(walking).toBeTruthy()
     expect(screen.getByText(/📍 \d/)).toBeTruthy()
 

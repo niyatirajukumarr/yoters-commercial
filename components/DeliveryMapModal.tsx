@@ -6,13 +6,20 @@ import { motion } from 'framer-motion'
 import { hoverScale } from '@/lib/motion'
 
 interface Props {
-  // coords is omitted when the final address came from manual text entry —
-  // there's no map point behind it to report.
+  // Always called with coordinates: the map pin, or failing that the geocoded
+  // landmark. Checkout rejects a delivery order without them, so confirming
+  // here without any was only ever a failure deferred to the payment step.
+  // `address` carries the landmark appended when one was given.
   onConfirm: (address: string, coords?: { lat: number; lng: number }) => void
   onClose: () => void
+  // Where to open the map when the customer's own location is unavailable.
+  // Deliveries are capped at 5km from the restaurant, so this has to be the
+  // restaurant — the previous fixed default was Hyderabad, ~500km from both
+  // of them, which put every tap out of range.
+  center?: { lat: number; lng: number }
 }
 
-export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
+export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
@@ -22,9 +29,28 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
-  const [manualAddress, setManualAddress] = useState('')
+  const [landmark, setLandmark] = useState('')
   const [locating, setLocating] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  // Which landmark text the pin currently reflects, for the case where the
+  // landmark is what placed it.
+  const [landmarkPinnedFor, setLandmarkPinnedFor] = useState<string | null>(null)
+  const [landmarkLocating, setLandmarkLocating] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const landmarkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /** Resolve typed text to a point, so a manual address can still be delivered to. */
+  const geocodeAddress = async (q: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const d = await res.json()
+      if (typeof d?.lat === 'number' && typeof d?.lng === 'number') {
+        return { lat: d.lat, lng: d.lng }
+      }
+    } catch {}
+    return null
+  }
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
@@ -63,7 +89,7 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
 
-      const defaultCenter: [number, number] = [17.385, 78.4867]
+      const defaultCenter: [number, number] = center ? [center.lat, center.lng] : [17.385, 78.4867]
       map = L.map(containerRef.current, { zoomControl: true, attributionControl: true })
       mapInstanceRef.current = map
 
@@ -123,6 +149,45 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
     }
   }
 
+  // A landmark is a note for the driver, not the delivery point — the pin is.
+  // So this only places the pin when there is not one yet: someone who denied
+  // location permission and never tapped the map can still be found by typing
+  // "opposite Acharya College gate". Once a pin exists it is left alone, since
+  // dragging it to your own gate and then adding a landmark should not throw
+  // that away and send the driver to the landmark instead.
+  useEffect(() => {
+    const q = landmark.trim()
+    if (landmarkDebounceRef.current) clearTimeout(landmarkDebounceRef.current)
+
+    if (!q) {
+      setLandmarkPinnedFor(null)
+      setConfirmError(null)
+      return
+    }
+    if (coords) return
+    // Below this a query is mostly noise, and Nominatim asks for at most one
+    // request a second — the wait keeps a burst of keystrokes to one lookup.
+    if (q.length < 4) return
+    if (landmarkPinnedFor === q) return
+
+    landmarkDebounceRef.current = setTimeout(async () => {
+      setLandmarkLocating(true)
+      const hit = await geocodeAddress(q)
+      setLandmarkLocating(false)
+
+      if (hit) {
+        setLandmarkPinnedFor(q)
+        setConfirmError(null)
+        flyTo(hit.lat, hit.lng, q, false)
+      } else {
+        setLandmarkPinnedFor(null)
+      }
+    }, 800)
+
+    return () => {
+      if (landmarkDebounceRef.current) clearTimeout(landmarkDebounceRef.current)
+    }
+  }, [landmark])
 
   return (
     <motion.div
@@ -194,36 +259,80 @@ export default function DeliveryMapModal({ onConfirm, onClose }: Props) {
         )}
 
 
-        {/* Disclaimer */}
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 13px', fontSize: 12, color: '#92400e' }}>
-          ⚠️ For a more precise location, enter a nearby landmark or address manually below.
+        {/* Optional landmark. Not an alternative to the pin — an extra line for
+            whoever is carrying the food, for the things a map cannot show: which
+            gate, which floor, the shop to stop at. Nothing here blocks Confirm. */}
+        <div>
+          <label
+            htmlFor="delivery-landmark"
+            style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--navy)', marginBottom: 6 }}
+          >
+            Nearby landmark <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(optional)</span>
+          </label>
+          <input
+            id="delivery-landmark"
+            type="text"
+            value={landmark}
+            onChange={e => setLandmark(e.target.value)}
+            placeholder="e.g. opposite Acharya College gate, 2nd floor"
+            style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginTop: 6 }}>
+            {landmarkLocating ? (
+              'Finding this on the map…'
+            ) : !coords && landmarkPinnedFor === landmark.trim() && landmark.trim() ? (
+              <span style={{ color: 'var(--green, #2e9e6b)' }}>
+                📍 Pinned on the map above — drag the pin if it is not quite right.
+              </span>
+            ) : (
+              'Helps the driver find you. Delivery still goes to the pin on the map.'
+            )}
+          </div>
         </div>
 
-        {/* OR manual address */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>OR</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-        </div>
-        <input
-          type="text"
-          value={manualAddress}
-          onChange={e => setManualAddress(e.target.value)}
-          placeholder="Enter nearby landmark or full address..."
-          style={{ width: '100%', padding: '13px 16px', border: '2px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-        />
+        {confirmError && (
+          <div style={{ fontSize: 13, color: 'var(--red, #e8334a)', lineHeight: 1.5 }}>
+            {confirmError}
+          </div>
+        )}
 
         <motion.button
-          {...((address || manualAddress) ? hoverScale : {})}
-          onClick={() => {
-            const usingManual = !!manualAddress.trim()
-            const final = manualAddress.trim() || address.trim()
-            if (final) onConfirm(final, usingManual ? undefined : (coords ?? undefined))
+          {...((address || landmark) && !confirming ? hoverScale : {})}
+          onClick={async () => {
+            const note = landmark.trim()
+            const base = address.trim()
+            if ((!base && !note) || confirming) return
+
+            // The landmark rides along with the address rather than replacing
+            // it, so the driver gets both the street and the "which gate".
+            const describe = (addr: string) => (note ? `${addr} (near ${note})` : addr)
+
+            // The pin is the delivery point whenever there is one.
+            if (coords) {
+              onConfirm(describe(base || note), coords)
+              return
+            }
+
+            // No pin at all — permission denied and the map never touched. The
+            // landmark is the only thing left to go on, so resolve it rather
+            // than confirming a location checkout will refuse.
+            setConfirming(true)
+            setConfirmError(null)
+            const resolved = await geocodeAddress(note)
+            setConfirming(false)
+
+            if (resolved) {
+              onConfirm(describe(base || note), resolved)
+              return
+            }
+            setConfirmError(
+              "We couldn't place that on the map. Tap your spot on the map above, or add the area to the landmark."
+            )
           }}
-          disabled={!address.trim() && !manualAddress.trim()}
-          style={{ width: '100%', padding: 15, background: (address || manualAddress) ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || manualAddress) ? 'pointer' : 'not-allowed' }}
+          disabled={(!address.trim() && !landmark.trim()) || confirming}
+          style={{ width: '100%', padding: 15, background: (address || landmark) && !confirming ? 'var(--accent)' : '#ccc', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (address || landmark) && !confirming ? 'pointer' : 'not-allowed' }}
         >
-          Confirm Delivery Location →
+          {confirming ? 'Finding address…' : 'Confirm Delivery Location →'}
         </motion.button>
       </motion.div>
     </motion.div>

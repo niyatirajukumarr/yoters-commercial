@@ -88,7 +88,13 @@ export function recordSuccess(email: string): void {
 export async function sendLockoutEmail(email: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM_EMAIL
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  // Falling back to '' made resetLink a bare "/auth?..." — a relative path no
+  // mail client can follow, so every lockout email shipped a dead link. The
+  // variable is currently unset in the deployment, so this is not theoretical.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.yoters.site'
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    logger.warn('[Lockout] NEXT_PUBLIC_APP_URL is not set; using the canonical site URL')
+  }
   if (!apiKey || !from) {
     logger.error('[Lockout] Resend not configured; lockout email not sent')
     return

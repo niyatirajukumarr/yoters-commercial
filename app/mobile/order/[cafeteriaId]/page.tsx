@@ -25,6 +25,7 @@ import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { calculateDeliveryChargeInfo } from '@/lib/utils/deliveryChargeCalculator'
+import { calculateParcelCharge, isParcelCategory, PARCEL_CHARGE_PER_ITEM } from '@/lib/utils/parcelCharge'
 
 interface MenuItem {
   id: string
@@ -630,6 +631,13 @@ export default function CafeteriaPage() {
     }
   }, [orderType, deliveryCoords, cafeteria?.latitude, cafeteria?.longitude])
 
+  // The same two conditions handlePlaceOrder refuses on, hoisted so the details
+  // screen can say so up front instead of letting the customer fill everything
+  // in and discover it at the payment button.
+  const deliveryBlocked =
+    orderType === 'delivery' &&
+    (!!deliveryChargeError || !deliveryCoords || !cafeteria?.latitude || !cafeteria?.longitude)
+
   // Auto-focus search input when search bar opens
   useEffect(() => {
     if (showSearchBar && searchInputRef.current) {
@@ -671,40 +679,20 @@ export default function CafeteriaPage() {
     return cartItem.find(i => cartLineKey(i) === key)
   }
 
-  // Categories that require parcel charge
-  const parcelChargeCategories = [
-    'Fresh juices', 'Mojitos', 'Hot beverages', 'Fruit milkshake', 'Thick shake',
-    'Coffee shake', 'Soda\'s', 'Special shakes', 'Lassi', 'Ice cream shakes',
-    'Delights', 'Quick bites', 'Maggie', 'Loaded fries', 'Strips', 'Combo', 'Big deals'
-  ]
-
-  // These are compared against categories a vendor typed into the dashboard, so
-  // an exact match is far too strict: the list said 'Thick shake' while the menu
-  // said 'Thick Shake', and one capital letter meant 22 items shipped without a
-  // parcel charge. Same story for Sodas / Soda's and Combo / Combos. Fold case,
-  // punctuation and a trailing plural before comparing.
-  const normalizeCategory = (c: string) =>
-    c.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, ' ').trim().replace(/s$/, '')
-
-  const parcelChargeKeys = new Set(parcelChargeCategories.map(normalizeCategory))
-
-  const needsParcel = (cartItemObj: { menuId: string }) => {
-    const menuItem = menuItems.find(m => m.id === cartItemObj.menuId)
-    return !!menuItem?.category && parcelChargeKeys.has(normalizeCategory(menuItem.category))
-  }
-
-  // Every unit gets its own cup or box, so the charge counts quantity rather
-  // than being one flat ₹5 for the order: two shakes is two containers. Items
-  // outside the categories above still add nothing.
-  const PARCEL_CHARGE_PER_ITEM = 5
+  // Same module the payment route prices against, so the screen and the
+  // server-side check cannot drift apart.
+  const categoryByMenuId = new Map<string, string | null>(
+    menuItems.map(m => [m.id, m.category ?? null])
+  )
   const parcelChargeUnits = cartItem.reduce(
-    (n, item) => (needsParcel(item) ? n + item.quantity : n),
+    (n, item) => (isParcelCategory(categoryByMenuId.get(item.menuId)) ? n + item.quantity : n),
     0
   )
-
-  // Skip parcel charge for test items (₹1)
-  const isTestOrder = cartItem.length > 0 && cartItem.every(item => item.price === 1)
-  const dynamicParcelCharge = isTestOrder ? 0 : parcelChargeUnits * PARCEL_CHARGE_PER_ITEM
+  const dynamicParcelCharge = calculateParcelCharge(
+    cartItem,
+    categoryByMenuId,
+    orderType ?? 'takeaway'
+  )
 
   // Keep the selected category valid when switching veg / non-veg
   useEffect(() => {
@@ -1926,11 +1914,30 @@ export default function CafeteriaPage() {
             </div>
           </div>
 
+          {/* An out-of-range address used to be invisible here: the delivery
+              row hides itself when the charge is ₹0, so the total looked
+              ordinary and the refusal only arrived as an alert on tapping
+              Proceed — quoting a reason last shown in the order-type sheet the
+              customer had already dismissed. Say it where they are, next to
+              the button it blocks, with the way to fix it. */}
+          {orderType === 'delivery' && deliveryBlocked && (
+            <div style={{ padding: '12px 14px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 10, fontSize: 13, color: '#92400e', marginBottom: 12, lineHeight: 1.5 }}>
+              ⚠️ {deliveryChargeError ?? 'We need a delivery location before you can pay.'}
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(true)}
+                style={{ display: 'block', marginTop: 8, background: 'none', border: 'none', padding: 0, color: '#92400e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
+              >
+                Change delivery location
+              </button>
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
@@ -2079,6 +2086,11 @@ export default function CafeteriaPage() {
 
       {showMapPicker && (
         <DeliveryMapModal
+          center={
+            cafeteria?.latitude && cafeteria?.longitude
+              ? { lat: cafeteria.latitude, lng: cafeteria.longitude }
+              : undefined
+          }
           onConfirm={(addr, coords) => {
             setDeliveryAddress(addr)
             setDeliveryCoords(coords ?? null)
