@@ -4,4 +4,5 @@
 // cafeteria has no entry here.
 export const CAFETERIA_LOGOS: { [key: string]: string } = {
   'LETHAFI': '/logos/lethafi.png',
+  'The Punjabi House': '/logos/punjabi-house.png',
 }
