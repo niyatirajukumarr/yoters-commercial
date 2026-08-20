@@ -14,7 +14,7 @@ import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   MoreHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
-  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift,
+  Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift, Flame,
 } from 'lucide-react'
 import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { WrapIcon } from '@/components/icons/WrapIcon'
@@ -66,15 +66,65 @@ interface Order {
 type Step = 'menu' | 'details' | 'payment' | 'confirmation'
 type Tab = 'home' | 'orders' | 'profile'
 
-// The drink/dessert categories are collapsed behind one pill — there were
-// enough of them to push everything else off the end of the scroll row.
-const BEVERAGE_GROUP = 'Beverages and Delights'
-const BEVERAGE_CATEGORIES = [
-  'Coffee Shake', 'Delights', 'Fresh Juices', 'Fruit Milkshakes', 'Hot Beverages',
-  'Ice Cream Shakes', 'Lassi', 'Mojitos', 'Sodas', 'Special Shakes', 'Thick Shake',
+/**
+ * Categories that collapse behind one pill, revealing their members as a
+ * second row when picked.
+ *
+ * Started as a single hardcoded drinks group — there were enough drink
+ * categories to push everything else off the end of the scroll row. It is a
+ * list now because a restaurant can have more than one such group, and the
+ * members carry their own order: the sub-row reads in the order written here,
+ * not alphabetically, so it can follow the printed menu.
+ *
+ * A group only appears when at least one of its members is actually on the
+ * menu, so this stays inert for restaurants that use none of these names.
+ */
+interface CategoryGroup {
+  label: string
+  members: string[]
+}
+
+const CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: 'Beverages and Delights',
+    members: [
+      'Coffee Shake', 'Delights', 'Fresh Juices', 'Fruit Milkshakes', 'Hot Beverages',
+      'Ice Cream Shakes', 'Lassi', 'Mojitos', 'Sodas', 'Special Shakes', 'Thick Shake',
+    ],
+  },
+  {
+    // The Punjabi House prints its veg starters as four sections on one page.
+    // Order matches the menu card.
+    label: 'Starters',
+    members: [
+      'Veg Tandoor Starters', 'Paneer Starters', 'Appetizers & Soups', 'Veg Chinese Starters',
+    ],
+  },
 ]
-const BEVERAGE_SET = new Set(BEVERAGE_CATEGORIES.map(c => c.toLowerCase()))
-const isBeverageCategory = (cat: string) => BEVERAGE_SET.has(cat.toLowerCase())
+
+const GROUP_LABEL_BY_MEMBER = new Map<string, string>()
+for (const group of CATEGORY_GROUPS) {
+  for (const member of group.members) GROUP_LABEL_BY_MEMBER.set(member.toLowerCase(), group.label)
+}
+
+/** The group a category belongs to, or null when it stands on its own. */
+const groupLabelFor = (cat: string): string | null =>
+  GROUP_LABEL_BY_MEMBER.get(cat.toLowerCase()) ?? null
+
+const isGroupedCategory = (cat: string) => groupLabelFor(cat) !== null
+
+/**
+ * Footnotes printed under a section on the menu card — the surcharges that
+ * belong to a whole section rather than to any one dish. Keyed lowercase so a
+ * capitalisation difference in the vendor's category cannot silently drop one.
+ */
+const CATEGORY_NOTES: { [key: string]: string } = {
+  'paneer starters': 'For gravy — extra ₹20',
+  'appetizers & soups': 'For 1 by 2 soup — extra ₹20',
+  'veg chinese starters': 'For gravy — extra ₹20',
+}
+
+const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
 
 // The FSSAI veg/non-veg mark — square outline with a dot for veg, a triangle
 // for non-veg. Same shape and colours the dish cards use, at a size that suits
@@ -101,7 +151,15 @@ function VegMark({ veg = false }: { veg?: boolean }) {
 // sketched/outline look rather than a full-color glyph set.
 function categoryIcon(cat: string) {
   const c = cat.toLowerCase()
-  if (c === BEVERAGE_GROUP.toLowerCase()) return CupSoda
+  if (c === 'beverages and delights') return CupSoda
+  // Starter sections, before the looser matches below — 'appetizers & soups'
+  // would otherwise fall through to the generic plate, and the four sub-pills
+  // would be indistinguishable from each other.
+  if (c.includes('tandoor')) return Flame
+  if (c.includes('paneer')) return Utensils
+  if (c.includes('appetizer') || c.includes('soup')) return Soup
+  if (c.includes('chinese')) return UtensilsCrossed
+  if (c === 'starters') return Flame
   if (c.includes('juice') || c.includes('fresh')) return Citrus
   if (c.includes('mojito')) return Martini
   if (c.includes('hot') || c.includes('coffee') || c.includes('tea')) return Coffee
@@ -653,21 +711,34 @@ export default function CafeteriaPage() {
   const categories = [...new Set(visibleItems.map(m => m.category))]
     .sort((a, b) => a.localeCompare(b))
 
-  // Top row shows one "Beverages and Delights" pill standing in for all the
-  // drink/dessert categories; picking it reveals them as a second row.
-  const beverageCats = categories.filter(isBeverageCategory)
+  // Each group present on this menu becomes one pill standing in for its
+  // members; picking it reveals them as a second row. Members keep the order
+  // they were written in CATEGORY_GROUPS so the sub-row can follow the printed
+  // menu, and are matched case-insensitively against what the vendor actually
+  // typed — the stored spelling is what gets selected.
+  const groupMembersPresent = new Map<string, string[]>()
+  for (const group of CATEGORY_GROUPS) {
+    const present = group.members
+      .map(member => categories.find(c => c.toLowerCase() === member.toLowerCase()))
+      .filter((c): c is string => !!c)
+    if (present.length) groupMembersPresent.set(group.label, present)
+  }
+
   const topLevelCategories = [
-    ...categories.filter(c => !isBeverageCategory(c)),
-    ...(beverageCats.length ? [BEVERAGE_GROUP] : []),
+    ...categories.filter(c => !isGroupedCategory(c)),
+    ...groupMembersPresent.keys(),
   ].sort((a, b) => a.localeCompare(b))
+
   // Derived rather than its own state, so the sub-row can never disagree with
   // which category is actually selected.
-  const groupOpen = isBeverageCategory(selectedCategory)
-  // With the group open the top row is mostly noise — the sub-row is what the
+  const openGroupLabel = groupLabelFor(selectedCategory)
+  const groupOpen = openGroupLabel !== null
+  const openGroupMembers = openGroupLabel ? groupMembersPresent.get(openGroupLabel) ?? [] : []
+  // With a group open the top row is mostly noise — the sub-row is what the
   // user is reading — so the other categories fold behind one button until
   // they ask for them back.
   const visibleTopCategories = groupOpen && !othersOpen
-    ? topLevelCategories.filter(c => c === BEVERAGE_GROUP)
+    ? topLevelCategories.filter(c => c === openGroupLabel)
     : topLevelCategories
 
   const cartItem = cart?.cafeteriaId === cafeteriaId ? cart.items : []
@@ -774,7 +845,10 @@ export default function CafeteriaPage() {
     if (item.variants && item.variants.length > 0) {
       const selectedVariant = selectedVariants[item.id]
       if (!selectedVariant) {
-        alert('Please select a size (Half/Full)')
+        // Names the actual options rather than assuming Half/Full — portions
+        // are sold by the piece too, and "select a size (Half/Full)" in front
+        // of 4pc/6pc/8pc buttons reads like a bug.
+        alert(`Please select an option: ${item.variants.map(v => v.name).join(' / ')}`)
         return
       }
       const variant = item.variants.find(v => v.name === selectedVariant)
@@ -1395,16 +1469,17 @@ export default function CafeteriaPage() {
               <>
                 <div className="cat-pills">
                   {visibleTopCategories.map(cat => {
-                    const isGroup = cat === BEVERAGE_GROUP
+                    const groupMembers = groupMembersPresent.get(cat)
+                    const isGroup = !!groupMembers
                     const CategoryIcon = categoryIcon(cat)
-                    const isActive = isGroup ? groupOpen : selectedCategory === cat
+                    const isActive = isGroup ? openGroupLabel === cat : selectedCategory === cat
                     return (
                       <button
                         key={cat}
                         className="cat-pill"
                         // Opening the group jumps to its first category so the
                         // list below always has something in it.
-                        onClick={() => setSelectedCategory(isGroup ? beverageCats[0] : cat)}
+                        onClick={() => setSelectedCategory(isGroup ? groupMembers[0] : cat)}
                         style={{ background: 'none', border: 'none', padding: 0 }}
                       >
                         <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
@@ -1431,10 +1506,10 @@ export default function CafeteriaPage() {
                   )}
                 </div>
 
-                {/* Sub-row for the beverage group */}
+                {/* Sub-row for whichever group is open */}
                 {groupOpen && (
                   <div className="cat-subpills">
-                    {beverageCats.map(cat => {
+                    {openGroupMembers.map(cat => {
                       const CategoryIcon = categoryIcon(cat)
                       const isActive = selectedCategory === cat
                       return (
@@ -1507,6 +1582,15 @@ export default function CafeteriaPage() {
                       </div>
                     )}
                     <div className="menu-section-title" style={{ paddingTop: catImg ? 12 : 20 }}>{catImg ? '' : selectedCategory} {!catImg && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>• {catItems.length} items</span>}</div>
+                    {/* Section surcharge from the printed menu — "for gravy,
+                        extra ₹20" and the like. It belongs to the whole section
+                        rather than to any one dish, so it sits under the heading
+                        where the card prints it, not on every item. */}
+                    {categoryNoteFor(selectedCategory) && (
+                      <div style={{ margin: '0 0 12px', padding: '9px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 12.5, color: '#92400e', fontWeight: 600 }}>
+                        {categoryNoteFor(selectedCategory)}
+                      </div>
+                    )}
                     {catItems.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>No dishes match your filters.</div>
                     ) : (
