@@ -1546,6 +1546,13 @@ export default function CafeteriaPage() {
             )}
           </div>
 
+          {/* Minimum order warning for The Punjabi House */}
+          {cafeteria?.name === 'The Punjabi House' && total > 0 && total < 100 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '14px 16px', marginBottom: 0, fontSize: 14, fontWeight: 600 }}>
+              ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+            </div>
+          )}
+
           {/* Items list */}
           <div style={{ paddingBottom: 180 }}>
             {menuSearch ? (
