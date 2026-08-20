@@ -2030,13 +2030,13 @@ export default function CafeteriaPage() {
               the button it blocks, with the way to fix it. */}
           {orderType === 'delivery' && deliveryBlocked && (
             <div style={{ padding: '12px 14px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 10, fontSize: 13, color: '#92400e', marginBottom: 12, lineHeight: 1.5 }}>
-              ⚠️ {deliveryChargeError ?? 'We need a delivery location before you can pay.'}
+              ⚠️ {deliveryChargeError || (!deliveryCoords ? 'Please select your delivery location on the map.' : 'Unable to deliver to this location.')}
               <button
                 type="button"
                 onClick={() => setShowMapPicker(true)}
                 style={{ display: 'block', marginTop: 8, background: 'none', border: 'none', padding: 0, color: '#92400e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
               >
-                Change delivery location
+                {!deliveryCoords ? 'Select delivery location' : 'Change delivery location'}
               </button>
             </div>
           )}
