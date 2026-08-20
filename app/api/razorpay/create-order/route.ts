@@ -55,7 +55,7 @@ async function verifyStoredTotal(order: any): Promise<{
 
   const { data: cafeteria } = await adminSupabase
     .from('cafeterias')
-    .select('latitude, longitude')
+    .select('name, latitude, longitude')
     .eq('id', order.cafeteria_id)
     .single()
 
@@ -77,6 +77,7 @@ async function verifyStoredTotal(order: any): Promise<{
     orderType: order.order_type,
     cafeteria: { latitude: cafeteria?.latitude ?? null, longitude: cafeteria?.longitude ?? null },
     delivery: { latitude: order.delivery_latitude, longitude: order.delivery_longitude },
+    restaurantName: cafeteria?.name,
   })
 
   const stored = Number(order.total_amount)

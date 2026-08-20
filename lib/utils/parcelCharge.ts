@@ -4,6 +4,8 @@
  * had no way to tell what a parcel charge should have been.
  */
 
+import { getRestaurantConfig } from './restaurantConfig'
+
 export const PARCEL_CHARGE_PER_ITEM = 5
 
 /** Categories whose items leave the counter in a container. */
@@ -40,20 +42,27 @@ export interface ParcelLine {
  * two cups. Dine-in pays nothing, and ₹1 test orders are exempt.
  *
  * @param categoryByMenuId category for each menu id, from `cafeteria_menu`
+ * @param restaurantName optional restaurant name to apply restaurant-specific rules
  */
 export function calculateParcelCharge(
   items: ParcelLine[],
   categoryByMenuId: Map<string, string | null>,
-  orderType: string | null | undefined
+  orderType: string | null | undefined,
+  restaurantName?: string | null
 ): number {
   if (orderType === 'dine_in') return 0
   if (!items.length) return 0
   if (items.every(i => Number(i.price) === 1)) return 0
 
+  const config = restaurantName ? getRestaurantConfig(restaurantName) : {}
+  const chargePerItem = config.parcelChargePerItem ?? PARCEL_CHARGE_PER_ITEM
+  const applyToAll = config.parcelChargeApplyToAll ?? false
+
   const units = items.reduce((n, i) => {
     const category = i.menuId ? categoryByMenuId.get(i.menuId) : null
-    return isParcelCategory(category) ? n + (Number(i.quantity) || 0) : n
+    const qualifies = applyToAll || isParcelCategory(category)
+    return qualifies ? n + (Number(i.quantity) || 0) : n
   }, 0)
 
-  return units * PARCEL_CHARGE_PER_ITEM
+  return units * chargePerItem
 }

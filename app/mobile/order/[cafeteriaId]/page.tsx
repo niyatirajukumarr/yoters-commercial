@@ -688,7 +688,8 @@ export default function CafeteriaPage() {
         cafeteria.latitude,
         cafeteria.longitude,
         deliveryCoords.lat,
-        deliveryCoords.lng
+        deliveryCoords.lng,
+        cafeteria.name
       )
       setDeliveryDistance(chargeInfo.distance)
       setDeliveryCharge(chargeInfo.charge)
@@ -772,7 +773,8 @@ export default function CafeteriaPage() {
   const dynamicParcelCharge = calculateParcelCharge(
     cartItem,
     categoryByMenuId,
-    orderType ?? 'takeaway'
+    orderType ?? 'takeaway',
+    cafeteria?.name
   )
 
   // Keep the selected category valid when switching veg / non-veg
@@ -886,6 +888,11 @@ export default function CafeteriaPage() {
   const handlePlaceOrder = async () => {
     if (!formData.name || !formData.phone || !cartItem.length) {
       alert('Please fill in name and phone, and add items to cart')
+      return
+    }
+    // Check minimum order amount
+    if (total < 100 && cafeteria?.name === 'The Punjabi House') {
+      alert('Minimum order amount is ₹100')
       return
     }
     // Validate delivery if order type is delivery
@@ -1544,6 +1551,13 @@ export default function CafeteriaPage() {
             )}
           </div>
 
+          {/* Minimum order warning for The Punjabi House */}
+          {cafeteria?.name === 'The Punjabi House' && total > 0 && total < 100 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '14px 16px', marginBottom: 0, fontSize: 14, fontWeight: 600 }}>
+              ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+            </div>
+          )}
+
           {/* Items list */}
           <div style={{ paddingBottom: 180 }}>
             {menuSearch ? (
@@ -1716,9 +1730,9 @@ export default function CafeteriaPage() {
                         <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
-                    {orderType === 'delivery' && deliveryCharge > 0 && (
+                    {orderType === 'delivery' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}</span>
+                        <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}{deliveryCharge === 0 ? ' (FREE)' : ''}</span>
                       </div>
                     )}
                   </>
@@ -1730,6 +1744,11 @@ export default function CafeteriaPage() {
                   <div style={{ fontWeight: 700, marginBottom: 8 }}>📌 Important: Wait for Confirmation</div>
                   <div style={{ fontWeight: 500 }}>Complete payment from your desired app and return back to this page. Keep this tab open to receive your order token and track your order in real-time.</div>
                 </div>
+                {cafeteria?.name === 'The Punjabi House' && total < 100 && total > 0 && (
+                  <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+                    ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+                  </div>
+                )}
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
                 </motion.button>
@@ -1996,10 +2015,10 @@ export default function CafeteriaPage() {
                     <span>₹{dynamicParcelCharge}</span>
                   </div>
                 )}
-                {orderType === 'delivery' && deliveryCharge > 0 && (
+                {orderType === 'delivery' && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
                     <span>Delivery ({deliveryDistance} km)</span>
-                    <span>₹{deliveryCharge}</span>
+                    <span>₹{deliveryCharge}{deliveryCharge === 0 ? ' (FREE)' : ''}</span>
                   </div>
                 )}
                 {orderType !== 'delivery' && orderType !== 'dine_in' && (
@@ -2021,22 +2040,28 @@ export default function CafeteriaPage() {
               the button it blocks, with the way to fix it. */}
           {orderType === 'delivery' && deliveryBlocked && (
             <div style={{ padding: '12px 14px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 10, fontSize: 13, color: '#92400e', marginBottom: 12, lineHeight: 1.5 }}>
-              ⚠️ {deliveryChargeError ?? 'We need a delivery location before you can pay.'}
+              ⚠️ {deliveryChargeError || (!deliveryCoords ? 'Please select your delivery location on the map.' : 'Unable to deliver to this location.')}
               <button
                 type="button"
                 onClick={() => setShowMapPicker(true)}
                 style={{ display: 'block', marginTop: 8, background: 'none', border: 'none', padding: 0, color: '#92400e', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
               >
-                Change delivery location
+                {!deliveryCoords ? 'Select delivery location' : 'Change delivery location'}
               </button>
             </div>
           )}
 
+          {cafeteria?.name === 'The Punjabi House' && total < 100 && total > 0 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+              ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
@@ -2106,7 +2131,7 @@ export default function CafeteriaPage() {
               {[
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: dynamicParcelCharge, emoji: '🥡' },
-                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: dynamicParcelCharge, emoji: '🛵' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: deliveryCharge, emoji: '🛵' },
               ].map(opt => {
                 const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
                 return (

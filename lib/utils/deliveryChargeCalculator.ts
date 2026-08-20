@@ -1,3 +1,5 @@
+import { getRestaurantConfig } from './restaurantConfig'
+
 /**
  * Straight-line distance between two points never matches what a rider
  * actually covers: roads bend, one-ways double back, and a 4.9 km line can be
@@ -28,14 +30,24 @@ export const MAX_DELIVERY_KM = 5
  * - up to 4.5 km: ₹50
  * - up to 5.0 km: ₹55
  * - beyond 5 km: no delivery
+ *
+ * @param restaurantName optional restaurant name to apply restaurant-specific rules
  */
-export function getDeliveryCharge(distanceKm: number): { charge: number; message?: string } {
+export function getDeliveryCharge(distanceKm: number, restaurantName?: string | null): { charge: number; message?: string } {
+  const config = restaurantName ? getRestaurantConfig(restaurantName) : {}
+  const maxDeliveryKm = config.maxDeliveryKm ?? MAX_DELIVERY_KM
+
   if (distanceKm <= 0) {
     return { charge: 0 }
   }
 
-  if (distanceKm > MAX_DELIVERY_KM) {
-    return { charge: 0, message: `Delivery not available beyond ${MAX_DELIVERY_KM} km` }
+  if (distanceKm > maxDeliveryKm) {
+    return { charge: 0, message: `Delivery not available beyond ${maxDeliveryKm} km` }
+  }
+
+  // If restaurant has a fixed delivery charge, use it
+  if (config.deliveryCharge !== undefined && config.deliveryCharge !== null) {
+    return { charge: config.deliveryCharge }
   }
 
   if (distanceKm <= 1.0) return { charge: 10 }
@@ -78,16 +90,19 @@ export interface DeliveryChargeInfo {
  * Tiering the raw value instead meant a customer at 1.04 km was shown
  * "1 km" and billed the 1.5 km rate, and one at 5.04 km was shown "5 km" and
  * refused — the screen and the price disagreeing about the same journey.
+ *
+ * @param restaurantName optional restaurant name to apply restaurant-specific rules
  */
 export function calculateDeliveryChargeInfo(
   cafeteriaLat: number,
   cafeteriaLng: number,
   deliveryLat: number,
-  deliveryLng: number
+  deliveryLng: number,
+  restaurantName?: string | null
 ): DeliveryChargeInfo {
   const straightLine = calculateDistance(cafeteriaLat, cafeteriaLng, deliveryLat, deliveryLng)
   const distance = Math.round(straightLine * ROAD_DISTANCE_FACTOR * 10) / 10
-  const chargeInfo = getDeliveryCharge(distance)
+  const chargeInfo = getDeliveryCharge(distance, restaurantName)
 
   return {
     distance,
