@@ -50,6 +50,8 @@ export interface ExpectedTotal {
    * the two charges still are.
    */
   itemsPriced: boolean
+  /** Message if minimum order amount not met */
+  minOrderMessage?: string
 }
 
 /**
@@ -85,10 +87,11 @@ export function expectedOrderTotal(input: ExpectedTotalInput): ExpectedTotal {
     subtotal += unit * (Number(line.quantity) || 0)
   }
 
-  // Check max order amount for this restaurant
+  // Check minimum order amount for this restaurant
   const config = restaurantName ? getRestaurantConfig(restaurantName) : {}
-  if (config.maxOrderAmount && subtotal > config.maxOrderAmount) {
-    itemsPriced = false
+  let minOrderMessage: string | undefined
+  if (config.minOrderAmount && subtotal > 0 && subtotal < config.minOrderAmount) {
+    minOrderMessage = `Minimum order amount is ₹${config.minOrderAmount}`
   }
 
   const categoryByMenuId = new Map<string, string | null>()
@@ -116,5 +119,6 @@ export function expectedOrderTotal(input: ExpectedTotalInput): ExpectedTotal {
     deliveryCharge,
     total: subtotal + parcelCharge + deliveryCharge,
     itemsPriced,
+    minOrderMessage,
   }
 }

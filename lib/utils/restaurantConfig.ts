@@ -12,8 +12,8 @@ export interface RestaurantConfig {
   deliveryCharge?: number | null
   /** Maximum delivery range in kilometers (null = use default 5km) */
   maxDeliveryKm?: number | null
-  /** Maximum order value in rupees (null = no limit) */
-  maxOrderAmount?: number | null
+  /** Minimum order value in rupees (null = no minimum) */
+  minOrderAmount?: number | null
 }
 
 export const RESTAURANT_CONFIGS: Record<string, RestaurantConfig> = {
@@ -22,7 +22,7 @@ export const RESTAURANT_CONFIGS: Record<string, RestaurantConfig> = {
     parcelChargeApplyToAll: true,
     deliveryCharge: 0,
     maxDeliveryKm: 2.5,
-    maxOrderAmount: 100,
+    minOrderAmount: 100,
   },
 }
 

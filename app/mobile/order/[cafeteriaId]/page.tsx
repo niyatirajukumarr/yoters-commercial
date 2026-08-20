@@ -890,6 +890,11 @@ export default function CafeteriaPage() {
       alert('Please fill in name and phone, and add items to cart')
       return
     }
+    // Check minimum order amount
+    if (total < 100 && cafeteria?.name === 'The Punjabi House') {
+      alert('Minimum order amount is ₹100')
+      return
+    }
     // Validate delivery if order type is delivery
     if (orderType === 'delivery') {
       if (deliveryChargeError) {
@@ -2029,11 +2034,17 @@ export default function CafeteriaPage() {
             </div>
           )}
 
+          {cafeteria?.name === 'The Punjabi House' && total < 100 && total > 0 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+              ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
