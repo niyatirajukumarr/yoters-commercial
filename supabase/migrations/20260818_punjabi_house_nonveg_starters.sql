@@ -107,6 +107,14 @@ begin
   -- Chicken Reshmi Kebab (₹249) and Chicken Tandoori Platter (₹659) carry one
   -- price against no portion, so they stay flat.
 
+  -- The card prints this one as "79/159" with no sizes against the two
+  -- figures, so the options are named by their own prices. The names must stay
+  -- distinct even so: cart lines key on the variant name, and two blank names
+  -- would merge the two choices into one line at one price.
+  update cafeteria_menu set price = 79, variants =
+    '[{"name":"₹79","price":79},{"name":"₹159","price":159}]'::jsonb
+  where cafeteria_id = pj and is_veg = false and name = 'Chicken Fry Kebab';
+
   -- 4. What the card prints under a dish name --------------------------------
   update cafeteria_menu set description =
     'Chicken Tikka - 3pcs, Malai Chicken Tikka - 3pcs, Lemon Chicken Tikka - 3pcs, Tandoori Chicken - 2pcs, Seekh Kebab - 3pcs, Tangri Kebab - 2pcs'

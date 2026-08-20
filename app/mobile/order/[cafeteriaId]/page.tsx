@@ -1170,7 +1170,12 @@ export default function CafeteriaPage() {
                         transition: 'all 0.2s'
                       }}
                     >
-                      {v.name} ₹{v.price}
+                      {/* Some dishes are printed as bare prices with no size
+                          against them — "79/159" — so the option is named by
+                          its own price. Showing name and price would read
+                          "₹79 ₹79". The name still has to be distinct, or two
+                          choices of one dish collapse into a single cart line. */}
+                      {v.name.includes('₹') ? v.name : `${v.name} ₹${v.price}`}
                     </button>
                   )
                 })}
