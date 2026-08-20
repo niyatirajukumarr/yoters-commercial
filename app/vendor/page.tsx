@@ -30,18 +30,77 @@ type VendorSummary = { today: RangeSummary; allTime: RangeSummary; dayStart: str
 // reset spelled the object out itself.
 const EMPTY_MENU_FORM = {
   name: '', description: '', price: '', category: 'Main', is_veg: true,
-  // Half/Full dishes carry a price per portion instead of a single price.
-  has_variants: false, half_price: '', full_price: '',
+  // A portioned dish carries a price per option instead of a single price.
+  // `portion` is a scheme id from PORTION_SCHEMES; `variant_prices` is keyed by
+  // the option name so a scheme can have any number of them.
+  portion: 'single', variant_prices: {} as Record<string, string>,
   image_file: null as File | null,
 }
 
-// A dish is Half/Full when it has a variants array; the customer menu reads
+// A dish is portioned when it has a variants array; the customer menu reads
 // the same shape (see lib/hooks/useCart.ts and the order page).
 type Variant = { name: string; price: number }
 const itemVariants = (item: { variants?: unknown }): Variant[] =>
   Array.isArray(item.variants) ? (item.variants as Variant[]) : []
-const variantPrice = (variants: Variant[], name: string) =>
-  variants.find(v => v.name === name)?.price
+
+/**
+ * How a dish can be split into portions.
+ *
+ * `options` are the variant names written to the database, and they are also
+ * what the customer sees on the buttons — so they have to read well on their
+ * own: "Half (6pc)", not "half6".
+ *
+ * Order matters twice over. The first option must be the cheapest, because the
+ * `price` column is set from it and that is what sorting, filters and any older
+ * reader fall back to. And the buttons appear on the customer's card in this
+ * order, so it should match how the restaurant's own menu prints them.
+ */
+interface PortionScheme {
+  id: string
+  label: string
+  options: string[]
+  placeholders?: string[]
+}
+
+const PORTION_SCHEMES: PortionScheme[] = [
+  { id: 'single', label: 'Single price', options: [] },
+  { id: 'half_full', label: 'Half / Full', options: ['Half', 'Full'], placeholders: ['100', '160'] },
+  { id: 'qtr_half_full', label: 'Qtr / Half / Full', options: ['Qtr', 'Half', 'Full'], placeholders: ['119', '219', '419'] },
+  { id: 'piece_4_6_8', label: 'By piece — 4 / 6 / 8', options: ['Qtr (4pc)', 'Half (6pc)', 'Full (8pc)'], placeholders: ['119', '179', '219'] },
+  { id: 'piece_2_4', label: 'By piece — 2 / 4', options: ['2pcs', '4pcs'], placeholders: ['149', '279'] },
+]
+
+/**
+ * Restaurants whose menu prints portions beyond Half/Full get the extra
+ * schemes. Everyone else keeps the two they had, rather than a dropdown of
+ * options their menu has no use for.
+ */
+const EXTENDED_PORTION_RESTAURANTS = new Set(['the punjabi house'])
+
+function portionSchemesFor(restaurantName: string | null | undefined): PortionScheme[] {
+  const extended = !!restaurantName && EXTENDED_PORTION_RESTAURANTS.has(restaurantName.trim().toLowerCase())
+  return extended ? PORTION_SCHEMES : PORTION_SCHEMES.filter(s => s.id === 'single' || s.id === 'half_full')
+}
+
+/**
+ * The scheme a saved dish is using, matched on its variant names.
+ *
+ * A dish whose names match nothing — the fry kebab priced "₹79 / ₹159", say —
+ * gets an ad-hoc scheme built from its own names rather than being forced into
+ * a preset. Editing it then changes its prices and leaves its options intact,
+ * where snapping it to the nearest preset would silently rename them.
+ */
+function schemeForVariants(variants: Variant[]): PortionScheme {
+  if (!variants.length) return PORTION_SCHEMES[0]
+  const names = variants.map(v => v.name)
+  const preset = PORTION_SCHEMES.find(
+    s => s.options.length === names.length && s.options.every((o, i) => o === names[i])
+  )
+  return preset ?? { id: 'custom', label: names.join(' / '), options: names }
+}
+
+const schemeById = (id: string, variants: Variant[]): PortionScheme =>
+  PORTION_SCHEMES.find(s => s.id === id) ?? schemeForVariants(variants)
 
 export default function VendorDashboard() {
   const router = useRouter()
@@ -57,7 +116,10 @@ export default function VendorDashboard() {
   const [menuForm, setMenuForm] = useState({ ...EMPTY_MENU_FORM })
   const [isOpen, setIsOpen] = useState(true)
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', is_veg: true, has_variants: false, half_price: '', full_price: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', is_veg: true, portion: 'single', variant_prices: {} as Record<string, string> })
+  // Options of the dish being edited, so one with names outside the presets
+  // can still be edited without losing them.
+  const [editVariants, setEditVariants] = useState<Variant[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -377,29 +439,37 @@ export default function VendorDashboard() {
    * `price` stays populated for Half/Full dishes — it's the Half price, and
    * it's what sorting, filters and any older reader still fall back to.
    */
-  function pricingColumns(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
+  function pricingColumns(
+    form: { price: string; portion: string; variant_prices: Record<string, string> },
+    variants: Variant[] = []
+  ) {
     // stock_quantity is always cleared: nobody tracks per-item stock here, and
     // a leftover count is a live hazard — the order flow decrements it and
     // hides the item at zero (app/student/page.tsx). null means unlimited.
-    if (!form.has_variants) {
+    const scheme = schemeById(form.portion, variants)
+    if (!scheme.options.length) {
       return { price: parseFloat(form.price), variants: null, stock_quantity: null }
     }
-    const half = parseFloat(form.half_price)
-    const full = parseFloat(form.full_price)
+    const priced = scheme.options.map(name => ({ name, price: parseFloat(form.variant_prices[name]) }))
     return {
-      price: half,
-      variants: [{ name: 'Half', price: half }, { name: 'Full', price: full }],
+      // The cheapest option, which is the first: `price` is what sorting and
+      // any reader that ignores variants falls back to.
+      price: priced[0].price,
+      variants: priced,
       stock_quantity: null,
     }
   }
 
-  // Half/Full dishes are priced per portion, so the single price field is
-  // hidden and the two portion prices take its place as what's required.
-  function pricingError(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
-    if (form.has_variants) {
-      if (!(parseFloat(form.half_price) > 0) || !(parseFloat(form.full_price) > 0)) {
-        return 'Enter both the Half and Full price.'
-      }
+  // A portioned dish is priced per option, so the single price field is hidden
+  // and every option's price takes its place as what's required.
+  function pricingError(
+    form: { price: string; portion: string; variant_prices: Record<string, string> },
+    variants: Variant[] = []
+  ) {
+    const scheme = schemeById(form.portion, variants)
+    if (scheme.options.length) {
+      const missing = scheme.options.filter(name => !(parseFloat(form.variant_prices[name]) > 0))
+      if (missing.length) return `Enter a price for ${missing.join(' and ')}.`
       return null
     }
     return parseFloat(form.price) > 0 ? null : 'Name and price required.'
@@ -407,7 +477,7 @@ export default function VendorDashboard() {
 
   async function updateMenuItem() {
     if (!editingItem || !editForm.name) { setMsg('Name and price required.'); return }
-    const invalid = pricingError(editForm)
+    const invalid = pricingError(editForm, editVariants)
     if (invalid) { setMsg(invalid); return }
     let imageUrl = editingItem.image_url
     if (menuForm.image_file) {
@@ -420,7 +490,7 @@ export default function VendorDashboard() {
       category: editForm.category,
       is_veg: editForm.is_veg,
       image_url: imageUrl,
-      ...pricingColumns(editForm),
+      ...pricingColumns(editForm, editVariants),
     }).eq('id', editingItem.id)
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item updated!')
@@ -1324,45 +1394,69 @@ export default function VendorDashboard() {
                     const form = editingItem ? editForm : menuForm
                     const setForm = (patch: Record<string, unknown>) =>
                       editingItem ? setEditForm(m => ({ ...m, ...patch })) : setMenuForm(m => ({ ...m, ...patch }))
-                    const priceField = (label: string, key: 'price' | 'half_price' | 'full_price', placeholder: string) => (
+                    const currentVariants = editingItem ? editVariants : []
+                    const scheme = schemeById(form.portion, currentVariants)
+                    // The dish's own scheme is offered alongside the presets
+                    // when its options match none of them, so editing it does
+                    // not force a rename.
+                    const presets = portionSchemesFor(cafeteria?.name)
+                    const choices = presets.some(s => s.id === scheme.id) ? presets : [...presets, scheme]
+
+                    const singlePriceField = (
                       <div style={{ flex: 1 }}>
-                        <label style={lbl}>{label}</label>
+                        <label style={lbl}>Price (₹) *</label>
                         <input
                           type="number"
-                          placeholder={placeholder}
-                          value={form[key] || ''}
-                          onChange={e => setForm({ [key]: e.target.value })}
+                          placeholder="80"
+                          value={form.price || ''}
+                          onChange={e => setForm({ price: e.target.value })}
                           style={inp}
                         />
                       </div>
                     )
+
                     return (
                       <>
                         <div>
                           <label style={lbl}>Portion Pricing</label>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {([[false, 'Single price'], [true, 'Half / Full']] as const).map(([on, label]) => {
-                              const active = form.has_variants === on
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {choices.map(option => {
+                              const active = scheme.id === option.id
                               return (
                                 <button
-                                  key={label}
+                                  key={option.id}
                                   type="button"
-                                  onClick={() => setForm({ has_variants: on })}
-                                  style={{ flex: 1, padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? 'var(--accent)' : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
+                                  // Prices are keyed by option name, so switching
+                                  // scheme keeps anything the two share — Half
+                                  // and Full survive a move to Qtr/Half/Full.
+                                  onClick={() => setForm({ portion: option.id })}
+                                  style={{ flex: '1 1 130px', padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? 'var(--accent)' : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
                                 >
-                                  {label}
+                                  {option.label}
                                 </button>
                               )
                             })}
                           </div>
                         </div>
-                        {form.has_variants ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {priceField('Half Price (₹) *', 'half_price', '100')}
-                            {priceField('Full Price (₹) *', 'full_price', '160')}
+                        {scheme.options.length ? (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {scheme.options.map((name, idx) => (
+                              <div key={name} style={{ flex: '1 1 100px' }}>
+                                <label style={lbl}>{name} (₹) *</label>
+                                <input
+                                  type="number"
+                                  placeholder={scheme.placeholders?.[idx] ?? ''}
+                                  value={form.variant_prices[name] ?? ''}
+                                  onChange={e => setForm({
+                                    variant_prices: { ...form.variant_prices, [name]: e.target.value },
+                                  })}
+                                  style={inp}
+                                />
+                              </div>
+                            ))}
                           </div>
                         ) : (
-                          priceField('Price (₹) *', 'price', '80')
+                          singlePriceField
                         )}
                       </>
                     )
@@ -1497,15 +1591,19 @@ export default function VendorDashboard() {
                           {...hoverScale}
                           onClick={() => {
                             setEditingItem(item)
+                            setEditVariants(variants)
                             setEditForm({
                               name: item.name,
                               description: item.description || '',
                               price: item.price.toString(),
                               category: item.category,
                               is_veg: item.is_veg ?? true,
-                              has_variants: variants.length > 0,
-                              half_price: variantPrice(variants, 'Half')?.toString() ?? '',
-                              full_price: variantPrice(variants, 'Full')?.toString() ?? '',
+                              portion: schemeForVariants(variants).id,
+                              // Keyed by option name, so a dish with names
+                              // outside the presets still loads its prices.
+                              variant_prices: Object.fromEntries(
+                                variants.map(v => [v.name, v.price.toString()])
+                              ),
                             })
                             setImagePreview(item.image_url || null)
                           }}
