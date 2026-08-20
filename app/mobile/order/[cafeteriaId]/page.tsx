@@ -143,6 +143,24 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     side: 'veg',
     members: ['Paneer', 'Nawabi', 'Kofta', 'Punjabi', 'Dal', 'Veg Delights'],
   },
+  {
+    // The card's own heading here is "Egg Delights", but that name is already
+    // a Starters section (Egg Chilly, Manchurian, Bhurji, the omelettes — kept
+    // there, not duplicated, per the owner). A category can only be in one
+    // group, so the five curries on this page are stored as 'Egg Curries'
+    // instead — a different name for a different set of dishes, even though
+    // the card prints the same words twice.
+    label: 'Non Veg Main Course',
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Chicken Delights', 'Egg Curries', 'Mutton Delights'],
+  },
+  {
+    label: "Bread's & Paratha's",
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Whole Wheat', 'Parathe', 'Naan', 'Kulche', 'Stuffed Parathe'],
+  },
 ]
 
 /**
@@ -228,6 +246,9 @@ function categoryIcon(cat: string) {
   if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
   if (c === 'dal') return Soup
   if (c === 'kofta' || c === 'nawabi' || c.includes('maincourse')) return UtensilsCrossed
+  if (c.includes('mutton') || c.includes('chicken delights')) return Flame
+  if (c.includes('egg curr')) return Egg
+  if (c.includes('naan') || c.includes('kulche') || c.includes('parath') || c.includes('phulka') || c.includes('bread') || c.includes('wheat')) return Croissant
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup

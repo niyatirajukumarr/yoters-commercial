@@ -70,6 +70,8 @@ const PORTION_SCHEMES: PortionScheme[] = [
   { id: 'piece_2_4', label: 'By piece — 2 / 4', options: ['2pcs', '4pcs'], placeholders: ['149', '279'] },
   // Shawarma is priced by the bread it is wrapped in, not by portion size.
   { id: 'base_kuboos_rumali', label: 'Base — Kuboos / Rumali', options: ['Kuboos', 'Rumali'], placeholders: ['89', '99'] },
+  // Stuffed parathas cost more cooked in the tandoor than on the tawa.
+  { id: 'tawa_tandoor', label: 'Tawa / Tandoor', options: ['Tawa', 'Tandoor'], placeholders: ['55', '65'] },
 ]
 
 /**
