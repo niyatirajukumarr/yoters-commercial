@@ -82,11 +82,25 @@ type Tab = 'home' | 'orders' | 'profile'
 interface CategoryGroup {
   label: string
   members: string[]
+  /**
+   * Restaurants this grouping belongs to, lowercased. Category names are not
+   * unique across restaurants — "Mojitos" is a drinks category at LETHAFI and
+   * part of the shakes page at The Punjabi House — so a group that did not say
+   * whose menu it describes would pull in another restaurant's category of the
+   * same name. Omitted means every restaurant.
+   */
+  restaurants?: string[]
+  /**
+   * Limits the group to one side of the veg toggle. "Pasta" exists on both
+   * sides at The Punjabi House, and only the veg one belongs to a section.
+   */
+  side?: 'veg' | 'nonveg'
 }
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
     label: 'Beverages and Delights',
+    restaurants: ['lethafi'],
     members: [
       'Coffee Shake', 'Delights', 'Fresh Juices', 'Fruit Milkshakes', 'Hot Beverages',
       'Ice Cream Shakes', 'Lassi', 'Mojitos', 'Sodas', 'Special Shakes', 'Thick Shake',
@@ -99,6 +113,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     // the veg/non-veg toggle decides which of the two sets that is, so each
     // side only ever sees its own. Order matches the printed cards.
     label: 'Starters',
+    restaurants: ['the punjabi house'],
     members: [
       'Veg Tandoor Starters', 'Paneer Starters', 'Appetizers & Soups', 'Veg Chinese Starters',
       'Chicken Tandoori Starters', 'Chicken Chinese Starters', 'Chicken Soups', 'Egg Delights',
@@ -108,20 +123,46 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
   {
     // Its own page on the card, separate from the starters.
     label: 'Shawarma',
+    restaurants: ['the punjabi house'],
     members: ['Shawarma Rolls', 'Shawarma Plate'],
+  },
+  {
+    // One page of the card. Chicken pasta and the chicken loaded fries are on
+    // it too, but they are non-veg dishes and live in their own categories on
+    // the other side of the toggle, so this section is veg-only.
+    label: 'Shake - Juice - Pasta',
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: [
+      'Shakes', 'Juice', 'Fries', 'Pasta', 'Signature Shake', 'Ice Cream', 'Mojitos',
+    ],
   },
 ]
 
-const GROUP_LABEL_BY_MEMBER = new Map<string, string>()
-for (const group of CATEGORY_GROUPS) {
-  for (const member of group.members) GROUP_LABEL_BY_MEMBER.set(member.toLowerCase(), group.label)
+/**
+ * The groups that apply to the menu currently on screen.
+ *
+ * Resolved per render rather than once at module load: which groups apply
+ * depends on the restaurant and on the veg toggle, and the same category name
+ * belongs to different groups at different restaurants.
+ */
+function resolveGroups(restaurantName: string | null | undefined, showVeg: boolean) {
+  const name = (restaurantName ?? '').trim().toLowerCase()
+  const applicable = CATEGORY_GROUPS.filter(g =>
+    (!g.restaurants || g.restaurants.includes(name)) &&
+    (!g.side || g.side === (showVeg ? 'veg' : 'nonveg'))
+  )
+
+  const labelByMember = new Map<string, string>()
+  for (const group of applicable) {
+    for (const member of group.members) labelByMember.set(member.toLowerCase(), group.label)
+  }
+
+  return {
+    groups: applicable,
+    labelFor: (cat: string): string | null => labelByMember.get(cat.toLowerCase()) ?? null,
+  }
 }
-
-/** The group a category belongs to, or null when it stands on its own. */
-const groupLabelFor = (cat: string): string | null =>
-  GROUP_LABEL_BY_MEMBER.get(cat.toLowerCase()) ?? null
-
-const isGroupedCategory = (cat: string) => groupLabelFor(cat) !== null
 
 /**
  * Footnotes printed under a section on the menu card — the surcharges that
@@ -138,6 +179,7 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'grill | alfham': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
   'shawarma rolls': 'Whole meat shawarma roll — extra ₹25',
   'shawarma plate': 'Extra mayonnaise ₹18 / ₹35 · Whole meat shawarma plate — extra ₹35',
+  'pasta': 'Extra cheese — ₹20',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -173,6 +215,11 @@ function categoryIcon(cat: string) {
   // would be indistinguishable from each other.
   if (c.includes('egg')) return Egg
   if (c.includes('shawarma')) return WrapIcon
+  if (c === 'juice' || c.includes('mojito')) return Citrus
+  if (c === 'shakes' || c.includes('signature shake')) return Milk
+  if (c.includes('ice cream')) return IceCreamCone
+  if (c.includes('fries')) return Zap
+  if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup
@@ -735,8 +782,10 @@ export default function CafeteriaPage() {
   // they were written in CATEGORY_GROUPS so the sub-row can follow the printed
   // menu, and are matched case-insensitively against what the vendor actually
   // typed — the stored spelling is what gets selected.
+  const { groups: activeGroups, labelFor: groupLabelFor } = resolveGroups(cafeteria?.name, showVegFront)
+
   const groupMembersPresent = new Map<string, string[]>()
-  for (const group of CATEGORY_GROUPS) {
+  for (const group of activeGroups) {
     const present = group.members
       .map(member => categories.find(c => c.toLowerCase() === member.toLowerCase()))
       .filter((c): c is string => !!c)
@@ -744,7 +793,7 @@ export default function CafeteriaPage() {
   }
 
   const topLevelCategories = [
-    ...categories.filter(c => !isGroupedCategory(c)),
+    ...categories.filter(c => groupLabelFor(c) === null),
     ...groupMembersPresent.keys(),
   ].sort((a, b) => a.localeCompare(b))
 
