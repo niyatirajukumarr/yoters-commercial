@@ -46,7 +46,7 @@ export function getDeliveryCharge(distanceKm: number, restaurantName?: string | 
   }
 
   // If restaurant has a fixed delivery charge, use it
-  if (config.deliveryCharge !== undefined) {
+  if (config.deliveryCharge !== undefined && config.deliveryCharge !== null) {
     return { charge: config.deliveryCharge }
   }
 
