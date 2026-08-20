@@ -137,6 +137,12 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
       'Shakes', 'Juice', 'Fries', 'Pasta', 'Signature Shake', 'Ice Cream', 'Mojitos',
     ],
   },
+  {
+    label: 'Veg Maincourse',
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Paneer', 'Nawabi', 'Kofta', 'Punjabi', 'Dal', 'Veg Delights'],
+  },
 ]
 
 /**
@@ -220,6 +226,8 @@ function categoryIcon(cat: string) {
   if (c.includes('ice cream')) return IceCreamCone
   if (c.includes('fries')) return Zap
   if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
+  if (c === 'dal') return Soup
+  if (c === 'kofta' || c === 'nawabi' || c.includes('maincourse')) return UtensilsCrossed
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup
