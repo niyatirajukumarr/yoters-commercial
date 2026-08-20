@@ -1718,9 +1718,9 @@ export default function CafeteriaPage() {
                         <span>Parcel Charge ({parcelChargeUnits} × ₹{PARCEL_CHARGE_PER_ITEM})</span><span>₹{dynamicParcelCharge}</span>
                       </div>
                     )}
-                    {orderType === 'delivery' && deliveryCharge > 0 && (
+                    {orderType === 'delivery' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 13, color: 'var(--muted)' }}>
-                        <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}</span>
+                        <span>Delivery ({deliveryDistance} km)</span><span>₹{deliveryCharge}{deliveryCharge === 0 ? ' (FREE)' : ''}</span>
                       </div>
                     )}
                   </>
@@ -1998,10 +1998,10 @@ export default function CafeteriaPage() {
                     <span>₹{dynamicParcelCharge}</span>
                   </div>
                 )}
-                {orderType === 'delivery' && deliveryCharge > 0 && (
+                {orderType === 'delivery' && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--muted)', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
                     <span>Delivery ({deliveryDistance} km)</span>
-                    <span>₹{deliveryCharge}</span>
+                    <span>₹{deliveryCharge}{deliveryCharge === 0 ? ' (FREE)' : ''}</span>
                   </div>
                 )}
                 {orderType !== 'delivery' && orderType !== 'dine_in' && (
