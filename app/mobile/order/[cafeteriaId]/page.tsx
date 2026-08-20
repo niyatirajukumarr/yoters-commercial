@@ -161,6 +161,26 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     side: 'veg',
     members: ['Whole Wheat', 'Parathe', 'Naan', 'Kulche', 'Stuffed Parathe'],
   },
+  {
+    // 'Noodles' and 'Fried Rice' are members here and of the non-veg entry
+    // below. Only one applies at a time — resolveGroups filters by side before
+    // it builds the member map — so a category name shared between the two
+    // sides never collides; it just means something different depending on
+    // which one is active.
+    label: 'Rice & Noodles',
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Noodles', 'Fried Rice', 'Rice Variety'],
+  },
+  {
+    // The card gives non-veg its own Noodles and Fried Rice lists rather than
+    // a Rice Variety section, so this entry has two members where the veg one
+    // above has three.
+    label: 'Rice & Noodles',
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Noodles', 'Fried Rice'],
+  },
 ]
 
 /**
@@ -204,6 +224,8 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'shawarma rolls': 'Whole meat shawarma roll — extra ₹25',
   'shawarma plate': 'Extra mayonnaise ₹18 / ₹35 · Whole meat shawarma plate — extra ₹35',
   'pasta': 'Extra cheese — ₹20',
+  'noodles': 'Any noodles schezwan — extra ₹20',
+  'fried rice': 'Any rice schezwan — extra ₹20',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -249,6 +271,8 @@ function categoryIcon(cat: string) {
   if (c.includes('mutton') || c.includes('chicken delights')) return Flame
   if (c.includes('egg curr')) return Egg
   if (c.includes('naan') || c.includes('kulche') || c.includes('parath') || c.includes('phulka') || c.includes('bread') || c.includes('wheat')) return Croissant
+  if (c === 'noodles') return Soup
+  if (c.includes('fried rice') || c.includes('rice variety') || c.includes('rice & noodles')) return UtensilsCrossed
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup
