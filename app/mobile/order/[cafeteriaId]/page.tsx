@@ -688,7 +688,8 @@ export default function CafeteriaPage() {
         cafeteria.latitude,
         cafeteria.longitude,
         deliveryCoords.lat,
-        deliveryCoords.lng
+        deliveryCoords.lng,
+        cafeteria.name
       )
       setDeliveryDistance(chargeInfo.distance)
       setDeliveryCharge(chargeInfo.charge)
@@ -772,7 +773,8 @@ export default function CafeteriaPage() {
   const dynamicParcelCharge = calculateParcelCharge(
     cartItem,
     categoryByMenuId,
-    orderType ?? 'takeaway'
+    orderType ?? 'takeaway',
+    cafeteria?.name
   )
 
   // Keep the selected category valid when switching veg / non-veg
