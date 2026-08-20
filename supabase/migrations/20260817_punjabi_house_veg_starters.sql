@@ -10,6 +10,11 @@
 --
 -- Scoped to is_veg = true throughout: the non-veg side keeps its own flat
 -- 'Starters' and 'Soups' categories, which this must not touch.
+--
+-- Must run after 20260816_add_punjabi_house_menu.sql, which seeds these dishes
+-- flat. Dated to sort after it for that reason: on a rebuilt database the
+-- earlier date meant this ran against an empty menu, matched nothing, and the
+-- four sections silently never appeared.
 
 do $$
 declare
