@@ -18,6 +18,7 @@ import { AppTabBar } from '@/components/AppTabBar'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
 import { getLethafiLocation } from '@/lib/utils/lethafiLocation'
 import { getBombayDineLocation } from '@/lib/utils/bombayDineLocation'
+import { getPunjabiHouseLocation } from '@/lib/utils/punjabi-house-location'
 
 interface CafeteriaWithQueue extends Cafeteria { queue: CafeteriaQueue }
 
@@ -425,7 +426,7 @@ export default function StudentHome() {
                         <div style={{ marginBottom: 24 }}>
                           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(26,31,46,0.08)', height: 280 }}>
                             <RestaurantMapLoader
-                              restaurant={c.name === 'LETHAFI' ? (getLethafiLocation() ?? undefined) : c.name === 'Bombay Dine' ? (getBombayDineLocation() ?? undefined) : undefined}
+                              restaurant={c.name === 'LETHAFI' ? (getLethafiLocation() ?? undefined) : c.name === 'Bombay Dine' ? (getBombayDineLocation() ?? undefined) : c.name === 'The Punjabi House' ? (getPunjabiHouseLocation() ?? undefined) : undefined}
                               showRoute
                             />
                           </div>
