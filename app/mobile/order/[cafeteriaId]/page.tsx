@@ -1739,6 +1739,11 @@ export default function CafeteriaPage() {
                   <div style={{ fontWeight: 700, marginBottom: 8 }}>📌 Important: Wait for Confirmation</div>
                   <div style={{ fontWeight: 500 }}>Complete payment from your desired app and return back to this page. Keep this tab open to receive your order token and track your order in real-time.</div>
                 </div>
+                {cafeteria?.name === 'The Punjabi House' && total < 100 && total > 0 && (
+                  <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+                    ⚠️ Minimum order is ₹100. Add ₹{100 - total} more to your cart.
+                  </div>
+                )}
                 <motion.button {...hoverScale} onClick={() => { setShowCartSheet(false); if (!orderType) { setShowOrderTypeModal(true) } else { setStep('details') } }} style={{ width: '100%', padding: 16, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                   Proceed to Checkout →
                 </motion.button>
