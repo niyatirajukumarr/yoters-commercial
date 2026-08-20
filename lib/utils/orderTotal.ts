@@ -11,6 +11,7 @@
 
 import { calculateDeliveryChargeInfo } from './deliveryChargeCalculator'
 import { calculateParcelCharge } from './parcelCharge'
+import { getRestaurantConfig } from './restaurantConfig'
 
 export interface PricedMenuItem {
   id: string
@@ -34,6 +35,7 @@ export interface ExpectedTotalInput {
   orderType: string | null | undefined
   cafeteria: { latitude: number | null; longitude: number | null }
   delivery: { latitude: number | null; longitude: number | null }
+  restaurantName?: string | null
 }
 
 export interface ExpectedTotal {
@@ -69,7 +71,7 @@ export function unitPriceFor(line: OrderLine, menu: PricedMenuItem | undefined):
 }
 
 export function expectedOrderTotal(input: ExpectedTotalInput): ExpectedTotal {
-  const { items, menuById, orderType, cafeteria, delivery } = input
+  const { items, menuById, orderType, cafeteria, delivery, restaurantName } = input
 
   let subtotal = 0
   let itemsPriced = items.length > 0
@@ -83,9 +85,15 @@ export function expectedOrderTotal(input: ExpectedTotalInput): ExpectedTotal {
     subtotal += unit * (Number(line.quantity) || 0)
   }
 
+  // Check max order amount for this restaurant
+  const config = restaurantName ? getRestaurantConfig(restaurantName) : {}
+  if (config.maxOrderAmount && subtotal > config.maxOrderAmount) {
+    itemsPriced = false
+  }
+
   const categoryByMenuId = new Map<string, string | null>()
   menuById.forEach((menu, id) => categoryByMenuId.set(id, menu.category))
-  const parcelCharge = calculateParcelCharge(items, categoryByMenuId, orderType)
+  const parcelCharge = calculateParcelCharge(items, categoryByMenuId, orderType, restaurantName)
 
   let deliveryCharge = 0
   if (
@@ -97,7 +105,8 @@ export function expectedOrderTotal(input: ExpectedTotalInput): ExpectedTotal {
       cafeteria.latitude,
       cafeteria.longitude,
       delivery.latitude,
-      delivery.longitude
+      delivery.longitude,
+      restaurantName
     ).charge
   }
 
