@@ -105,6 +105,11 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
       'Tandoori Chicken', 'Grill | Alfham',
     ],
   },
+  {
+    // Its own page on the card, separate from the starters.
+    label: 'Shawarma',
+    members: ['Shawarma Rolls', 'Shawarma Plate'],
+  },
 ]
 
 const GROUP_LABEL_BY_MEMBER = new Map<string, string>()
@@ -131,6 +136,8 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'chicken soups': 'For 1 by 2 soup — extra ₹20',
   'tandoori chicken': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
   'grill | alfham': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
+  'shawarma rolls': 'Whole meat shawarma roll — extra ₹25',
+  'shawarma plate': 'Extra mayonnaise ₹18 / ₹35 · Whole meat shawarma plate — extra ₹35',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -165,6 +172,7 @@ function categoryIcon(cat: string) {
   // would otherwise fall through to the generic plate, and the four sub-pills
   // would be indistinguishable from each other.
   if (c.includes('egg')) return Egg
+  if (c.includes('shawarma')) return WrapIcon
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup

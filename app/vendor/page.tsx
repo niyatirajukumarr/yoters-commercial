@@ -68,6 +68,8 @@ const PORTION_SCHEMES: PortionScheme[] = [
   { id: 'qtr_half_full', label: 'Qtr / Half / Full', options: ['Qtr', 'Half', 'Full'], placeholders: ['119', '219', '419'] },
   { id: 'piece_4_6_8', label: 'By piece — 4 / 6 / 8', options: ['Qtr (4pc)', 'Half (6pc)', 'Full (8pc)'], placeholders: ['119', '179', '219'] },
   { id: 'piece_2_4', label: 'By piece — 2 / 4', options: ['2pcs', '4pcs'], placeholders: ['149', '279'] },
+  // Shawarma is priced by the bread it is wrapped in, not by portion size.
+  { id: 'base_kuboos_rumali', label: 'Base — Kuboos / Rumali', options: ['Kuboos', 'Rumali'], placeholders: ['89', '99'] },
 ]
 
 /**
