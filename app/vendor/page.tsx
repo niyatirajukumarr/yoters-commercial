@@ -1577,7 +1577,12 @@ export default function VendorDashboard() {
                                   key={v.name}
                                   style={{ fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: v.name === 'Half' ? 'rgba(124,92,252,0.15)' : 'rgba(46,158,107,0.15)', color: v.name === 'Half' ? '#7c5cfc' : 'var(--green)' }}
                                 >
-                                  {v.name} ₹{v.price}
+                                  {/* An option can be named by its own price
+                                      when the menu prints one — "₹79 / ₹159"
+                                      with no sizes against the figures. Adding
+                                      the price again reads "₹79 ₹79". Same
+                                      guard as the customer card. */}
+                                  {v.name.includes('₹') ? v.name : `${v.name} ₹${v.price}`}
                                 </span>
                               ))
                             ) : (
