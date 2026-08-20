@@ -2126,7 +2126,7 @@ export default function CafeteriaPage() {
               {[
                 { key: 'dine_in', label: 'Dine In', desc: 'Eat at the restaurant', charge: 0, emoji: '🍽️' },
                 { key: 'takeaway', label: 'Take Away', desc: 'Pick up and go', charge: dynamicParcelCharge, emoji: '🥡' },
-                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: dynamicParcelCharge, emoji: '🛵' },
+                { key: 'delivery', label: 'Home Delivery', desc: 'Deliver to my address', charge: deliveryCharge, emoji: '🛵' },
               ].map(opt => {
                 const isDeliveryUnavailable = opt.key === 'delivery' && cafeteria?.delivery_available === false
                 return (
