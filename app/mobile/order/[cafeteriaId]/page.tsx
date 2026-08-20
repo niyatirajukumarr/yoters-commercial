@@ -93,11 +93,16 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    // The Punjabi House prints its veg starters as four sections on one page.
-    // Order matches the menu card.
+    // The Punjabi House prints its starters as sections on one page — four on
+    // the veg card, six on the non-veg one. Both live in this single group:
+    // members are filtered by what is actually on the menu being viewed, and
+    // the veg/non-veg toggle decides which of the two sets that is, so each
+    // side only ever sees its own. Order matches the printed cards.
     label: 'Starters',
     members: [
       'Veg Tandoor Starters', 'Paneer Starters', 'Appetizers & Soups', 'Veg Chinese Starters',
+      'Chicken Tandoori Starters', 'Chicken Chinese Starters', 'Chicken Soups', 'Egg Delights',
+      'Tandoori Chicken', 'Grill | Alfham',
     ],
   },
 ]
@@ -122,6 +127,10 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'paneer starters': 'For gravy — extra ₹20',
   'appetizers & soups': 'For 1 by 2 soup — extra ₹20',
   'veg chinese starters': 'For gravy — extra ₹20',
+  'chicken chinese starters': 'For gravy — extra ₹20',
+  'chicken soups': 'For 1 by 2 soup — extra ₹20',
+  'tandoori chicken': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
+  'grill | alfham': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -155,7 +164,8 @@ function categoryIcon(cat: string) {
   // Starter sections, before the looser matches below — 'appetizers & soups'
   // would otherwise fall through to the generic plate, and the four sub-pills
   // would be indistinguishable from each other.
-  if (c.includes('tandoor')) return Flame
+  if (c.includes('egg')) return Egg
+  if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup
   if (c.includes('chinese')) return UtensilsCrossed

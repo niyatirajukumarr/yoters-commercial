@@ -180,9 +180,11 @@ CROSS JOIN (
     ('Mains', 'Egg Kolhapuri', 'Egg kolhapuri', 169, false),
     ('Mains', 'Dhaba Egg Masala', 'Dhaba egg masala', 149, false),
     ('Mains', 'Egg Curry', 'Egg curry', 129, false),
-    ('Mains', 'Egg Bhurji', 'Egg bhurji', 89, false),
-    ('Mains', 'Masala Omelette', 'Masala omelette', 59, false),
-    ('Mains', 'Plain Omelette', 'Plain omelette', 49, false),
+    -- Egg Bhurji, Masala Omelette and Plain Omelette were listed here as well
+    -- as under Starters above, so each was seeded twice. The duplication was
+    -- invisible while the copies sat in different categories; the moment both
+    -- landed in Egg Delights the menu showed each dish twice. Kept under
+    -- Starters only, which is where 20260817 moves them to Egg Delights from.
 
     -- NON-VEG MAINCOURSE - MUTTON DELIGHTS
     ('Mains', 'Mutton Rogan Josh', 'Mutton rogan josh', 329, false),
