@@ -1189,12 +1189,24 @@ export default function CafeteriaPage() {
     cafeteria?.name
   )
 
-  // Keep the selected category valid when switching veg / non-veg
+  // Keep the selected category valid when switching veg / non-veg. Falls back
+  // to the first category alphabetically — which for The Punjabi House meant
+  // landing on "Appetizers & Soups" every time, an accident of the letter A
+  // rather than a choice anyone made. Biryani is the restaurant's actual
+  // headline dish and exists on both sides of the toggle, so it wins there
+  // instead. Every other restaurant is untouched.
+  const defaultCategory = (() => {
+    if (!categories.length) return null
+    const isPunjabiHouse = (cafeteria?.name ?? '').trim().toLowerCase() === 'the punjabi house'
+    if (isPunjabiHouse && categories.includes('Biryani')) return 'Biryani'
+    return categories[0]
+  })()
+
   useEffect(() => {
-    if (categories.length > 0 && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
-      setSelectedCategory(categories[0])
+    if (defaultCategory && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
+      setSelectedCategory(defaultCategory)
     }
-  }, [categories.join('|'), selectedCategory])
+  }, [categories.join('|'), selectedCategory, defaultCategory])
 
   // Leaving the group puts every pill back on screen, so the row can't come
   // back collapsed the next time the group is opened.
