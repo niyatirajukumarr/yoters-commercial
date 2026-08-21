@@ -306,12 +306,11 @@ const PUNJABI_HOUSE_NOTICE = {
  * Full-screen notice The Punjabi House shows once per session before its
  * menu: logo fades in, then the two bullet groups stagger in below it. The
  * "door" the brief asked for is the exit, not a separate button — closing (✕)
- * fades the notice out and two panels then part from the centre, so leaving
- * the screen reads as doors opening onto the menu rather than a modal just
- * disappearing. Real 3D perspective panels were deliberately not used: a
- * mobile webview cannot be trusted to render that smoothly, and two solid
- * panels sliding apart sells the same idea without the risk of it looking
- * broken on a slower phone.
+ * fades the notice out, then two hinged wood panels swing open around the Y
+ * axis (CSS `perspective` + `rotateY`, hinge on the outer screen edge, same
+ * as a real double door) to reveal the menu behind. `backfaceVisibility:
+ * hidden` on each panel is what makes a door past 90° vanish cleanly instead
+ * of flashing its reverse side.
  *
  * Gating: session-only (sessionStorage, keyed per cafeteria) rather than
  * every visit — once read, a returning customer should not be blocked by it
@@ -326,11 +325,11 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
     try {
       sessionStorage.setItem(`ph-intro-seen:${cafeteriaId}`, '1')
     } catch {}
-    // 200ms content fade, then the door panels (delay 200ms, duration 600ms)
-    // finish at 800ms. onDone unmounts this component, so it has to fire on
-    // or after that, never before — a shorter timer would cut the slide off
-    // mid-motion instead of letting it finish.
-    setTimeout(onDone, 800)
+    // 200ms content fade, then the door panels (delay 200ms, duration 700ms)
+    // finish at 900ms. onDone unmounts this component, so it has to fire on
+    // or after that, never before — a shorter timer would cut the swing off
+    // mid-motion instead of letting the hinge settle.
+    setTimeout(onDone, 900)
   }
 
   return (
@@ -424,21 +423,56 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
         </motion.div>
       </motion.div>
 
-      {/* The door: two panels covering the full screen, meeting at the centre
-          at rest, sliding fully off-screen on close. Kept as flat colour
-          rather than 3D perspective — see the component note above. */}
-      <motion.div
-        initial={{ x: '0%' }}
-        animate={{ x: closing ? '-100%' : '0%' }}
-        transition={{ duration: 0.6, delay: closing ? 0.2 : 0, ease: transitionEase }}
-        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', zIndex: 1, background: 'linear-gradient(90deg, #241309 0%, #170d05 100%)', boxShadow: '4px 0 24px rgba(0,0,0,0.4)' }}
-      />
-      <motion.div
-        initial={{ x: '0%' }}
-        animate={{ x: closing ? '100%' : '0%' }}
-        transition={{ duration: 0.6, delay: closing ? 0.2 : 0, ease: transitionEase }}
-        style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', zIndex: 1, background: 'linear-gradient(270deg, #241309 0%, #170d05 100%)', boxShadow: '-4px 0 24px rgba(0,0,0,0.4)' }}
-      />
+      {/* The door: two wooden panels hinged at the outer edges, pushed open
+          around the Y axis rather than sliding — `perspective` on this
+          wrapper is what gives the children's rotateY actual depth instead of
+          a flat squash. Each door's transform-origin sits on its OUTER edge
+          (screen edge), same as a real hinge, so it swings from the wall
+          inward-then-away rather than pivoting on empty air at centre.
+          backfaceVisibility: 'hidden' is doing real work here, not just
+          tidiness — past 90° a rotated panel is showing its back, and without
+          this it would flash the (transparent) reverse of the div; hidden
+          makes it cleanly vanish instead, which is also what "fully open, out
+          of the way" should look like. */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1, perspective: 1400 }}>
+        {[
+          { side: 'left' as const, sign: -1 },
+          { side: 'right' as const, sign: 1 },
+        ].map(({ side, sign }) => (
+          <motion.div
+            key={side}
+            initial={{ rotateY: 0 }}
+            animate={{ rotateY: closing ? sign * 100 : 0 }}
+            transition={{ duration: 0.7, delay: closing ? 0.2 : 0, ease: transitionEase }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, [side]: 0, width: '50%',
+              transformOrigin: `${side} center`,
+              backfaceVisibility: 'hidden',
+              // Grain lines over a lit-from-upper-left wood gradient, plus an
+              // inset bevel and a darker seam on the inner edge (the two
+              // doors' meeting line) so at rest they read as one unit, not
+              // two separate rectangles.
+              background:
+                'repeating-linear-gradient(90deg, rgba(0,0,0,0.09) 0px, rgba(0,0,0,0.09) 1.5px, transparent 1.5px, transparent 15px), ' +
+                'linear-gradient(135deg, #6b3d1f 0%, #4a2612 55%, #34190c 100%)',
+              boxShadow:
+                `inset 0 0 0 6px rgba(0,0,0,0.16), inset 3px 3px 10px rgba(255,255,255,0.07), inset -4px -4px 14px rgba(0,0,0,0.4), ` +
+                `inset ${side === 'left' ? '-2px' : '2px'} 0 0 rgba(0,0,0,0.45)`,
+            }}
+          >
+            {/* Push-bar handle near the inner edge — where a double door's
+                hardware actually sits, not centred on the panel. */}
+            <div
+              style={{
+                position: 'absolute', top: '50%', [side === 'left' ? 'right' : 'left']: 16,
+                transform: 'translateY(-50%)', width: 7, height: 76, borderRadius: 4,
+                background: 'linear-gradient(180deg, #ecd3a0 0%, #b8944f 45%, #7a5a2c 100%)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+              }}
+            />
+          </motion.div>
+        ))}
+      </div>
     </motion.div>
   )
 }
