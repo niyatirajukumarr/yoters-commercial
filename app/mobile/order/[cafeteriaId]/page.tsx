@@ -370,7 +370,7 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
           aria-label="Close and view menu"
           initial={{ opacity: 0, scale: 0.7 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.9, duration: 0.3 }}
+          transition={{ delay: 0.6, duration: 0.3 }}
           whileTap={{ scale: 0.9 }}
           style={{
             position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
@@ -395,7 +395,10 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
           initial="hidden"
           animate="visible"
           variants={stagger}
-          transition={{ delayChildren: 0.35 }}
+          // Logo animates in alone (0.6s) and holds by itself for a beat
+          // before the points start — 1.6s = 0.6s logo + a 1s pause, so the
+          // reveal reads as logo, then points, not everything at once.
+          transition={{ delayChildren: 1.6 }}
           style={{ width: '100%', maxWidth: 360 }}
         >
           {PUNJABI_HOUSE_NOTICE.food.map(line => (
@@ -427,7 +430,9 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
           variants={staggerItem}
           initial="hidden"
           animate="visible"
-          transition={{ delay: 1.6 }}
+          // 2.9s: after the last point finishes (delayChildren 1.6s + 10
+          // staggered items * 0.08s + that item's own 0.4s ≈ 2.8s).
+          transition={{ delay: 2.9 }}
           style={{ marginTop: 28, fontSize: 12, color: 'rgba(242,232,220,0.55)', textAlign: 'center' }}
         >
           Tap ✕ to continue to the menu
