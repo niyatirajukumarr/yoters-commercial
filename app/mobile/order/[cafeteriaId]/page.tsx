@@ -197,6 +197,18 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     side: 'nonveg',
     members: ['Non-Veg Thali'],
   },
+  {
+    // No `side` here, unlike the pairs above — this card genuinely mixes veg
+    // and non-veg dishes within the same section (Chicken Tikka Masala Combo
+    // sits next to Veg Curry Combo under one "TPH Signature Combos" heading).
+    // One group definition applies to both toggle states; the existing
+    // per-item is_veg filter, upstream of grouping, does the actual split.
+    // "Refreshment's" has no non-veg members, so on that side it simply has
+    // nothing to show and the empty-group check already skips it.
+    label: 'Rice Bowls & Combos',
+    restaurants: ['the punjabi house'],
+    members: ['TPH Signature Combos', 'TPH Rice Bowls', 'TPH Chinese Bowls', "Refreshment's"],
+  },
 ]
 
 /**
@@ -242,6 +254,8 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'pasta': 'Extra cheese — ₹20',
   'noodles': 'Any noodles schezwan — extra ₹20',
   'fried rice': 'Any rice schezwan — extra ₹20',
+  'tph rice bowls': 'Served along with boondi raita',
+  'tph chinese bowls': 'Add-ons — make it Schezwan / Chilly Garlic, extra ₹20',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -284,6 +298,8 @@ function categoryIcon(cat: string) {
   if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
   if (c === 'dal') return Soup
   if (c.includes('thali') || c.includes('mania') || c.includes("combo's")) return UtensilsCrossed
+  if (c.includes('bowl')) return UtensilsCrossed
+  if (c.includes("refreshment")) return Milk
   if (c === 'kofta' || c === 'nawabi' || c.includes('maincourse')) return UtensilsCrossed
   if (c.includes('mutton') || c.includes('chicken delights')) return Flame
   if (c.includes('egg curr')) return Egg
