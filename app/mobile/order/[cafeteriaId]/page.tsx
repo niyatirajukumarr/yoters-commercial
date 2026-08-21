@@ -22,7 +22,7 @@ import { FlipButton } from '@/components/ui/flip-button'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
-import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
+import { stagger, staggerItem, viewportOnce, hoverScale, transitionEase } from '@/lib/motion'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { calculateDeliveryChargeInfo } from '@/lib/utils/deliveryChargeCalculator'
 import { calculateParcelCharge, isParcelCategory, PARCEL_CHARGE_PER_ITEM } from '@/lib/utils/parcelCharge'
@@ -278,6 +278,168 @@ function VegMark({ veg = false }: { veg?: boolean }) {
         ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: colour }} />
         : <span style={{ width: 0, height: 0, borderLeft: '3.5px solid transparent', borderRight: '3.5px solid transparent', borderBottom: `6px solid ${colour}` }} />}
     </span>
+  )
+}
+
+// The Punjabi House's own food-safety and order-policy notices — a real
+// legal/business disclosure (Halal sourcing, no artificial colour, orders not
+// cancellable once placed), not decorative copy, so it is data here rather
+// than something a future edit could casually reword.
+const PUNJABI_HOUSE_NOTICE = {
+  food: [
+    'We Use "Halal" meats only',
+    'We use Refined Sunflower Oil for Cooking',
+    'We Do Not Use Artificial Colour, Flavor Or Preservatives',
+    'We use the best quality and fresh Ingredients Only',
+    'We Use Only RO Water For Cooking',
+  ],
+  policy: [
+    'Once Order is placed it will take min 15-20 min to serve you',
+    'Parcel Charges Extra',
+    'Orders once Placed will not be cancelled',
+    'All Prices are subject to change without prior Notice',
+    'We accept UPI, Master, Rupay & Visa Cards Only',
+  ],
+}
+
+/**
+ * Full-screen notice The Punjabi House shows once per session before its
+ * menu: logo fades in, then the two bullet groups stagger in below it. The
+ * "door" the brief asked for is the exit, not a separate button — closing (✕)
+ * fades the notice out and two panels then part from the centre, so leaving
+ * the screen reads as doors opening onto the menu rather than a modal just
+ * disappearing. Real 3D perspective panels were deliberately not used: a
+ * mobile webview cannot be trusted to render that smoothly, and two solid
+ * panels sliding apart sells the same idea without the risk of it looking
+ * broken on a slower phone.
+ *
+ * Gating: session-only (sessionStorage, keyed per cafeteria) rather than
+ * every visit — once read, a returning customer should not be blocked by it
+ * again on the same visit to the app, the same way the cart survives a tab
+ * switch but not a fresh session.
+ */
+function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDone: () => void }) {
+  const [closing, setClosing] = useState(false)
+
+  const handleClose = () => {
+    setClosing(true)
+    try {
+      sessionStorage.setItem(`ph-intro-seen:${cafeteriaId}`, '1')
+    } catch {}
+    // 200ms content fade, then the door panels (delay 200ms, duration 600ms)
+    // finish at 800ms. onDone unmounts this component, so it has to fire on
+    // or after that, never before — a shorter timer would cut the slide off
+    // mid-motion instead of letting it finish.
+    setTimeout(onDone, 800)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.01 } }}
+      style={{ position: 'fixed', inset: 0, zIndex: 900 }}
+    >
+      {/* Content: logo, then bullets, fades out the moment the door starts —
+          it would otherwise still be visible, upside-down feeling, between
+          the two door panels as they slide apart. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: closing ? 0 : 1 }}
+        transition={{ duration: closing ? 0.2 : 0.4 }}
+        style={{
+          position: 'absolute', inset: 0, zIndex: 2,
+          background: 'radial-gradient(circle at 50% 20%, #2a1810 0%, #1a0f08 60%, #120a05 100%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '48px 28px 40px', overflowY: 'auto',
+        }}
+      >
+        <motion.button
+          type="button"
+          onClick={handleClose}
+          aria-label="Close and view menu"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.9, duration: 0.3 }}
+          whileTap={{ scale: 0.9 }}
+          style={{
+            position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
+            width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.35)',
+            background: 'rgba(255,255,255,0.08)', color: '#f5ead9', fontSize: 18, lineHeight: 1,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          ✕
+        </motion.button>
+
+        <motion.img
+          src="/logos/punjabi-house.png"
+          alt="The Punjabi House"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: transitionEase }}
+          style={{ width: 108, height: 108, marginTop: 28, marginBottom: 20, flexShrink: 0 }}
+        />
+
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={stagger}
+          transition={{ delayChildren: 0.35 }}
+          style={{ width: '100%', maxWidth: 360 }}
+        >
+          {PUNJABI_HOUSE_NOTICE.food.map(line => (
+            <motion.div
+              key={line}
+              variants={staggerItem}
+              style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+            >
+              <span style={{ opacity: 0.7 }}>•</span>
+              <span>{line}</span>
+            </motion.div>
+          ))}
+
+          <motion.div variants={staggerItem} style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,110,0.6), transparent)', margin: '14px 0' }} />
+
+          {PUNJABI_HOUSE_NOTICE.policy.map(line => (
+            <motion.div
+              key={line}
+              variants={staggerItem}
+              style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+            >
+              <span style={{ opacity: 0.7 }}>•</span>
+              <span>{line}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <motion.div
+          variants={staggerItem}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 1.6 }}
+          style={{ marginTop: 28, fontSize: 12, color: 'rgba(242,232,220,0.55)', textAlign: 'center' }}
+        >
+          Tap ✕ to continue to the menu
+        </motion.div>
+      </motion.div>
+
+      {/* The door: two panels covering the full screen, meeting at the centre
+          at rest, sliding fully off-screen on close. Kept as flat colour
+          rather than 3D perspective — see the component note above. */}
+      <motion.div
+        initial={{ x: '0%' }}
+        animate={{ x: closing ? '-100%' : '0%' }}
+        transition={{ duration: 0.6, delay: closing ? 0.2 : 0, ease: transitionEase }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', zIndex: 1, background: 'linear-gradient(90deg, #241309 0%, #170d05 100%)', boxShadow: '4px 0 24px rgba(0,0,0,0.4)' }}
+      />
+      <motion.div
+        initial={{ x: '0%' }}
+        animate={{ x: closing ? '100%' : '0%' }}
+        transition={{ duration: 0.6, delay: closing ? 0.2 : 0, ease: transitionEase }}
+        style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', zIndex: 1, background: 'linear-gradient(270deg, #241309 0%, #170d05 100%)', boxShadow: '-4px 0 24px rgba(0,0,0,0.4)' }}
+      />
+    </motion.div>
   )
 }
 
@@ -578,6 +740,10 @@ export default function CafeteriaPage() {
 
   // Core state
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
+  // Undecided until the cafeteria loads (null), so the intro cannot flash on
+  // for one frame while cafeteria.name is still unknown, then vanish once it
+  // turns out to be a different restaurant.
+  const [showPunjabiHouseIntro, setShowPunjabiHouseIntro] = useState<boolean | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -715,6 +881,23 @@ export default function CafeteriaPage() {
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
+  // The Punjabi House-only notice screen. Session-scoped: once a customer has
+  // dismissed it, revisiting this restaurant's menu later in the same session
+  // does not show it again, the same way the cart survives a tab switch but
+  // not a fresh session (see useCart).
+  useEffect(() => {
+    if (!cafeteria) return
+    const isPunjabiHouse = cafeteria.name.trim().toLowerCase() === 'the punjabi house'
+    if (!isPunjabiHouse) { setShowPunjabiHouseIntro(false); return }
+    try {
+      setShowPunjabiHouseIntro(!sessionStorage.getItem(`ph-intro-seen:${cafeteriaId}`))
+    } catch {
+      // sessionStorage unavailable (private mode, etc.) — show it every visit
+      // rather than silently never showing a food-safety/policy notice.
+      setShowPunjabiHouseIntro(true)
+    }
+  }, [cafeteria, cafeteriaId])
+
   useEffect(() => {
     const fetch = async () => {
       if (!user?.phone) {
@@ -1431,6 +1614,16 @@ export default function CafeteriaPage() {
       paddingBottom: 80,
       background: !showVegFront ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)' : 'transparent',
     }}>
+      {/* Sits on top of the menu below rather than gating the loading state,
+          so the menu finishes loading in the background while the customer
+          reads — by the time the doors open it is already there, not still
+          spinning. */}
+      <AnimatePresence>
+        {showPunjabiHouseIntro && (
+          <PunjabiHouseIntro cafeteriaId={cafeteriaId} onDone={() => setShowPunjabiHouseIntro(false)} />
+        )}
+      </AnimatePresence>
+
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
         <div>
