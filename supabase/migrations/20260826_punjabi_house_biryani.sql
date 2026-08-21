@@ -66,9 +66,12 @@ begin
   -- Mutton Dum Biryani and Kolkata Mutton Biryani are sold one way only, and
   -- already priced to the card — no change.
 
-  -- Descriptions printed under the dish name, where legible on the card.
-  -- Hyderabadi Chicken Dum Biryani's is cropped mid-word and left alone rather
-  -- than guessed at.
+  -- Descriptions printed under the dish name. Hyderabadi Chicken Dum
+  -- Biryani's ends mid-word in the card photo ("...1 Boiled") — the owner
+  -- confirmed this is the text to use verbatim, so it is stored exactly as
+  -- given rather than completed with a guessed word.
+  update cafeteria_menu set description = 'Authentic Hyderabadi Style Dum Biryani, Served Along with 2 pcs Chicken and 1 Boiled'
+    where cafeteria_id = pj and is_veg = false and name = 'Hyderabadi Chicken Dum Biryani';
   update cafeteria_menu set description = 'Fragrant rice layered with flavorful Kolkata-style chicken, fried egg & masala aalu.'
     where cafeteria_id = pj and is_veg = false and name = 'Kolkata Chicken Dum Biryani';
   update cafeteria_menu set description = 'Fragrant basmati rice layered with tender, boneless butter chicken, in a creamy gravy.'
