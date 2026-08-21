@@ -281,6 +281,14 @@ function VegMark({ veg = false }: { veg?: boolean }) {
   )
 }
 
+// A slow, pronounced ease-in-out — steep at both ends, fast through the
+// middle — rather than `transitionEase` (lib/motion.ts), which is tuned for
+// quick UI feedback: a button press, a card lifting on hover. A door this
+// size read as weightless at that curve's speed. This is closer to what a
+// heavy object actually does when pushed: a beat to get moving, most of the
+// travel happens fast, then it settles rather than snapping to a stop.
+const doorEase = [0.76, 0, 0.24, 1] as const
+
 // The Punjabi House's own food-safety and order-policy notices — a real
 // legal/business disclosure (Halal sourcing, no artificial colour, orders not
 // cancellable once placed), not decorative copy, so it is data here rather
@@ -325,11 +333,14 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
     try {
       sessionStorage.setItem(`ph-intro-seen:${cafeteriaId}`, '1')
     } catch {}
-    // 200ms content fade, then the door panels (delay 200ms, duration 700ms)
-    // finish at 900ms. onDone unmounts this component, so it has to fire on
-    // or after that, never before — a shorter timer would cut the swing off
-    // mid-motion instead of letting the hinge settle.
-    setTimeout(onDone, 900)
+    // 250ms content fade, then the doors: left starts at 250ms and runs
+    // 1100ms (finishes 1350ms), right starts 100ms after it at 350ms
+    // (finishes 1450ms) — the stagger is deliberate, two doors moving in
+    // exact lockstep is part of what read as mechanical/cliché before.
+    // onDone unmounts this component, so the timer has to clear the LATER
+    // door (1450ms) with room to spare, never cut in before it — a shorter
+    // timer would chop the swing off mid-motion instead of letting it settle.
+    setTimeout(onDone, 1500)
   }
 
   return (
@@ -345,7 +356,7 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: closing ? 0 : 1 }}
-        transition={{ duration: closing ? 0.2 : 0.4 }}
+        transition={{ duration: closing ? 0.25 : 0.4 }}
         style={{
           position: 'absolute', inset: 0, zIndex: 2,
           background: 'radial-gradient(circle at 50% 20%, #2a1810 0%, #1a0f08 60%, #120a05 100%)',
@@ -432,42 +443,83 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
           backfaceVisibility: 'hidden' is doing real work here, not just
           tidiness — past 90° a rotated panel is showing its back, and without
           this it would flash the (transparent) reverse of the div; hidden
-          makes it cleanly vanish instead, which is also what "fully open, out
-          of the way" should look like. */}
+          makes it cleanly vanish instead.
+
+          `doorEase` and the 94° target (rather than the app's usual UI
+          easing, or a full 100°) both come from the same fix: the first cut
+          used a quick ease-out sized for a button, and animated 10° of pure
+          dead motion past the point backfaceVisibility already makes it
+          invisible. A door this size reads as light, not solid, at that
+          speed — this version is slower and every degree of it is visible,
+          rather than trading duration for motion nobody sees. */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, perspective: 1400 }}>
         {[
-          { side: 'left' as const, sign: -1 },
-          { side: 'right' as const, sign: 1 },
-        ].map(({ side, sign }) => (
+          { side: 'left' as const, sign: -1, doorDelay: closing ? 0.25 : 0 },
+          { side: 'right' as const, sign: 1, doorDelay: closing ? 0.35 : 0 },
+        ].map(({ side, sign, doorDelay }) => (
           <motion.div
             key={side}
             initial={{ rotateY: 0 }}
-            animate={{ rotateY: closing ? sign * 100 : 0 }}
-            transition={{ duration: 0.7, delay: closing ? 0.2 : 0, ease: transitionEase }}
+            animate={{ rotateY: closing ? sign * 94 : 0 }}
+            transition={{ duration: 1.1, delay: doorDelay, ease: doorEase }}
             style={{
               position: 'absolute', top: 0, bottom: 0, [side]: 0, width: '50%',
               transformOrigin: `${side} center`,
               backfaceVisibility: 'hidden',
-              // Grain lines over a lit-from-upper-left wood gradient, plus an
-              // inset bevel and a darker seam on the inner edge (the two
-              // doors' meeting line) so at rest they read as one unit, not
-              // two separate rectangles.
-              background:
-                'repeating-linear-gradient(90deg, rgba(0,0,0,0.09) 0px, rgba(0,0,0,0.09) 1.5px, transparent 1.5px, transparent 15px), ' +
-                'linear-gradient(135deg, #6b3d1f 0%, #4a2612 55%, #34190c 100%)',
+              // A dark, near-black-mahogany base rather than the lighter
+              // mid-brown of the first pass — that read as a cartoon-door
+              // brown; this is closer to a stained hardwood door under low
+              // restaurant lighting. A slight warm shift toward the hinge
+              // (where the gold trim below also sits) rather than one flat
+              // tone across the whole panel.
+              background: `linear-gradient(${side === 'left' ? '100deg' : '260deg'}, #4a2a16 0%, #2e1a0d 45%, #1c0f07 100%)`,
               boxShadow:
-                `inset 0 0 0 6px rgba(0,0,0,0.16), inset 3px 3px 10px rgba(255,255,255,0.07), inset -4px -4px 14px rgba(0,0,0,0.4), ` +
-                `inset ${side === 'left' ? '-2px' : '2px'} 0 0 rgba(0,0,0,0.45)`,
+                `inset 0 0 0 3px rgba(0,0,0,0.3), ` +
+                `inset 2px 2px 8px rgba(255,255,255,0.05), inset -6px -6px 20px rgba(0,0,0,0.5), ` +
+                // Gold trim on both edges, brand-matched to the divider line
+                // above — this is the piece that replaces the old flat black
+                // seam and is most of why this now reads as a fitted door
+                // rather than a slab of colour with a crack down the middle.
+                `inset ${side === 'left' ? '-2.5px' : '2.5px'} 0 0 rgba(212,175,110,0.65), ` +
+                `inset ${side === 'left' ? '2px' : '-2px'} 0 0 rgba(212,175,110,0.22)`,
             }}
           >
+            {/* One recessed panel per leaf — a plain flush door with a single
+                inset rectangle reads as considered/modern; the repeating
+                grain-line texture this replaced looked closer to a stock
+                pattern-fill than an actual door. */}
+            <div
+              style={{
+                position: 'absolute', inset: '9% 16%',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, rgba(0,0,0,0.18), rgba(0,0,0,0.02) 40%, rgba(255,255,255,0.04) 100%)',
+                boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.05), 0 1px 0 rgba(255,255,255,0.04)',
+              }}
+            />
+
+            {/* Light catching the panel as it turns — a diagonal gold
+                highlight that flares up around the midpoint of the swing and
+                fades at both ends, the way a lacquered surface would catch
+                the light passing through the arc rather than staying flat. */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: closing ? [0, 0.85, 0] : 0 }}
+              transition={{ duration: 1.1, delay: doorDelay, ease: 'easeInOut', times: [0, 0.55, 1] }}
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(115deg, transparent 30%, rgba(255,232,190,0.16) 48%, transparent 66%)',
+                pointerEvents: 'none',
+              }}
+            />
+
             {/* Push-bar handle near the inner edge — where a double door's
                 hardware actually sits, not centred on the panel. */}
             <div
               style={{
-                position: 'absolute', top: '50%', [side === 'left' ? 'right' : 'left']: 16,
-                transform: 'translateY(-50%)', width: 7, height: 76, borderRadius: 4,
-                background: 'linear-gradient(180deg, #ecd3a0 0%, #b8944f 45%, #7a5a2c 100%)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                position: 'absolute', top: '50%', [side === 'left' ? 'right' : 'left']: 18,
+                transform: 'translateY(-50%)', width: 6, height: 80, borderRadius: 4,
+                background: 'linear-gradient(180deg, #f5e3bd 0%, #d4af6e 38%, #8a6a3c 100%)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.55), inset 1px 0 0 rgba(255,255,255,0.35)',
               }}
             />
           </motion.div>
