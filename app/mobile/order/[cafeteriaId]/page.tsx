@@ -181,6 +181,22 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     side: 'nonveg',
     members: ['Noodles', 'Fried Rice'],
   },
+  {
+    // The non-veg entry below shares this label with one member instead of
+    // two — the card gives non-veg a thali page but no Punjabi Mania of its
+    // own. Same pattern as the two Rice & Noodles entries: only one applies at
+    // a time, so 'Non-Veg Thali' never collides with anything on the veg side.
+    label: "Thali's & Combo's",
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Veg Thali', 'Punjabi Mania'],
+  },
+  {
+    label: "Thali's & Combo's",
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Non-Veg Thali'],
+  },
 ]
 
 /**
@@ -267,6 +283,7 @@ function categoryIcon(cat: string) {
   if (c.includes('fries')) return Zap
   if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
   if (c === 'dal') return Soup
+  if (c.includes('thali') || c.includes('mania') || c.includes("combo's")) return UtensilsCrossed
   if (c === 'kofta' || c === 'nawabi' || c.includes('maincourse')) return UtensilsCrossed
   if (c.includes('mutton') || c.includes('chicken delights')) return Flame
   if (c.includes('egg curr')) return Egg
