@@ -326,7 +326,25 @@ const PUNJABI_HOUSE_NOTICE = {
  * switch but not a fresh session.
  */
 function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDone: () => void }) {
+  // Three distinct steps, not one big overlapping fade: the logo alone,
+  // then the points, then the ✕ (which is what actually opens the door).
+  const [step, setStep] = useState<'logo' | 'points' | 'ready'>('logo')
   const [closing, setClosing] = useState(false)
+
+  useEffect(() => {
+    if (step !== 'logo') return
+    const t = setTimeout(() => setStep('points'), 1400)
+    return () => clearTimeout(t)
+  }, [step])
+
+  useEffect(() => {
+    if (step !== 'points') return
+    // 11 rows (5 food + divider + 5 policy) at 0.08s stagger + the last
+    // row's own 0.4s ≈ 1.2s to fully read in; 1.5s gives it a beat to
+    // settle before the ✕ appears as its own, third step.
+    const t = setTimeout(() => setStep('ready'), 1500)
+    return () => clearTimeout(t)
+  }, [step])
 
   const handleClose = () => {
     setClosing(true)
@@ -350,9 +368,10 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
       exit={{ opacity: 0, transition: { duration: 0.01 } }}
       style={{ position: 'fixed', inset: 0, zIndex: 900 }}
     >
-      {/* Content: logo, then bullets, fades out the moment the door starts —
-          it would otherwise still be visible, upside-down feeling, between
-          the two door panels as they slide apart. */}
+      {/* Content, fades out the moment the door starts — it would otherwise
+          still be visible, upside-down feeling, between the two door panels
+          as they slide apart. Internally it runs three separate steps
+          (logo alone → points → ✕), not one overlapping fade-in. */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: closing ? 0 : 1 }}
@@ -360,83 +379,113 @@ function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDon
         style={{
           position: 'absolute', inset: 0, zIndex: 2,
           background: 'radial-gradient(circle at 50% 20%, #2a1810 0%, #1a0f08 60%, #120a05 100%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          padding: '48px 28px 40px', overflowY: 'auto',
         }}
       >
-        <motion.button
-          type="button"
-          onClick={handleClose}
-          aria-label="Close and view menu"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6, duration: 0.3 }}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
-            width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.35)',
-            background: 'rgba(255,255,255,0.08)', color: '#f5ead9', fontSize: 18, lineHeight: 1,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          ✕
-        </motion.button>
-
-        <motion.img
-          src="/logos/punjabi-house.png"
-          alt="The Punjabi House"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: transitionEase }}
-          style={{ width: 108, height: 108, marginTop: 28, marginBottom: 20, flexShrink: 0 }}
-        />
-
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={stagger}
-          // Logo animates in alone (0.6s) and holds by itself for a beat
-          // before the points start — 1.6s = 0.6s logo + a 1s pause, so the
-          // reveal reads as logo, then points, not everything at once.
-          transition={{ delayChildren: 1.6 }}
-          style={{ width: '100%', maxWidth: 360 }}
-        >
-          {PUNJABI_HOUSE_NOTICE.food.map(line => (
+        <AnimatePresence mode="wait">
+          {step === 'logo' ? (
+            // Step 1: the logo alone, centered on the screen — nothing else
+            // present yet, so it can't read as "everything faded in together".
             <motion.div
-              key={line}
-              variants={staggerItem}
-              style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+              key="step-logo"
+              exit={{ opacity: 0, transition: { duration: 0.35 } }}
+              style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <span style={{ opacity: 0.7 }}>•</span>
-              <span>{line}</span>
+              <motion.img
+                src="/logos/punjabi-house.png"
+                alt="The Punjabi House"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: transitionEase }}
+                style={{ width: 132, height: 132 }}
+              />
             </motion.div>
-          ))}
-
-          <motion.div variants={staggerItem} style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,110,0.6), transparent)', margin: '14px 0' }} />
-
-          {PUNJABI_HOUSE_NOTICE.policy.map(line => (
+          ) : (
+            // Step 2: the logo settles small at the top and the points read
+            // in. Step 3 (the ✕) mounts into this same tree once `step`
+            // becomes 'ready' — it isn't present at all during step 2.
             <motion.div
-              key={line}
-              variants={staggerItem}
-              style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+              key="step-points"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: '48px 28px 40px', overflowY: 'auto', height: '100%',
+              }}
             >
-              <span style={{ opacity: 0.7 }}>•</span>
-              <span>{line}</span>
-            </motion.div>
-          ))}
-        </motion.div>
+              {step === 'ready' && (
+                <motion.button
+                  type="button"
+                  onClick={handleClose}
+                  aria-label="Close and view menu"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
+                    width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.35)',
+                    background: 'rgba(255,255,255,0.08)', color: '#f5ead9', fontSize: 18, lineHeight: 1,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  ✕
+                </motion.button>
+              )}
 
-        <motion.div
-          variants={staggerItem}
-          initial="hidden"
-          animate="visible"
-          // 2.9s: after the last point finishes (delayChildren 1.6s + 10
-          // staggered items * 0.08s + that item's own 0.4s ≈ 2.8s).
-          transition={{ delay: 2.9 }}
-          style={{ marginTop: 28, fontSize: 12, color: 'rgba(242,232,220,0.55)', textAlign: 'center' }}
-        >
-          Tap ✕ to continue to the menu
-        </motion.div>
+              <motion.img
+                src="/logos/punjabi-house.png"
+                alt="The Punjabi House"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: transitionEase }}
+                style={{ width: 72, height: 72, marginTop: 28, marginBottom: 20, flexShrink: 0 }}
+              />
+
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={stagger}
+                style={{ width: '100%', maxWidth: 360 }}
+              >
+                {PUNJABI_HOUSE_NOTICE.food.map(line => (
+                  <motion.div
+                    key={line}
+                    variants={staggerItem}
+                    style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+                  >
+                    <span style={{ opacity: 0.7 }}>•</span>
+                    <span>{line}</span>
+                  </motion.div>
+                ))}
+
+                <motion.div variants={staggerItem} style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,110,0.6), transparent)', margin: '14px 0' }} />
+
+                {PUNJABI_HOUSE_NOTICE.policy.map(line => (
+                  <motion.div
+                    key={line}
+                    variants={staggerItem}
+                    style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+                  >
+                    <span style={{ opacity: 0.7 }}>•</span>
+                    <span>{line}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {step === 'ready' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                  style={{ marginTop: 28, fontSize: 12, color: 'rgba(242,232,220,0.55)', textAlign: 'center' }}
+                >
+                  Tap ✕ to continue to the menu
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* The door: two wooden panels hinged at the outer edges, pushed open
