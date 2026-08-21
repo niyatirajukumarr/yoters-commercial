@@ -127,12 +127,14 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     members: ['Shawarma Rolls', 'Shawarma Plate'],
   },
   {
-    // One page of the card. Chicken pasta and the chicken loaded fries are on
-    // it too, but they are non-veg dishes and live in their own categories on
-    // the other side of the toggle, so this section is veg-only.
+    // One page of the card. Same pattern as 'Starters' above: unscoped by
+    // side, since 'Fries' and 'Pasta' each carry both a veg and a non-veg
+    // category, and the per-item is_veg filter upstream of grouping already
+    // makes sure only the toggle's own side ever shows. 'Shakes', 'Juice',
+    // 'Signature Shake', 'Ice Cream' and 'Mojitos' have no non-veg items, so
+    // they simply never appear under the non-veg toggle.
     label: 'Shake - Juice - Pasta',
     restaurants: ['the punjabi house'],
-    side: 'veg',
     members: [
       'Shakes', 'Juice', 'Fries', 'Pasta', 'Signature Shake', 'Ice Cream', 'Mojitos',
     ],
