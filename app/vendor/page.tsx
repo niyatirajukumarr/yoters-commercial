@@ -11,6 +11,11 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
+// The vendor's audible new-order alert. One constant so the file can be
+// swapped in one place; every vendor of every restaurant shares this same
+// dashboard component, so this single sound covers all of them.
+const VENDOR_ALERT_SOUND_SRC = '/sound beat.mp3'
+
 // Mirrors the payload from /api/vendor/summary.
 type RangeSummary = {
   orders: number
@@ -141,9 +146,85 @@ export default function VendorDashboard() {
   const [menuSearchQuery, setMenuSearchQuery] = useState('')
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
-  const prevOrderCount = useState({ count: 0 })
-  const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const fetchOrdersRef = useRef(null as any)
+
+  // IDs of orders currently awaiting accept/deny — null until the first
+  // fetch resolves, so a page load that already has pending orders on it
+  // doesn't ring for orders that were sitting there before the tab opened.
+  // Tracking IDs (not a raw count) is what makes a new order reliably
+  // detected even when the total order count doesn't change between polls —
+  // e.g. one order gets accepted in the same window a new one arrives.
+  const seenPendingIdsRef = useRef<Set<string> | null>(null)
+  // One persistent, looping <audio> element rather than a `new Audio()` per
+  // tick: re-using it is what lets a browser's autoplay gate be satisfied
+  // once (see unlockAlertAudio below) and stay satisfied, instead of every
+  // fresh Audio instance needing its own permission.
+  const alertAudioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUnlockedRef = useRef(false)
+
+  const getAlertAudio = useCallback(() => {
+    if (!alertAudioRef.current) {
+      const audio = new Audio(VENDOR_ALERT_SOUND_SRC)
+      audio.loop = true
+      audio.preload = 'auto'
+      alertAudioRef.current = audio
+    }
+    return alertAudioRef.current
+  }, [])
+
+  const startAlertSound = useCallback(() => {
+    const audio = getAlertAudio()
+    audio.currentTime = 0
+    // Browsers reject a programmatic play() call outside a user gesture —
+    // this is exactly the failure mode that made the sound silently never
+    // play before ("isn't reflecting"): the call was missing entirely, so
+    // there wasn't even a rejected promise to notice. Catching it now at
+    // least surfaces the reason if a vendor's browser still blocks it.
+    audio.play().catch(err => {
+      console.warn('Vendor alert sound blocked by the browser:', err)
+    })
+  }, [getAlertAudio])
+
+  const stopAlertSound = useCallback(() => {
+    const audio = alertAudioRef.current
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+    }
+  }, [])
+
+  // Most browsers only allow audio to play after the page has seen SOME user
+  // gesture — a click anywhere, not necessarily on a sound-related control.
+  // A vendor who has the dashboard open and waiting for orders may not have
+  // clicked anything yet when the first order lands, so this "unlocks" audio
+  // the moment they first touch the page at all: play+immediately pause a
+  // muted attempt, which is enough for the browser to remember consent for
+  // every later real play() call in this tab.
+  useEffect(() => {
+    if (audioUnlockedRef.current) return
+    const unlock = () => {
+      if (audioUnlockedRef.current) return
+      const audio = getAlertAudio()
+      const wasMuted = audio.muted
+      audio.muted = true
+      audio.play()
+        .then(() => {
+          audio.pause()
+          audio.currentTime = 0
+          audio.muted = wasMuted
+          audioUnlockedRef.current = true
+        })
+        .catch(() => {
+          audio.muted = wasMuted
+        })
+    }
+    document.addEventListener('pointerdown', unlock)
+    document.addEventListener('keydown', unlock)
+    return () => {
+      document.removeEventListener('pointerdown', unlock)
+      document.removeEventListener('keydown', unlock)
+    }
+  }, [getAlertAudio])
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
@@ -200,28 +281,33 @@ export default function VendorDashboard() {
       const json = await res.json()
       const data = json.orders
       if (data) {
-        if (notify && data.length > prevOrderCount[0].count) {
-          const newest = data[data.length - 1]
-          setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
-
-          // Stop any existing alert sound
-          if (alertSoundIntervalRef.current) {
-            clearInterval(alertSoundIntervalRef.current)
+        // Only the live "awaiting decision" fetch (no `date`) tracks new
+        // pending orders — a date-scoped fetch (the Today/Revenue tab) can
+        // include orders that were pending on some earlier day and long
+        // since resolved, which is not a "new order" by any useful meaning.
+        if (!date) {
+          const currentPendingIds = new Set(
+            (data as Order[]).filter(o => o.status === 'pending_approval').map(o => o.id)
+          )
+          if (seenPendingIdsRef.current === null) {
+            // First load: seed silently, nothing to ring for yet.
+            seenPendingIdsRef.current = currentPendingIds
+          } else {
+            const newPending = (data as Order[]).filter(
+              o => o.status === 'pending_approval' && !seenPendingIdsRef.current!.has(o.id)
+            )
+            if (notify && newPending.length > 0) {
+              const newest = newPending[newPending.length - 1]
+              setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
+              startAlertSound()
+            }
+            seenPendingIdsRef.current = currentPendingIds
           }
-
-          // Play alert sound file
-          const playAlertSound = () => {
-            try {
-              const audio = new Audio('/sound beat.mp3')
-              audio.volume = 1.0
-            } catch {}
-          }
-
-          // Play sound immediately and repeat every 2s
-          playAlertSound()
-          alertSoundIntervalRef.current = setInterval(playAlertSound, 2000)
+          // Nothing left awaiting a decision — nothing left to ring about,
+          // regardless of whether it was this fetch or an accept/deny click
+          // that resolved the last one.
+          if (currentPendingIds.size === 0) stopAlertSound()
         }
-        prevOrderCount[0].count = data.length
         setOrders(data as Order[])
 
         // Cache the orders by date if a date was specified
@@ -231,7 +317,7 @@ export default function VendorDashboard() {
       }
     } catch (error) {
     }
-  }, [])
+  }, [startAlertSound, stopAlertSound])
 
   // Keep fetchOrders ref updated so real-time subscriptions always use the latest version
   useEffect(() => {
@@ -264,7 +350,7 @@ export default function VendorDashboard() {
     }
     init()
     return () => {
-      if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
+      stopAlertSound()
     }
   }, [router, fetchOrders])
 
@@ -579,11 +665,10 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
-        // Stop alert sound when order is approved
-        if (alertSoundIntervalRef.current) {
-          clearInterval(alertSoundIntervalRef.current)
-          alertSoundIntervalRef.current = null
-        }
+        // Stop the alert sound immediately rather than waiting for the
+        // follow-up fetchOrders below to notice this was the last pending
+        // order — the vendor just acted on it, so it should go quiet now.
+        stopAlertSound()
         setShowMsg(true)
         const msg = order.order_type === 'delivery'
           ? `✅ Order approved! Prep: ${prepTime}m, Delivery: ${deliveryTime}m`
@@ -629,6 +714,10 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
+        // A denial resolves the pending order just as much as an approval
+        // does — this was previously missing, so denying an order left the
+        // alert ringing until the next poll happened to notice.
+        stopAlertSound()
         setShowMsg(true)
         setMsg('❌ Order denied. Student has been notified and refund initiated.')
         setApprovalModal(null)
