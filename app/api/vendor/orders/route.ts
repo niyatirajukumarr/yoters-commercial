@@ -12,6 +12,13 @@ export async function GET(req: NextRequest) {
 
   const cafId = req.nextUrl.searchParams.get('cafeteriaId')
   const dateParam = req.nextUrl.searchParams.get('date')
+  // The "All time" summary needs the actual completed/cancelled order rows,
+  // not just the aggregate counts — every other mode here is scoped to one
+  // day or to active-only, so there was previously no way to get them at
+  // all. This mode returns every order for the cafeteria, any status, any
+  // date, paginated past PostgREST's row cap the same way the summary route
+  // already is.
+  const allTime = req.nextUrl.searchParams.get('range') === 'allTime'
   if (!cafId) return NextResponse.json({ error: 'Missing cafeteriaId' }, { status: 400 })
 
   // Orders carry customer PII — only the owning vendor (or a manager/admin) may
@@ -59,6 +66,28 @@ export async function GET(req: NextRequest) {
     }
   } catch (err) {
     logger.error('Error in auto-mark payment pending:', err)
+  }
+
+  if (allTime) {
+    const PAGE_SIZE = 1000
+    const rows: unknown[] = []
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await adminSupabase
+        .from('orders')
+        .select('*')
+        .eq('cafeteria_id', cafId)
+        .order('created_at', { ascending: false })
+        .range(from, from + PAGE_SIZE - 1)
+
+      if (error) {
+        logger.error('Vendor all-time orders query failed:', error)
+        return NextResponse.json({ error: 'Failed to load orders.' }, { status: 500 })
+      }
+      if (!data || data.length === 0) break
+      rows.push(...data)
+      if (data.length < PAGE_SIZE) break
+    }
+    return NextResponse.json({ orders: rows })
   }
 
   // Orders tab: show only ACTIVE orders (exclude collected/cancelled) regardless of date

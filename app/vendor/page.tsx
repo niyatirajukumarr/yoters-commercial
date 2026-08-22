@@ -231,6 +231,13 @@ export default function VendorDashboard() {
   // figures can't be derived from it.
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
+  // The all-time completed/cancelled order ROWS (not just the counts above) —
+  // fetched separately and only on demand, since `orders` is deliberately
+  // scoped to one day and can never contain them. Without this, switching to
+  // "All time" showed the correct count from `summary` but the row list
+  // underneath it could never populate, stuck forever on "details loading".
+  const [allTimeOrders, setAllTimeOrders] = useState<Order[] | null>(null)
+  const [loadingAllTimeOrders, setLoadingAllTimeOrders] = useState(false)
   // Initialize to today's date in IST, not browser timezone
   const getISTDateString = (date: Date = new Date()) => {
     const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
@@ -413,6 +420,35 @@ export default function VendorDashboard() {
     ]).finally(() => setLoadingDate(false))
   }, [selectedDate, tab, cafeteria, fetchOrders, fetchSummary])
 
+  const fetchAllTimeOrders = useCallback(async (cafId: string) => {
+    setLoadingAllTimeOrders(true)
+    try {
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+      if (!session?.access_token) return
+      const res = await withTimeout(
+        fetch(`/api/vendor/orders?cafeteriaId=${cafId}&range=allTime`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        15000,
+        'All-time orders fetch timed out'
+      )
+      if (!res.ok) return
+      const json = await res.json()
+      if (json.orders) setAllTimeOrders(json.orders as Order[])
+    } catch (error) {
+    } finally {
+      setLoadingAllTimeOrders(false)
+    }
+  }, [])
+
+  // Only fetched once the vendor actually asks for "All time" — this is
+  // every order the cafeteria has ever had, so there's no reason to load it
+  // for a vendor who only ever looks at Today.
+  useEffect(() => {
+    if (tab !== 'today' || summaryRange !== 'allTime' || !cafeteria || allTimeOrders) return
+    fetchAllTimeOrders(cafeteria.id)
+  }, [tab, summaryRange, cafeteria, allTimeOrders, fetchAllTimeOrders])
+
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
   // replaces `orders` with a new array every tick even when nothing moved.
@@ -469,6 +505,10 @@ export default function VendorDashboard() {
       }
     }
     if (cafeteria) fetchOrders(cafeteria.id)
+    // The cached all-time list doesn't include this order yet — clearing it
+    // makes the next visit to "All time" refetch rather than keep showing a
+    // stale snapshot from before this order was collected.
+    if (status === 'collected') setAllTimeOrders(null)
     setActionLoading(null)
   }
 
@@ -732,6 +772,7 @@ export default function VendorDashboard() {
         setDenialReason('')
         setIsDenying(false)
         if (cafeteria) fetchOrders(cafeteria.id)
+        setAllTimeOrders(null)
       } else {
         setShowMsg(true)
         setMsg(`Error: ${result.error}`)
@@ -1216,8 +1257,15 @@ export default function VendorDashboard() {
               return orderDateIST === selectedDate
             }
 
-            const collected = orders.filter(o => o.status === 'collected').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            const cancelled = orders.filter(o => o.status === 'cancelled').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            // `orders` is deliberately scoped to `selectedDate` (see the fetch
+            // effect above) and can never contain an all-time result — that
+            // used to leave this list stuck on "details loading" forever once
+            // the vendor switched to All time, even though the count above it
+            // (from the summary API) was correct. `allTimeOrders` is the
+            // dedicated, separately-fetched full history for that case.
+            const rangeOrders = summaryRange === 'allTime' ? (allTimeOrders ?? []) : orders
+            const collected = rangeOrders.filter(o => o.status === 'collected').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            const cancelled = rangeOrders.filter(o => o.status === 'cancelled').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status) && filterByDate(o))
 
             // Server figures once they land; until then fall back to today's
@@ -1441,7 +1489,7 @@ export default function VendorDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                         {collected.length === 0 && (s?.completed || 0) > 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>
-                              {loadingDate ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
+                              {loadingDate || (isAll && loadingAllTimeOrders) ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
                             </div>
                           : collected.length === 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders</div>
@@ -1453,7 +1501,7 @@ export default function VendorDashboard() {
                     {/* Cancelled/denied orders */}
                     {cancelled.length > 0 && (
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders{isAll ? '' : ' Today'} ({cancelled.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                           {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
                         </div>
