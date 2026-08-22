@@ -10,6 +10,7 @@ import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
+import { istHour } from '@/lib/day-window'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   MoreHorizontal,
@@ -48,6 +49,13 @@ interface Cafeteria {
   latitude?: number
   longitude?: number
   delivery_available?: boolean
+  // The browse/home lists gate ordering on this already (grey card, block
+  // navigation) — but that gate lives entirely in THEIR click handlers.
+  // Someone opening this cafeteria's order page directly, e.g. from a QR
+  // code, never passes through that click handler, so this page has to
+  // enforce the same rule itself rather than trust it was checked upstream.
+  is_open?: boolean
+  is_closed?: boolean
 }
 
 interface Order {
@@ -95,6 +103,16 @@ interface CategoryGroup {
    * sides at The Punjabi House, and only the veg one belongs to a section.
    */
   side?: 'veg' | 'nonveg'
+  /**
+   * Serving window, IST, 24h clock ("from" inclusive, "to" exclusive) —
+   * outside it the pill is greyed out and tapping it shows a message instead
+   * of opening it, because the kitchen genuinely isn't running this section.
+   */
+  gatedHours?: { from: number; to: number }
+  /** Message shown when tapped before `gatedHours.from`. */
+  gatedMessage?: string
+  /** Message shown when tapped at/after `gatedHours.to`. Falls back to `gatedMessage`. */
+  gatedClosedMessage?: string
 }
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
@@ -121,10 +139,15 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    // Its own page on the card, separate from the starters.
+    // Its own page on the card, separate from the starters. The kitchen only
+    // runs this section 1pm-10pm IST, so it's greyed out and unopenable
+    // outside that window, both before it starts and after it closes.
     label: 'Shawarma',
     restaurants: ['the punjabi house'],
     members: ['Shawarma Rolls', 'Shawarma Plate'],
+    gatedHours: { from: 13, to: 22 },
+    gatedMessage: 'Starts from 1 pm',
+    gatedClosedMessage: 'Closed for today — available 1 pm to 10 pm',
   },
   {
     // One page of the card. Same pattern as 'Starters' above: unscoped by
@@ -891,6 +914,17 @@ export default function CafeteriaPage() {
   const [selectedCategory, setSelectedCategory] = useState('')
   // Whether the non-beverage pills are showing while the group is open.
   const [othersOpen, setOthersOpen] = useState(false)
+  // Message shown when a time-gated pill (e.g. Shawarma before 1pm) is
+  // tapped — cleared after a few seconds, same transient-toast pattern as
+  // the closed-cafe notice on the browse page.
+  const [gateMessage, setGateMessage] = useState<string | null>(null)
+  // Re-render once a minute so a gated pill un-greys itself the moment its
+  // hour arrives, instead of waiting for some unrelated state change.
+  const [, setClockTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setClockTick(n => n + 1), 60_000)
+    return () => clearInterval(t)
+  }, [])
   const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
   const [showSearchBar, setShowSearchBar] = useState(false)
@@ -1081,8 +1115,16 @@ export default function CafeteriaPage() {
       })
       .subscribe()
 
+    // Realtime-only, with no fallback, meant a dropped/missed websocket event
+    // (backgrounded phone, brief reconnect) left this customer's own order —
+    // their queue token, their status — stuck stale until something else
+    // happened to trigger a refetch. A quiet poll underneath the realtime
+    // channel is what actually guarantees it self-corrects.
+    const poll = setInterval(fetch, 15_000)
+
     return () => {
       supabase.removeChannel(channel)
+      clearInterval(poll)
     }
   }, [cafeteriaId, user?.phone])
 
@@ -1196,12 +1238,17 @@ export default function CafeteriaPage() {
   const { groups: activeGroups, labelFor: groupLabelFor } = resolveGroups(cafeteria?.name, showVegFront)
 
   const groupMembersPresent = new Map<string, string[]>()
+  const groupByLabel = new Map<string, CategoryGroup>()
   for (const group of activeGroups) {
     const present = group.members
       .map(member => categories.find(c => c.toLowerCase() === member.toLowerCase()))
       .filter((c): c is string => !!c)
-    if (present.length) groupMembersPresent.set(group.label, present)
+    if (present.length) {
+      groupMembersPresent.set(group.label, present)
+      groupByLabel.set(group.label, group)
+    }
   }
+  const currentISTHour = istHour()
 
   const topLevelCategories = [
     ...categories.filter(c => groupLabelFor(c) === null),
@@ -1323,6 +1370,14 @@ export default function CafeteriaPage() {
   // re-tapping ADD on return is one action rather than a cart that silently
   // filled itself.
   const handleAddItem = async (item: MenuItem) => {
+    // The browse/home lists already block this by graying out the card and
+    // hijacking its onClick — but that's their gate, not this page's. Anyone
+    // who reached this page directly (a QR code on the table, a bookmark)
+    // never passed through it, so it has to be re-checked here too.
+    if (cafeteria?.is_closed) {
+      alert('This restaurant is currently closed')
+      return
+    }
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
@@ -1366,6 +1421,12 @@ export default function CafeteriaPage() {
   }
 
   const handlePlaceOrder = async () => {
+    // Same QR-code gap as handleAddItem: the checkout step can be reached
+    // directly without ever crossing the browse page's closed-cafe gate.
+    if (cafeteria?.is_closed) {
+      alert('This restaurant is currently closed')
+      return
+    }
     if (!formData.name || !formData.phone || !cartItem.length) {
       alert('Please fill in name and phone, and add items to cart')
       return
@@ -1778,6 +1839,16 @@ export default function CafeteriaPage() {
         )}
       </AnimatePresence>
 
+      {gateMessage && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          background: '#E8334A', color: 'white', padding: '14px 24px', borderRadius: 8,
+          fontSize: 14, fontWeight: 600, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        }}>
+          {gateMessage}
+        </div>
+      )}
+
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
         <div>
@@ -1866,7 +1937,14 @@ export default function CafeteriaPage() {
                 ) : (cafeteria.image_emoji || '🍽️')}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
+                  {cafeteria.is_closed && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#991b1b', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>
+                      Closed
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
               {/* Glass effect search icon button */}
@@ -1985,14 +2063,29 @@ export default function CafeteriaPage() {
                     const isGroup = !!groupMembers
                     const CategoryIcon = categoryIcon(cat)
                     const isActive = isGroup ? openGroupLabel === cat : selectedCategory === cat
+                    const group = isGroup ? groupByLabel.get(cat) : undefined
+                    const beforeOpen = !!group?.gatedHours && currentISTHour < group.gatedHours.from
+                    const afterClose = !!group?.gatedHours && currentISTHour >= group.gatedHours.to
+                    const isGated = beforeOpen || afterClose
                     return (
                       <button
                         key={cat}
                         className="cat-pill"
                         // Opening the group jumps to its first category so the
-                        // list below always has something in it.
-                        onClick={() => setSelectedCategory(isGroup ? groupMembers[0] : cat)}
-                        style={{ background: 'none', border: 'none', padding: 0 }}
+                        // list below always has something in it. A gated pill
+                        // never opens — it just surfaces its message instead.
+                        onClick={() => {
+                          if (isGated) {
+                            const message = afterClose
+                              ? group!.gatedClosedMessage ?? group!.gatedMessage ?? 'Not available right now'
+                              : group!.gatedMessage ?? 'Not available yet'
+                            setGateMessage(message)
+                            setTimeout(() => setGateMessage(null), 3000)
+                            return
+                          }
+                          setSelectedCategory(isGroup ? groupMembers![0] : cat)
+                        }}
+                        style={{ background: 'none', border: 'none', padding: 0, opacity: isGated ? 0.4 : 1 }}
                       >
                         <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
                           <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
@@ -2547,11 +2640,17 @@ export default function CafeteriaPage() {
             </div>
           )}
 
+          {cafeteria?.is_closed && (
+            <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+              This restaurant is currently closed and cannot accept orders right now.
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100)}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
