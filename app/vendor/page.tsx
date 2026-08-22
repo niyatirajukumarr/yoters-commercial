@@ -381,14 +381,22 @@ export default function VendorDashboard() {
     }
   }, [cafeteria, tab, selectedDate])
 
-  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working
+  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working.
+  // notify=true here too, not just on the realtime path: whichever one
+  // actually observes a new pending order first is the one that should ring
+  // the alert. With notify=false on every poll, a poll that happened to win
+  // the race against a delayed/missed realtime push would silently mark the
+  // new order "seen" — the alert path only checked notify on the realtime
+  // callback, so that order would then never ring at all. New-order
+  // detection is by order ID, so both paths racing on the same order is
+  // harmless; it can only ring once regardless of which one gets there first.
   useEffect(() => {
     if (!cafeteria) return
     const interval = setInterval(() => {
       if (tab === 'today') {
         fetchOrdersRef.current?.(cafeteria.id, false, selectedDate)
       } else {
-        fetchOrdersRef.current?.(cafeteria.id, false)
+        fetchOrdersRef.current?.(cafeteria.id, true)
       }
     }, 5000)
     return () => clearInterval(interval)
@@ -441,7 +449,7 @@ export default function VendorDashboard() {
   useEffect(() => {
     if (!cafeteria || tab !== 'orders') return
     const pollInterval = setInterval(() => {
-      fetchOrdersRef.current?.(cafeteria.id, false)
+      fetchOrdersRef.current?.(cafeteria.id, true)
     }, 5000)
     return () => clearInterval(pollInterval)
   }, [cafeteria, tab])
