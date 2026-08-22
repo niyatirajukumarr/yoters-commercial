@@ -68,14 +68,26 @@ export default function AdminDashboard() {
 
       if (cafsError) throw cafsError
 
-      // Fetch only completed orders that were paid (revenue only, not cancelled/refunded)
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('cafeteria_id, total_amount, payment_status, status')
-        .eq('payment_status', 'paid')
-        .eq('status', 'collected')
+      // Fetch only completed orders that were paid (revenue only, not cancelled/refunded).
+      // Paginated with `.range()` — a single unpaginated select here silently
+      // truncates at PostgREST's default 1000-row cap once the platform has
+      // more collected+paid orders than that, undercounting every cafeteria's
+      // total with no error.
+      const ordersData: { cafeteria_id: string; total_amount: number; payment_status: string; status: string }[] = []
+      const ORDERS_PAGE_SIZE = 1000
+      for (let from = 0; ; from += ORDERS_PAGE_SIZE) {
+        const { data: page, error: ordersError } = await supabase
+          .from('orders')
+          .select('cafeteria_id, total_amount, payment_status, status')
+          .eq('payment_status', 'paid')
+          .eq('status', 'collected')
+          .range(from, from + ORDERS_PAGE_SIZE - 1)
 
-      if (ordersError) throw ordersError
+        if (ordersError) throw ordersError
+        if (!page || page.length === 0) break
+        ordersData.push(...page)
+        if (page.length < ORDERS_PAGE_SIZE) break
+      }
 
       // Payouts already sent. 'processing' counts as spent — its outcome is
       // unconfirmed, and treating unknown money as unspent is what causes a

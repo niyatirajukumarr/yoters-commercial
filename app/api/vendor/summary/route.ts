@@ -101,20 +101,29 @@ export async function GET(req: NextRequest) {
   }
 
   // Only the four fields the totals need — no customer PII leaves the server.
-  // This reads every order for the cafeteria; at LETHAFI's current volume that
-  // is tens of rows. If it ever reaches tens of thousands, move the arithmetic
-  // into a Postgres aggregate rather than paginating this.
-  const { data, error } = await adminSupabase
-    .from('orders')
-    .select('status,payment_status,total_amount,created_at')
-    .eq('cafeteria_id', cafId)
+  // A single unpaginated `.select()` here used to silently truncate "all
+  // time" at PostgREST's default 1000-row cap once a cafeteria passed that
+  // many orders — undercounting completed orders and revenue with no error,
+  // since Supabase just returns the first page rather than failing. Paging
+  // through with `.range()` until a short page comes back is what actually
+  // reads every order regardless of how many there are.
+  const PAGE_SIZE = 1000
+  const rows: SummaryRow[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await adminSupabase
+      .from('orders')
+      .select('status,payment_status,total_amount,created_at')
+      .eq('cafeteria_id', cafId)
+      .range(from, from + PAGE_SIZE - 1)
 
-  if (error) {
-    logger.error('Vendor summary query failed:', error)
-    return NextResponse.json({ error: 'Failed to load summary.' }, { status: 500 })
+    if (error) {
+      logger.error('Vendor summary query failed:', error)
+      return NextResponse.json({ error: 'Failed to load summary.' }, { status: 500 })
+    }
+    if (!data || data.length === 0) break
+    rows.push(...(data as SummaryRow[]))
+    if (data.length < PAGE_SIZE) break
   }
-
-  const rows = (data ?? []) as SummaryRow[]
   const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
   let dayStart = istDayStart()
 
