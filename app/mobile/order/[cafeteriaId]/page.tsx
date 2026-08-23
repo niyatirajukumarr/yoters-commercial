@@ -1144,11 +1144,6 @@ const ITEM_IMAGES: { [key: string]: string } = {
   'Paneer Chilly Bowl':           'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop',
   'Chilly Chicken Bowl':          'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop',
 
-  // THE PUNJABI HOUSE - BEVERAGES SHAKES
-  'Virgin Mojito':                'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=200&h=200&fit=crop',
-  'Blue Sea Lime':                'https://images.unsplash.com/photo-1570696516188-ade861b84a49?w=200&h=200&fit=crop',
-  'Fresh Lime':                   'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop',
-
   // THE PUNJABI HOUSE - SIDES/FRIES
   'Salted Fries':                 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
   'Peri Peri Fries':              'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
@@ -1165,12 +1160,6 @@ const ITEM_IMAGES: { [key: string]: string } = {
   'Chicken Red Sauce Pasta':      'https://images.unsplash.com/photo-1621996346565-431f63602f41?w=200&h=200&fit=crop',
 
   // THE PUNJABI HOUSE - DESSERTS
-  'Butter Scotch':                'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
-  'Strawberry':                   'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
-  'Chocolate':                    'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
-  'Vanilla':                      'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
-  'Black Currant':                'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
-  'Mango':                        'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop',
   'Punjabi Sweet Lassi':          'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=200&h=200&fit=crop',
   'Butter Milk':                  'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=200&h=200&fit=crop',
   'Gulab Jamun':                  'https://images.unsplash.com/photo-1551632440-e5e89f63c076?w=200&h=200&fit=crop',
