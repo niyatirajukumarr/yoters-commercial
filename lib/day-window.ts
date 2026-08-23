@@ -15,3 +15,13 @@ export function istDayStart(now: Date = new Date()): Date {
   shifted.setUTCHours(0, 0, 0, 0)
   return new Date(shifted.getTime() - IST_OFFSET_MS)
 }
+
+/**
+ * Current hour-of-day in IST (0-23), for gating something like "opens at
+ * 1pm" by clock time rather than by calendar day. Same fixed offset as
+ * `istDayStart` — a customer's phone can be in any timezone, so this can't
+ * be read off `Date.getHours()`.
+ */
+export function istHour(now: Date = new Date()): number {
+  return new Date(now.getTime() + IST_OFFSET_MS).getUTCHours()
+}

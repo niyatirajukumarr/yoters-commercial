@@ -11,6 +11,11 @@ import { withTimeout } from '@/lib/utils/withTimeout'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
+// The vendor's audible new-order alert. One constant so the file can be
+// swapped in one place; every vendor of every restaurant shares this same
+// dashboard component, so this single sound covers all of them.
+const VENDOR_ALERT_SOUND_SRC = '/sound beat.mp3'
+
 // Mirrors the payload from /api/vendor/summary.
 type RangeSummary = {
   orders: number
@@ -30,18 +35,81 @@ type VendorSummary = { today: RangeSummary; allTime: RangeSummary; dayStart: str
 // reset spelled the object out itself.
 const EMPTY_MENU_FORM = {
   name: '', description: '', price: '', category: 'Main', is_veg: true,
-  // Half/Full dishes carry a price per portion instead of a single price.
-  has_variants: false, half_price: '', full_price: '',
+  // A portioned dish carries a price per option instead of a single price.
+  // `portion` is a scheme id from PORTION_SCHEMES; `variant_prices` is keyed by
+  // the option name so a scheme can have any number of them.
+  portion: 'single', variant_prices: {} as Record<string, string>,
   image_file: null as File | null,
 }
 
-// A dish is Half/Full when it has a variants array; the customer menu reads
+// A dish is portioned when it has a variants array; the customer menu reads
 // the same shape (see lib/hooks/useCart.ts and the order page).
 type Variant = { name: string; price: number }
 const itemVariants = (item: { variants?: unknown }): Variant[] =>
   Array.isArray(item.variants) ? (item.variants as Variant[]) : []
-const variantPrice = (variants: Variant[], name: string) =>
-  variants.find(v => v.name === name)?.price
+
+/**
+ * How a dish can be split into portions.
+ *
+ * `options` are the variant names written to the database, and they are also
+ * what the customer sees on the buttons — so they have to read well on their
+ * own: "Half (6pc)", not "half6".
+ *
+ * Order matters twice over. The first option must be the cheapest, because the
+ * `price` column is set from it and that is what sorting, filters and any older
+ * reader fall back to. And the buttons appear on the customer's card in this
+ * order, so it should match how the restaurant's own menu prints them.
+ */
+interface PortionScheme {
+  id: string
+  label: string
+  options: string[]
+  placeholders?: string[]
+}
+
+const PORTION_SCHEMES: PortionScheme[] = [
+  { id: 'single', label: 'Single price', options: [] },
+  { id: 'half_full', label: 'Half / Full', options: ['Half', 'Full'], placeholders: ['100', '160'] },
+  { id: 'qtr_half_full', label: 'Qtr / Half / Full', options: ['Qtr', 'Half', 'Full'], placeholders: ['119', '219', '419'] },
+  { id: 'piece_4_6_8', label: 'By piece — 4 / 6 / 8', options: ['Qtr (4pc)', 'Half (6pc)', 'Full (8pc)'], placeholders: ['119', '179', '219'] },
+  { id: 'piece_2_4', label: 'By piece — 2 / 4', options: ['2pcs', '4pcs'], placeholders: ['149', '279'] },
+  // Shawarma is priced by the bread it is wrapped in, not by portion size.
+  { id: 'base_kuboos_rumali', label: 'Base — Kuboos / Rumali', options: ['Kuboos', 'Rumali'], placeholders: ['89', '99'] },
+  // Stuffed parathas cost more cooked in the tandoor than on the tawa.
+  { id: 'tawa_tandoor', label: 'Tawa / Tandoor', options: ['Tawa', 'Tandoor'], placeholders: ['55', '65'] },
+]
+
+/**
+ * Restaurants whose menu prints portions beyond Half/Full get the extra
+ * schemes. Everyone else keeps the two they had, rather than a dropdown of
+ * options their menu has no use for.
+ */
+const EXTENDED_PORTION_RESTAURANTS = new Set(['the punjabi house'])
+
+function portionSchemesFor(restaurantName: string | null | undefined): PortionScheme[] {
+  const extended = !!restaurantName && EXTENDED_PORTION_RESTAURANTS.has(restaurantName.trim().toLowerCase())
+  return extended ? PORTION_SCHEMES : PORTION_SCHEMES.filter(s => s.id === 'single' || s.id === 'half_full')
+}
+
+/**
+ * The scheme a saved dish is using, matched on its variant names.
+ *
+ * A dish whose names match nothing — the fry kebab priced "₹79 / ₹159", say —
+ * gets an ad-hoc scheme built from its own names rather than being forced into
+ * a preset. Editing it then changes its prices and leaves its options intact,
+ * where snapping it to the nearest preset would silently rename them.
+ */
+function schemeForVariants(variants: Variant[]): PortionScheme {
+  if (!variants.length) return PORTION_SCHEMES[0]
+  const names = variants.map(v => v.name)
+  const preset = PORTION_SCHEMES.find(
+    s => s.options.length === names.length && s.options.every((o, i) => o === names[i])
+  )
+  return preset ?? { id: 'custom', label: names.join(' / '), options: names }
+}
+
+const schemeById = (id: string, variants: Variant[]): PortionScheme =>
+  PORTION_SCHEMES.find(s => s.id === id) ?? schemeForVariants(variants)
 
 export default function VendorDashboard() {
   const router = useRouter()
@@ -57,7 +125,10 @@ export default function VendorDashboard() {
   const [menuForm, setMenuForm] = useState({ ...EMPTY_MENU_FORM })
   const [isOpen, setIsOpen] = useState(true)
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', is_veg: true, has_variants: false, half_price: '', full_price: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: 'Main', is_veg: true, portion: 'single', variant_prices: {} as Record<string, string> })
+  // Options of the dish being edited, so one with names outside the presets
+  // can still be edited without losing them.
+  const [editVariants, setEditVariants] = useState<Variant[]>([])
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -75,15 +146,98 @@ export default function VendorDashboard() {
   const [menuSearchQuery, setMenuSearchQuery] = useState('')
 
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null)
-  const prevOrderCount = useState({ count: 0 })
-  const alertSoundIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const fetchOrdersRef = useRef(null as any)
+
+  // IDs of orders currently awaiting accept/deny — null until the first
+  // fetch resolves, so a page load that already has pending orders on it
+  // doesn't ring for orders that were sitting there before the tab opened.
+  // Tracking IDs (not a raw count) is what makes a new order reliably
+  // detected even when the total order count doesn't change between polls —
+  // e.g. one order gets accepted in the same window a new one arrives.
+  const seenPendingIdsRef = useRef<Set<string> | null>(null)
+  // One persistent, looping <audio> element rather than a `new Audio()` per
+  // tick: re-using it is what lets a browser's autoplay gate be satisfied
+  // once (see unlockAlertAudio below) and stay satisfied, instead of every
+  // fresh Audio instance needing its own permission.
+  const alertAudioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUnlockedRef = useRef(false)
+
+  const getAlertAudio = useCallback(() => {
+    if (!alertAudioRef.current) {
+      const audio = new Audio(VENDOR_ALERT_SOUND_SRC)
+      audio.loop = true
+      audio.preload = 'auto'
+      alertAudioRef.current = audio
+    }
+    return alertAudioRef.current
+  }, [])
+
+  const startAlertSound = useCallback(() => {
+    const audio = getAlertAudio()
+    audio.currentTime = 0
+    // Browsers reject a programmatic play() call outside a user gesture —
+    // this is exactly the failure mode that made the sound silently never
+    // play before ("isn't reflecting"): the call was missing entirely, so
+    // there wasn't even a rejected promise to notice. Catching it now at
+    // least surfaces the reason if a vendor's browser still blocks it.
+    audio.play().catch(err => {
+      console.warn('Vendor alert sound blocked by the browser:', err)
+    })
+  }, [getAlertAudio])
+
+  const stopAlertSound = useCallback(() => {
+    const audio = alertAudioRef.current
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+    }
+  }, [])
+
+  // Most browsers only allow audio to play after the page has seen SOME user
+  // gesture — a click anywhere, not necessarily on a sound-related control.
+  // A vendor who has the dashboard open and waiting for orders may not have
+  // clicked anything yet when the first order lands, so this "unlocks" audio
+  // the moment they first touch the page at all: play+immediately pause a
+  // muted attempt, which is enough for the browser to remember consent for
+  // every later real play() call in this tab.
+  useEffect(() => {
+    if (audioUnlockedRef.current) return
+    const unlock = () => {
+      if (audioUnlockedRef.current) return
+      const audio = getAlertAudio()
+      const wasMuted = audio.muted
+      audio.muted = true
+      audio.play()
+        .then(() => {
+          audio.pause()
+          audio.currentTime = 0
+          audio.muted = wasMuted
+          audioUnlockedRef.current = true
+        })
+        .catch(() => {
+          audio.muted = wasMuted
+        })
+    }
+    document.addEventListener('pointerdown', unlock)
+    document.addEventListener('keydown', unlock)
+    return () => {
+      document.removeEventListener('pointerdown', unlock)
+      document.removeEventListener('keydown', unlock)
+    }
+  }, [getAlertAudio])
 
   // Totals come from the server, not from the loaded order list — the list is
   // deliberately today-only (the queue would be unusable otherwise), so all-time
   // figures can't be derived from it.
   const [summary, setSummary] = useState<VendorSummary | null>(null)
   const [summaryRange, setSummaryRange] = useState<'today' | 'allTime'>('today')
+  // The all-time completed/cancelled order ROWS (not just the counts above) —
+  // fetched separately and only on demand, since `orders` is deliberately
+  // scoped to one day and can never contain them. Without this, switching to
+  // "All time" showed the correct count from `summary` but the row list
+  // underneath it could never populate, stuck forever on "details loading".
+  const [allTimeOrders, setAllTimeOrders] = useState<Order[] | null>(null)
+  const [loadingAllTimeOrders, setLoadingAllTimeOrders] = useState(false)
   // Initialize to today's date in IST, not browser timezone
   const getISTDateString = (date: Date = new Date()) => {
     const IST_OFFSET_MS = (5 * 60 + 30) * 60_000
@@ -134,28 +288,33 @@ export default function VendorDashboard() {
       const json = await res.json()
       const data = json.orders
       if (data) {
-        if (notify && data.length > prevOrderCount[0].count) {
-          const newest = data[data.length - 1]
-          setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
-
-          // Stop any existing alert sound
-          if (alertSoundIntervalRef.current) {
-            clearInterval(alertSoundIntervalRef.current)
+        // Only the live "awaiting decision" fetch (no `date`) tracks new
+        // pending orders — a date-scoped fetch (the Today/Revenue tab) can
+        // include orders that were pending on some earlier day and long
+        // since resolved, which is not a "new order" by any useful meaning.
+        if (!date) {
+          const currentPendingIds = new Set(
+            (data as Order[]).filter(o => o.status === 'pending_approval').map(o => o.id)
+          )
+          if (seenPendingIdsRef.current === null) {
+            // First load: seed silently, nothing to ring for yet.
+            seenPendingIdsRef.current = currentPendingIds
+          } else {
+            const newPending = (data as Order[]).filter(
+              o => o.status === 'pending_approval' && !seenPendingIdsRef.current!.has(o.id)
+            )
+            if (notify && newPending.length > 0) {
+              const newest = newPending[newPending.length - 1]
+              setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
+              startAlertSound()
+            }
+            seenPendingIdsRef.current = currentPendingIds
           }
-
-          // Play alert sound file
-          const playAlertSound = () => {
-            try {
-              const audio = new Audio('/sound beat.mp3')
-              audio.volume = 1.0
-            } catch {}
-          }
-
-          // Play sound immediately and repeat every 2s
-          playAlertSound()
-          alertSoundIntervalRef.current = setInterval(playAlertSound, 2000)
+          // Nothing left awaiting a decision — nothing left to ring about,
+          // regardless of whether it was this fetch or an accept/deny click
+          // that resolved the last one.
+          if (currentPendingIds.size === 0) stopAlertSound()
         }
-        prevOrderCount[0].count = data.length
         setOrders(data as Order[])
 
         // Cache the orders by date if a date was specified
@@ -165,7 +324,7 @@ export default function VendorDashboard() {
       }
     } catch (error) {
     }
-  }, [])
+  }, [startAlertSound, stopAlertSound])
 
   // Keep fetchOrders ref updated so real-time subscriptions always use the latest version
   useEffect(() => {
@@ -198,7 +357,7 @@ export default function VendorDashboard() {
     }
     init()
     return () => {
-      if (alertSoundIntervalRef.current) clearInterval(alertSoundIntervalRef.current)
+      stopAlertSound()
     }
   }, [router, fetchOrders])
 
@@ -229,14 +388,22 @@ export default function VendorDashboard() {
     }
   }, [cafeteria, tab, selectedDate])
 
-  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working
+  // Auto-refresh orders every 5 seconds as fallback if real-time isn't working.
+  // notify=true here too, not just on the realtime path: whichever one
+  // actually observes a new pending order first is the one that should ring
+  // the alert. With notify=false on every poll, a poll that happened to win
+  // the race against a delayed/missed realtime push would silently mark the
+  // new order "seen" — the alert path only checked notify on the realtime
+  // callback, so that order would then never ring at all. New-order
+  // detection is by order ID, so both paths racing on the same order is
+  // harmless; it can only ring once regardless of which one gets there first.
   useEffect(() => {
     if (!cafeteria) return
     const interval = setInterval(() => {
       if (tab === 'today') {
         fetchOrdersRef.current?.(cafeteria.id, false, selectedDate)
       } else {
-        fetchOrdersRef.current?.(cafeteria.id, false)
+        fetchOrdersRef.current?.(cafeteria.id, true)
       }
     }, 5000)
     return () => clearInterval(interval)
@@ -252,6 +419,35 @@ export default function VendorDashboard() {
       fetchSummary(cafeteria.id, selectedDate)
     ]).finally(() => setLoadingDate(false))
   }, [selectedDate, tab, cafeteria, fetchOrders, fetchSummary])
+
+  const fetchAllTimeOrders = useCallback(async (cafId: string) => {
+    setLoadingAllTimeOrders(true)
+    try {
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
+      if (!session?.access_token) return
+      const res = await withTimeout(
+        fetch(`/api/vendor/orders?cafeteriaId=${cafId}&range=allTime`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        15000,
+        'All-time orders fetch timed out'
+      )
+      if (!res.ok) return
+      const json = await res.json()
+      if (json.orders) setAllTimeOrders(json.orders as Order[])
+    } catch (error) {
+    } finally {
+      setLoadingAllTimeOrders(false)
+    }
+  }, [])
+
+  // Only fetched once the vendor actually asks for "All time" — this is
+  // every order the cafeteria has ever had, so there's no reason to load it
+  // for a vendor who only ever looks at Today.
+  useEffect(() => {
+    if (tab !== 'today' || summaryRange !== 'allTime' || !cafeteria || allTimeOrders) return
+    fetchAllTimeOrders(cafeteria.id)
+  }, [tab, summaryRange, cafeteria, allTimeOrders, fetchAllTimeOrders])
 
   // Refresh the totals when an order's money or fulfilment state actually
   // changes — keyed on a signature rather than the array, since the 5s poll
@@ -289,7 +485,7 @@ export default function VendorDashboard() {
   useEffect(() => {
     if (!cafeteria || tab !== 'orders') return
     const pollInterval = setInterval(() => {
-      fetchOrdersRef.current?.(cafeteria.id, false)
+      fetchOrdersRef.current?.(cafeteria.id, true)
     }, 5000)
     return () => clearInterval(pollInterval)
   }, [cafeteria, tab])
@@ -309,6 +505,10 @@ export default function VendorDashboard() {
       }
     }
     if (cafeteria) fetchOrders(cafeteria.id)
+    // The cached all-time list doesn't include this order yet — clearing it
+    // makes the next visit to "All time" refetch rather than keep showing a
+    // stale snapshot from before this order was collected.
+    if (status === 'collected') setAllTimeOrders(null)
     setActionLoading(null)
   }
 
@@ -377,29 +577,37 @@ export default function VendorDashboard() {
    * `price` stays populated for Half/Full dishes — it's the Half price, and
    * it's what sorting, filters and any older reader still fall back to.
    */
-  function pricingColumns(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
+  function pricingColumns(
+    form: { price: string; portion: string; variant_prices: Record<string, string> },
+    variants: Variant[] = []
+  ) {
     // stock_quantity is always cleared: nobody tracks per-item stock here, and
     // a leftover count is a live hazard — the order flow decrements it and
     // hides the item at zero (app/student/page.tsx). null means unlimited.
-    if (!form.has_variants) {
+    const scheme = schemeById(form.portion, variants)
+    if (!scheme.options.length) {
       return { price: parseFloat(form.price), variants: null, stock_quantity: null }
     }
-    const half = parseFloat(form.half_price)
-    const full = parseFloat(form.full_price)
+    const priced = scheme.options.map(name => ({ name, price: parseFloat(form.variant_prices[name]) }))
     return {
-      price: half,
-      variants: [{ name: 'Half', price: half }, { name: 'Full', price: full }],
+      // The cheapest option, which is the first: `price` is what sorting and
+      // any reader that ignores variants falls back to.
+      price: priced[0].price,
+      variants: priced,
       stock_quantity: null,
     }
   }
 
-  // Half/Full dishes are priced per portion, so the single price field is
-  // hidden and the two portion prices take its place as what's required.
-  function pricingError(form: { price: string; has_variants: boolean; half_price: string; full_price: string }) {
-    if (form.has_variants) {
-      if (!(parseFloat(form.half_price) > 0) || !(parseFloat(form.full_price) > 0)) {
-        return 'Enter both the Half and Full price.'
-      }
+  // A portioned dish is priced per option, so the single price field is hidden
+  // and every option's price takes its place as what's required.
+  function pricingError(
+    form: { price: string; portion: string; variant_prices: Record<string, string> },
+    variants: Variant[] = []
+  ) {
+    const scheme = schemeById(form.portion, variants)
+    if (scheme.options.length) {
+      const missing = scheme.options.filter(name => !(parseFloat(form.variant_prices[name]) > 0))
+      if (missing.length) return `Enter a price for ${missing.join(' and ')}.`
       return null
     }
     return parseFloat(form.price) > 0 ? null : 'Name and price required.'
@@ -407,7 +615,7 @@ export default function VendorDashboard() {
 
   async function updateMenuItem() {
     if (!editingItem || !editForm.name) { setMsg('Name and price required.'); return }
-    const invalid = pricingError(editForm)
+    const invalid = pricingError(editForm, editVariants)
     if (invalid) { setMsg(invalid); return }
     let imageUrl = editingItem.image_url
     if (menuForm.image_file) {
@@ -420,7 +628,7 @@ export default function VendorDashboard() {
       category: editForm.category,
       is_veg: editForm.is_veg,
       image_url: imageUrl,
-      ...pricingColumns(editForm),
+      ...pricingColumns(editForm, editVariants),
     }).eq('id', editingItem.id)
     if (error) { setMsg('Error: ' + error.message); return }
     setMsg('✅ Item updated!')
@@ -505,11 +713,10 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
-        // Stop alert sound when order is approved
-        if (alertSoundIntervalRef.current) {
-          clearInterval(alertSoundIntervalRef.current)
-          alertSoundIntervalRef.current = null
-        }
+        // Stop the alert sound immediately rather than waiting for the
+        // follow-up fetchOrders below to notice this was the last pending
+        // order — the vendor just acted on it, so it should go quiet now.
+        stopAlertSound()
         setShowMsg(true)
         const msg = order.order_type === 'delivery'
           ? `✅ Order approved! Prep: ${prepTime}m, Delivery: ${deliveryTime}m`
@@ -555,12 +762,17 @@ export default function VendorDashboard() {
       })
       const result = await response.json()
       if (response.ok) {
+        // A denial resolves the pending order just as much as an approval
+        // does — this was previously missing, so denying an order left the
+        // alert ringing until the next poll happened to notice.
+        stopAlertSound()
         setShowMsg(true)
         setMsg('❌ Order denied. Student has been notified and refund initiated.')
         setApprovalModal(null)
         setDenialReason('')
         setIsDenying(false)
         if (cafeteria) fetchOrders(cafeteria.id)
+        setAllTimeOrders(null)
       } else {
         setShowMsg(true)
         setMsg(`Error: ${result.error}`)
@@ -1045,8 +1257,15 @@ export default function VendorDashboard() {
               return orderDateIST === selectedDate
             }
 
-            const collected = orders.filter(o => o.status === 'collected').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            const cancelled = orders.filter(o => o.status === 'cancelled').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            // `orders` is deliberately scoped to `selectedDate` (see the fetch
+            // effect above) and can never contain an all-time result — that
+            // used to leave this list stuck on "details loading" forever once
+            // the vendor switched to All time, even though the count above it
+            // (from the summary API) was correct. `allTimeOrders` is the
+            // dedicated, separately-fetched full history for that case.
+            const rangeOrders = summaryRange === 'allTime' ? (allTimeOrders ?? []) : orders
+            const collected = rangeOrders.filter(o => o.status === 'collected').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            const cancelled = rangeOrders.filter(o => o.status === 'cancelled').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             const active = orders.filter(o => !['collected', 'cancelled'].includes(o.status) && filterByDate(o))
 
             // Server figures once they land; until then fall back to today's
@@ -1270,7 +1489,7 @@ export default function VendorDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                         {collected.length === 0 && (s?.completed || 0) > 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>
-                              {loadingDate ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
+                              {loadingDate || (isAll && loadingAllTimeOrders) ? 'Loading order details...' : `${s?.completed || 0} completed orders (details loading)`}
                             </div>
                           : collected.length === 0
                           ? <div style={{ textAlign: 'center', padding: 16, color: 'var(--muted)', fontSize: 13 }}>No completed orders</div>
@@ -1282,7 +1501,7 @@ export default function VendorDashboard() {
                     {/* Cancelled/denied orders */}
                     {cancelled.length > 0 && (
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders Today ({cancelled.length})</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>❌ Cancelled / Denied Orders{isAll ? '' : ' Today'} ({cancelled.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflow: 'auto' }}>
                           {cancelled.map(o => <OrderRow key={o.id} order={o} borderColor="var(--red)" />)}
                         </div>
@@ -1324,45 +1543,69 @@ export default function VendorDashboard() {
                     const form = editingItem ? editForm : menuForm
                     const setForm = (patch: Record<string, unknown>) =>
                       editingItem ? setEditForm(m => ({ ...m, ...patch })) : setMenuForm(m => ({ ...m, ...patch }))
-                    const priceField = (label: string, key: 'price' | 'half_price' | 'full_price', placeholder: string) => (
+                    const currentVariants = editingItem ? editVariants : []
+                    const scheme = schemeById(form.portion, currentVariants)
+                    // The dish's own scheme is offered alongside the presets
+                    // when its options match none of them, so editing it does
+                    // not force a rename.
+                    const presets = portionSchemesFor(cafeteria?.name)
+                    const choices = presets.some(s => s.id === scheme.id) ? presets : [...presets, scheme]
+
+                    const singlePriceField = (
                       <div style={{ flex: 1 }}>
-                        <label style={lbl}>{label}</label>
+                        <label style={lbl}>Price (₹) *</label>
                         <input
                           type="number"
-                          placeholder={placeholder}
-                          value={form[key] || ''}
-                          onChange={e => setForm({ [key]: e.target.value })}
+                          placeholder="80"
+                          value={form.price || ''}
+                          onChange={e => setForm({ price: e.target.value })}
                           style={inp}
                         />
                       </div>
                     )
+
                     return (
                       <>
                         <div>
                           <label style={lbl}>Portion Pricing</label>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {([[false, 'Single price'], [true, 'Half / Full']] as const).map(([on, label]) => {
-                              const active = form.has_variants === on
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {choices.map(option => {
+                              const active = scheme.id === option.id
                               return (
                                 <button
-                                  key={label}
+                                  key={option.id}
                                   type="button"
-                                  onClick={() => setForm({ has_variants: on })}
-                                  style={{ flex: 1, padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? 'var(--accent)' : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
+                                  // Prices are keyed by option name, so switching
+                                  // scheme keeps anything the two share — Half
+                                  // and Full survive a move to Qtr/Half/Full.
+                                  onClick={() => setForm({ portion: option.id })}
+                                  style={{ flex: '1 1 130px', padding: 11, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, background: active ? 'var(--accent)' : 'var(--surface2)', color: active ? 'white' : 'var(--text2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
                                 >
-                                  {label}
+                                  {option.label}
                                 </button>
                               )
                             })}
                           </div>
                         </div>
-                        {form.has_variants ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {priceField('Half Price (₹) *', 'half_price', '100')}
-                            {priceField('Full Price (₹) *', 'full_price', '160')}
+                        {scheme.options.length ? (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {scheme.options.map((name, idx) => (
+                              <div key={name} style={{ flex: '1 1 100px' }}>
+                                <label style={lbl}>{name} (₹) *</label>
+                                <input
+                                  type="number"
+                                  placeholder={scheme.placeholders?.[idx] ?? ''}
+                                  value={form.variant_prices[name] ?? ''}
+                                  onChange={e => setForm({
+                                    variant_prices: { ...form.variant_prices, [name]: e.target.value },
+                                  })}
+                                  style={inp}
+                                />
+                              </div>
+                            ))}
                           </div>
                         ) : (
-                          priceField('Price (₹) *', 'price', '80')
+                          singlePriceField
                         )}
                       </>
                     )
@@ -1483,7 +1726,12 @@ export default function VendorDashboard() {
                                   key={v.name}
                                   style={{ fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: v.name === 'Half' ? 'rgba(124,92,252,0.15)' : 'rgba(46,158,107,0.15)', color: v.name === 'Half' ? '#7c5cfc' : 'var(--green)' }}
                                 >
-                                  {v.name} ₹{v.price}
+                                  {/* An option can be named by its own price
+                                      when the menu prints one — "₹79 / ₹159"
+                                      with no sizes against the figures. Adding
+                                      the price again reads "₹79 ₹79". Same
+                                      guard as the customer card. */}
+                                  {v.name.includes('₹') ? v.name : `${v.name} ₹${v.price}`}
                                 </span>
                               ))
                             ) : (
@@ -1497,15 +1745,19 @@ export default function VendorDashboard() {
                           {...hoverScale}
                           onClick={() => {
                             setEditingItem(item)
+                            setEditVariants(variants)
                             setEditForm({
                               name: item.name,
                               description: item.description || '',
                               price: item.price.toString(),
                               category: item.category,
                               is_veg: item.is_veg ?? true,
-                              has_variants: variants.length > 0,
-                              half_price: variantPrice(variants, 'Half')?.toString() ?? '',
-                              full_price: variantPrice(variants, 'Full')?.toString() ?? '',
+                              portion: schemeForVariants(variants).id,
+                              // Keyed by option name, so a dish with names
+                              // outside the presets still loads its prices.
+                              variant_prices: Object.fromEntries(
+                                variants.map(v => [v.name, v.price.toString()])
+                              ),
                             })
                             setImagePreview(item.image_url || null)
                           }}

@@ -10,6 +10,7 @@ import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
 import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
+import { istHour } from '@/lib/day-window'
 import {
   ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   MoreHorizontal,
@@ -22,7 +23,7 @@ import { FlipButton } from '@/components/ui/flip-button'
 import { focusPageSearch } from '@/lib/utils/focusPageSearch'
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
-import { stagger, staggerItem, viewportOnce, hoverScale } from '@/lib/motion'
+import { stagger, staggerItem, viewportOnce, hoverScale, transitionEase } from '@/lib/motion'
 import { CAFETERIA_LOGOS } from '@/lib/cafeteriaLogos'
 import { calculateDeliveryChargeInfo } from '@/lib/utils/deliveryChargeCalculator'
 import { calculateParcelCharge, isParcelCategory, PARCEL_CHARGE_PER_ITEM } from '@/lib/utils/parcelCharge'
@@ -48,6 +49,13 @@ interface Cafeteria {
   latitude?: number
   longitude?: number
   delivery_available?: boolean
+  // The browse/home lists gate ordering on this already (grey card, block
+  // navigation) — but that gate lives entirely in THEIR click handlers.
+  // Someone opening this cafeteria's order page directly, e.g. from a QR
+  // code, never passes through that click handler, so this page has to
+  // enforce the same rule itself rather than trust it was checked upstream.
+  is_open?: boolean
+  is_closed?: boolean
 }
 
 interface Order {
@@ -82,11 +90,35 @@ type Tab = 'home' | 'orders' | 'profile'
 interface CategoryGroup {
   label: string
   members: string[]
+  /**
+   * Restaurants this grouping belongs to, lowercased. Category names are not
+   * unique across restaurants — "Mojitos" is a drinks category at LETHAFI and
+   * part of the shakes page at The Punjabi House — so a group that did not say
+   * whose menu it describes would pull in another restaurant's category of the
+   * same name. Omitted means every restaurant.
+   */
+  restaurants?: string[]
+  /**
+   * Limits the group to one side of the veg toggle. "Pasta" exists on both
+   * sides at The Punjabi House, and only the veg one belongs to a section.
+   */
+  side?: 'veg' | 'nonveg'
+  /**
+   * Serving window, IST, 24h clock ("from" inclusive, "to" exclusive) —
+   * outside it the pill is greyed out and tapping it shows a message instead
+   * of opening it, because the kitchen genuinely isn't running this section.
+   */
+  gatedHours?: { from: number; to: number }
+  /** Message shown when tapped before `gatedHours.from`. */
+  gatedMessage?: string
+  /** Message shown when tapped at/after `gatedHours.to`. Falls back to `gatedMessage`. */
+  gatedClosedMessage?: string
 }
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
     label: 'Beverages and Delights',
+    restaurants: ['lethafi'],
     members: [
       'Coffee Shake', 'Delights', 'Fresh Juices', 'Fruit Milkshakes', 'Hot Beverages',
       'Ice Cream Shakes', 'Lassi', 'Mojitos', 'Sodas', 'Special Shakes', 'Thick Shake',
@@ -99,24 +131,135 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     // the veg/non-veg toggle decides which of the two sets that is, so each
     // side only ever sees its own. Order matches the printed cards.
     label: 'Starters',
+    restaurants: ['the punjabi house'],
     members: [
       'Veg Tandoor Starters', 'Paneer Starters', 'Appetizers & Soups', 'Veg Chinese Starters',
       'Chicken Tandoori Starters', 'Chicken Chinese Starters', 'Chicken Soups', 'Egg Delights',
       'Tandoori Chicken', 'Grill | Alfham',
     ],
   },
+  {
+    // Its own page on the card, separate from the starters. The kitchen only
+    // runs this section 1pm-10pm IST, so it's greyed out and unopenable
+    // outside that window, both before it starts and after it closes.
+    label: 'Shawarma',
+    restaurants: ['the punjabi house'],
+    members: ['Shawarma Rolls', 'Shawarma Plate'],
+    gatedHours: { from: 13, to: 22 },
+    gatedMessage: 'Starts from 1 pm',
+    gatedClosedMessage: 'Closed for today — available 1 pm to 10 pm',
+  },
+  {
+    // One page of the card. Same pattern as 'Starters' above: unscoped by
+    // side, since 'Fries' and 'Pasta' each carry both a veg and a non-veg
+    // category, and the per-item is_veg filter upstream of grouping already
+    // makes sure only the toggle's own side ever shows. 'Shakes', 'Juice',
+    // 'Signature Shake', 'Ice Cream' and 'Mojitos' have no non-veg items, so
+    // they simply never appear under the non-veg toggle.
+    label: 'Shake - Juice - Pasta',
+    restaurants: ['the punjabi house'],
+    members: [
+      'Shakes', 'Juice', 'Fries', 'Pasta', 'Signature Shake', 'Ice Cream', 'Mojitos',
+    ],
+  },
+  {
+    label: 'Veg Maincourse',
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Paneer', 'Nawabi', 'Kofta', 'Punjabi', 'Dal', 'Veg Delights'],
+  },
+  {
+    // The card's own heading here is "Egg Delights", but that name is already
+    // a Starters section (Egg Chilly, Manchurian, Bhurji, the omelettes — kept
+    // there, not duplicated, per the owner). A category can only be in one
+    // group, so the five curries on this page are stored as 'Egg Curries'
+    // instead — a different name for a different set of dishes, even though
+    // the card prints the same words twice.
+    label: 'Non Veg Main Course',
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Chicken Delights', 'Egg Curries', 'Mutton Delights'],
+  },
+  {
+    label: "Bread's & Paratha's",
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Whole Wheat', 'Parathe', 'Naan', 'Kulche', 'Stuffed Parathe'],
+  },
+  {
+    // 'Noodles' and 'Fried Rice' are members here and of the non-veg entry
+    // below. Only one applies at a time — resolveGroups filters by side before
+    // it builds the member map — so a category name shared between the two
+    // sides never collides; it just means something different depending on
+    // which one is active.
+    label: 'Rice & Noodles',
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Noodles', 'Fried Rice', 'Rice Variety'],
+  },
+  {
+    // The card gives non-veg its own Noodles and Fried Rice lists rather than
+    // a Rice Variety section, so this entry has two members where the veg one
+    // above has three.
+    label: 'Rice & Noodles',
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Noodles', 'Fried Rice'],
+  },
+  {
+    // The non-veg entry below shares this label with one member instead of
+    // two — the card gives non-veg a thali page but no Punjabi Mania of its
+    // own. Same pattern as the two Rice & Noodles entries: only one applies at
+    // a time, so 'Non-Veg Thali' never collides with anything on the veg side.
+    label: "Thali's & Combo's",
+    restaurants: ['the punjabi house'],
+    side: 'veg',
+    members: ['Veg Thali', 'Punjabi Mania'],
+  },
+  {
+    label: "Thali's & Combo's",
+    restaurants: ['the punjabi house'],
+    side: 'nonveg',
+    members: ['Non-Veg Thali'],
+  },
+  {
+    // No `side` here, unlike the pairs above — this card genuinely mixes veg
+    // and non-veg dishes within the same section (Chicken Tikka Masala Combo
+    // sits next to Veg Curry Combo under one "TPH Signature Combos" heading).
+    // One group definition applies to both toggle states; the existing
+    // per-item is_veg filter, upstream of grouping, does the actual split.
+    // "Refreshment's" has no non-veg members, so on that side it simply has
+    // nothing to show and the empty-group check already skips it.
+    label: 'Rice Bowls & Combos',
+    restaurants: ['the punjabi house'],
+    members: ['TPH Signature Combos', 'TPH Rice Bowls', 'TPH Chinese Bowls', "Refreshment's"],
+  },
 ]
 
-const GROUP_LABEL_BY_MEMBER = new Map<string, string>()
-for (const group of CATEGORY_GROUPS) {
-  for (const member of group.members) GROUP_LABEL_BY_MEMBER.set(member.toLowerCase(), group.label)
+/**
+ * The groups that apply to the menu currently on screen.
+ *
+ * Resolved per render rather than once at module load: which groups apply
+ * depends on the restaurant and on the veg toggle, and the same category name
+ * belongs to different groups at different restaurants.
+ */
+function resolveGroups(restaurantName: string | null | undefined, showVeg: boolean) {
+  const name = (restaurantName ?? '').trim().toLowerCase()
+  const applicable = CATEGORY_GROUPS.filter(g =>
+    (!g.restaurants || g.restaurants.includes(name)) &&
+    (!g.side || g.side === (showVeg ? 'veg' : 'nonveg'))
+  )
+
+  const labelByMember = new Map<string, string>()
+  for (const group of applicable) {
+    for (const member of group.members) labelByMember.set(member.toLowerCase(), group.label)
+  }
+
+  return {
+    groups: applicable,
+    labelFor: (cat: string): string | null => labelByMember.get(cat.toLowerCase()) ?? null,
+  }
 }
-
-/** The group a category belongs to, or null when it stands on its own. */
-const groupLabelFor = (cat: string): string | null =>
-  GROUP_LABEL_BY_MEMBER.get(cat.toLowerCase()) ?? null
-
-const isGroupedCategory = (cat: string) => groupLabelFor(cat) !== null
 
 /**
  * Footnotes printed under a section on the menu card — the surcharges that
@@ -131,6 +274,13 @@ const CATEGORY_NOTES: { [key: string]: string } = {
   'chicken soups': 'For 1 by 2 soup — extra ₹20',
   'tandoori chicken': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
   'grill | alfham': 'Add-ons — extra mayonnaise ₹18 / ₹35 · Kuboos ₹18',
+  'shawarma rolls': 'Whole meat shawarma roll — extra ₹25',
+  'shawarma plate': 'Extra mayonnaise ₹18 / ₹35 · Whole meat shawarma plate — extra ₹35',
+  'pasta': 'Extra cheese — ₹20',
+  'noodles': 'Any noodles schezwan — extra ₹20',
+  'fried rice': 'Any rice schezwan — extra ₹20',
+  'tph rice bowls': 'Served along with boondi raita',
+  'tph chinese bowls': 'Add-ons — make it Schezwan / Chilly Garlic, extra ₹20',
 }
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
@@ -156,6 +306,308 @@ function VegMark({ veg = false }: { veg?: boolean }) {
   )
 }
 
+// A slow, pronounced ease-in-out — steep at both ends, fast through the
+// middle — rather than `transitionEase` (lib/motion.ts), which is tuned for
+// quick UI feedback: a button press, a card lifting on hover. A door this
+// size read as weightless at that curve's speed. This is closer to what a
+// heavy object actually does when pushed: a beat to get moving, most of the
+// travel happens fast, then it settles rather than snapping to a stop.
+const doorEase = [0.76, 0, 0.24, 1] as const
+
+// The Punjabi House's own food-safety and order-policy notices — a real
+// legal/business disclosure (Halal sourcing, no artificial colour, orders not
+// cancellable once placed), not decorative copy, so it is data here rather
+// than something a future edit could casually reword.
+const PUNJABI_HOUSE_NOTICE = {
+  food: [
+    'We Use "Halal" meats only',
+    'We use Refined Sunflower Oil for Cooking',
+    'We Do Not Use Artificial Colour, Flavor Or Preservatives',
+    'We use the best quality and fresh Ingredients Only',
+    'We Use Only RO Water For Cooking',
+  ],
+  policy: [
+    'Once Order is placed it will take min 15-20 min to serve you',
+    'Parcel Charges Extra',
+    'Orders once Placed will not be cancelled',
+    'All Prices are subject to change without prior Notice',
+    'We accept UPI, Master, Rupay & Visa Cards Only',
+  ],
+}
+
+/**
+ * Full-screen notice The Punjabi House shows once per session before its
+ * menu: logo fades in, then the two bullet groups stagger in below it. The
+ * "door" the brief asked for is the exit, not a separate button — closing (✕)
+ * fades the notice out, then two hinged wood panels swing open around the Y
+ * axis (CSS `perspective` + `rotateY`, hinge on the outer screen edge, same
+ * as a real double door) to reveal the menu behind. `backfaceVisibility:
+ * hidden` on each panel is what makes a door past 90° vanish cleanly instead
+ * of flashing its reverse side.
+ *
+ * Gating: session-only (sessionStorage, keyed per cafeteria) rather than
+ * every visit — once read, a returning customer should not be blocked by it
+ * again on the same visit to the app, the same way the cart survives a tab
+ * switch but not a fresh session.
+ */
+function PunjabiHouseIntro({ cafeteriaId, onDone }: { cafeteriaId: string; onDone: () => void }) {
+  // Three distinct steps, not one big overlapping fade: the logo alone,
+  // then the points, then the ✕ (which is what actually opens the door).
+  const [step, setStep] = useState<'logo' | 'points' | 'ready'>('logo')
+  const [closing, setClosing] = useState(false)
+
+  useEffect(() => {
+    if (step !== 'logo') return
+    const t = setTimeout(() => setStep('points'), 1400)
+    return () => clearTimeout(t)
+  }, [step])
+
+  useEffect(() => {
+    if (step !== 'points') return
+    // 11 rows (5 food + divider + 5 policy) at 0.08s stagger + the last
+    // row's own 0.4s ≈ 1.2s to fully read in; 1.5s gives it a beat to
+    // settle before the ✕ appears as its own, third step.
+    const t = setTimeout(() => setStep('ready'), 1500)
+    return () => clearTimeout(t)
+  }, [step])
+
+  const handleClose = () => {
+    setClosing(true)
+    try {
+      sessionStorage.setItem(`ph-intro-seen:${cafeteriaId}`, '1')
+    } catch {}
+    // 250ms content fade, then the doors: left starts at 250ms and runs
+    // 1100ms (finishes 1350ms), right starts 100ms after it at 350ms
+    // (finishes 1450ms) — the stagger is deliberate, two doors moving in
+    // exact lockstep is part of what read as mechanical/cliché before.
+    // onDone unmounts this component, so the timer has to clear the LATER
+    // door (1450ms) with room to spare, never cut in before it — a shorter
+    // timer would chop the swing off mid-motion instead of letting it settle.
+    setTimeout(onDone, 1500)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.01 } }}
+      style={{ position: 'fixed', inset: 0, zIndex: 900 }}
+    >
+      {/* Content, fades out the moment the door starts — it would otherwise
+          still be visible, upside-down feeling, between the two door panels
+          as they slide apart. Internally it runs three separate steps
+          (logo alone → points → ✕), not one overlapping fade-in. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: closing ? 0 : 1 }}
+        transition={{ duration: closing ? 0.25 : 0.4 }}
+        style={{
+          position: 'absolute', inset: 0, zIndex: 2,
+          background: 'radial-gradient(circle at 50% 20%, #2a1810 0%, #1a0f08 60%, #120a05 100%)',
+        }}
+      >
+        <AnimatePresence mode="wait">
+          {step === 'logo' ? (
+            // Step 1: the logo alone, centered on the screen — nothing else
+            // present yet, so it can't read as "everything faded in together".
+            <motion.div
+              key="step-logo"
+              exit={{ opacity: 0, transition: { duration: 0.35 } }}
+              style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <motion.img
+                src="/logos/punjabi-house.png"
+                alt="The Punjabi House"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: transitionEase }}
+                style={{ width: 132, height: 132 }}
+              />
+            </motion.div>
+          ) : (
+            // Step 2: the logo settles small at the top and the points read
+            // in. Step 3 (the ✕) mounts into this same tree once `step`
+            // becomes 'ready' — it isn't present at all during step 2.
+            <motion.div
+              key="step-points"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: '48px 28px 40px', overflowY: 'auto', height: '100%',
+              }}
+            >
+              {step === 'ready' && (
+                <motion.button
+                  type="button"
+                  onClick={handleClose}
+                  aria-label="Close and view menu"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
+                    width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.35)',
+                    background: 'rgba(255,255,255,0.08)', color: '#f5ead9', fontSize: 18, lineHeight: 1,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  ✕
+                </motion.button>
+              )}
+
+              <motion.img
+                src="/logos/punjabi-house.png"
+                alt="The Punjabi House"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: transitionEase }}
+                style={{ width: 72, height: 72, marginTop: 28, marginBottom: 20, flexShrink: 0 }}
+              />
+
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={stagger}
+                style={{ width: '100%', maxWidth: 360 }}
+              >
+                {PUNJABI_HOUSE_NOTICE.food.map(line => (
+                  <motion.div
+                    key={line}
+                    variants={staggerItem}
+                    style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+                  >
+                    <span style={{ opacity: 0.7 }}>•</span>
+                    <span>{line}</span>
+                  </motion.div>
+                ))}
+
+                <motion.div variants={staggerItem} style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,110,0.6), transparent)', margin: '14px 0' }} />
+
+                {PUNJABI_HOUSE_NOTICE.policy.map(line => (
+                  <motion.div
+                    key={line}
+                    variants={staggerItem}
+                    style={{ display: 'flex', gap: 10, padding: '7px 4px', color: '#f2e8dc', fontSize: 14.5, lineHeight: 1.4 }}
+                  >
+                    <span style={{ opacity: 0.7 }}>•</span>
+                    <span>{line}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {step === 'ready' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                  style={{ marginTop: 28, fontSize: 12, color: 'rgba(242,232,220,0.55)', textAlign: 'center' }}
+                >
+                  Tap ✕ to continue to the menu
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* The door: two wooden panels hinged at the outer edges, pushed open
+          around the Y axis rather than sliding — `perspective` on this
+          wrapper is what gives the children's rotateY actual depth instead of
+          a flat squash. Each door's transform-origin sits on its OUTER edge
+          (screen edge), same as a real hinge, so it swings from the wall
+          inward-then-away rather than pivoting on empty air at centre.
+          backfaceVisibility: 'hidden' is doing real work here, not just
+          tidiness — past 90° a rotated panel is showing its back, and without
+          this it would flash the (transparent) reverse of the div; hidden
+          makes it cleanly vanish instead.
+
+          `doorEase` and the 94° target (rather than the app's usual UI
+          easing, or a full 100°) both come from the same fix: the first cut
+          used a quick ease-out sized for a button, and animated 10° of pure
+          dead motion past the point backfaceVisibility already makes it
+          invisible. A door this size reads as light, not solid, at that
+          speed — this version is slower and every degree of it is visible,
+          rather than trading duration for motion nobody sees. */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1, perspective: 1400 }}>
+        {[
+          { side: 'left' as const, sign: -1, doorDelay: closing ? 0.25 : 0 },
+          { side: 'right' as const, sign: 1, doorDelay: closing ? 0.35 : 0 },
+        ].map(({ side, sign, doorDelay }) => (
+          <motion.div
+            key={side}
+            initial={{ rotateY: 0 }}
+            animate={{ rotateY: closing ? sign * 94 : 0 }}
+            transition={{ duration: 1.1, delay: doorDelay, ease: doorEase }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, [side]: 0, width: '50%',
+              transformOrigin: `${side} center`,
+              backfaceVisibility: 'hidden',
+              // A dark, near-black-mahogany base rather than the lighter
+              // mid-brown of the first pass — that read as a cartoon-door
+              // brown; this is closer to a stained hardwood door under low
+              // restaurant lighting. A slight warm shift toward the hinge
+              // (where the gold trim below also sits) rather than one flat
+              // tone across the whole panel.
+              background: `linear-gradient(${side === 'left' ? '100deg' : '260deg'}, #4a2a16 0%, #2e1a0d 45%, #1c0f07 100%)`,
+              boxShadow:
+                `inset 0 0 0 3px rgba(0,0,0,0.3), ` +
+                `inset 2px 2px 8px rgba(255,255,255,0.05), inset -6px -6px 20px rgba(0,0,0,0.5), ` +
+                // Gold trim on both edges, brand-matched to the divider line
+                // above — this is the piece that replaces the old flat black
+                // seam and is most of why this now reads as a fitted door
+                // rather than a slab of colour with a crack down the middle.
+                `inset ${side === 'left' ? '-2.5px' : '2.5px'} 0 0 rgba(212,175,110,0.65), ` +
+                `inset ${side === 'left' ? '2px' : '-2px'} 0 0 rgba(212,175,110,0.22)`,
+            }}
+          >
+            {/* One recessed panel per leaf — a plain flush door with a single
+                inset rectangle reads as considered/modern; the repeating
+                grain-line texture this replaced looked closer to a stock
+                pattern-fill than an actual door. */}
+            <div
+              style={{
+                position: 'absolute', inset: '9% 16%',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, rgba(0,0,0,0.18), rgba(0,0,0,0.02) 40%, rgba(255,255,255,0.04) 100%)',
+                boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.05), 0 1px 0 rgba(255,255,255,0.04)',
+              }}
+            />
+
+            {/* Light catching the panel as it turns — a diagonal gold
+                highlight that flares up around the midpoint of the swing and
+                fades at both ends, the way a lacquered surface would catch
+                the light passing through the arc rather than staying flat. */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: closing ? [0, 0.85, 0] : 0 }}
+              transition={{ duration: 1.1, delay: doorDelay, ease: 'easeInOut', times: [0, 0.55, 1] }}
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(115deg, transparent 30%, rgba(255,232,190,0.16) 48%, transparent 66%)',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Push-bar handle near the inner edge — where a double door's
+                hardware actually sits, not centred on the panel. */}
+            <div
+              style={{
+                position: 'absolute', top: '50%', [side === 'left' ? 'right' : 'left']: 18,
+                transform: 'translateY(-50%)', width: 6, height: 80, borderRadius: 4,
+                background: 'linear-gradient(180deg, #f5e3bd 0%, #d4af6e 38%, #8a6a3c 100%)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.55), inset 1px 0 0 rgba(255,255,255,0.35)',
+              }}
+            />
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // Black-and-white line icons instead of colored emoji, to match a
 // sketched/outline look rather than a full-color glyph set.
 function categoryIcon(cat: string) {
@@ -165,6 +617,22 @@ function categoryIcon(cat: string) {
   // would otherwise fall through to the generic plate, and the four sub-pills
   // would be indistinguishable from each other.
   if (c.includes('egg')) return Egg
+  if (c.includes('shawarma')) return WrapIcon
+  if (c === 'juice' || c.includes('mojito')) return Citrus
+  if (c === 'shakes' || c.includes('signature shake')) return Milk
+  if (c.includes('ice cream')) return IceCreamCone
+  if (c.includes('fries')) return Zap
+  if (c.includes('pasta') || c.includes('shake - juice')) return UtensilsCrossed
+  if (c === 'dal') return Soup
+  if (c.includes('thali') || c.includes('mania') || c.includes("combo's")) return UtensilsCrossed
+  if (c.includes('bowl')) return UtensilsCrossed
+  if (c.includes("refreshment")) return Milk
+  if (c === 'kofta' || c === 'nawabi' || c.includes('maincourse')) return UtensilsCrossed
+  if (c.includes('mutton') || c.includes('chicken delights')) return Flame
+  if (c.includes('egg curr')) return Egg
+  if (c.includes('naan') || c.includes('kulche') || c.includes('parath') || c.includes('phulka') || c.includes('bread') || c.includes('wheat')) return Croissant
+  if (c === 'noodles') return Soup
+  if (c.includes('fried rice') || c.includes('rice variety') || c.includes('rice & noodles')) return UtensilsCrossed
   if (c.includes('tandoor') || c.includes('grill') || c.includes('alfham')) return Flame
   if (c.includes('paneer')) return Utensils
   if (c.includes('appetizer') || c.includes('soup')) return Soup
@@ -777,11 +1245,26 @@ export default function CafeteriaPage() {
 
   // Core state
   const [cafeteria, setCafeteria] = useState<Cafeteria | null>(null)
+  // Undecided until the cafeteria loads (null), so the intro cannot flash on
+  // for one frame while cafeteria.name is still unknown, then vanish once it
+  // turns out to be a different restaurant.
+  const [showPunjabiHouseIntro, setShowPunjabiHouseIntro] = useState<boolean | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('')
   // Whether the non-beverage pills are showing while the group is open.
   const [othersOpen, setOthersOpen] = useState(false)
+  // Message shown when a time-gated pill (e.g. Shawarma before 1pm) is
+  // tapped — cleared after a few seconds, same transient-toast pattern as
+  // the closed-cafe notice on the browse page.
+  const [gateMessage, setGateMessage] = useState<string | null>(null)
+  // Re-render once a minute so a gated pill un-greys itself the moment its
+  // hour arrives, instead of waiting for some unrelated state change.
+  const [, setClockTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setClockTick(n => n + 1), 60_000)
+    return () => clearInterval(t)
+  }, [])
   const [showVegFront, setShowVegFront] = useState(true)
   const [showFilter, setShowFilter] = useState(false)
   const [showSearchBar, setShowSearchBar] = useState(false)
@@ -914,6 +1397,23 @@ export default function CafeteriaPage() {
   }, [cafeteriaId])
 
   // Fetch user's orders from this cafe with real-time subscription
+  // The Punjabi House-only notice screen. Session-scoped: once a customer has
+  // dismissed it, revisiting this restaurant's menu later in the same session
+  // does not show it again, the same way the cart survives a tab switch but
+  // not a fresh session (see useCart).
+  useEffect(() => {
+    if (!cafeteria) return
+    const isPunjabiHouse = cafeteria.name.trim().toLowerCase() === 'the punjabi house'
+    if (!isPunjabiHouse) { setShowPunjabiHouseIntro(false); return }
+    try {
+      setShowPunjabiHouseIntro(!sessionStorage.getItem(`ph-intro-seen:${cafeteriaId}`))
+    } catch {
+      // sessionStorage unavailable (private mode, etc.) — show it every visit
+      // rather than silently never showing a food-safety/policy notice.
+      setShowPunjabiHouseIntro(true)
+    }
+  }, [cafeteria, cafeteriaId])
+
   useEffect(() => {
     const fetch = async () => {
       if (!user?.phone) {
@@ -955,8 +1455,16 @@ export default function CafeteriaPage() {
       })
       .subscribe()
 
+    // Realtime-only, with no fallback, meant a dropped/missed websocket event
+    // (backgrounded phone, brief reconnect) left this customer's own order —
+    // their queue token, their status — stuck stale until something else
+    // happened to trigger a refetch. A quiet poll underneath the realtime
+    // channel is what actually guarantees it self-corrects.
+    const poll = setInterval(fetch, 15_000)
+
     return () => {
       supabase.removeChannel(channel)
+      clearInterval(poll)
     }
   }, [cafeteriaId, user?.phone])
 
@@ -1067,16 +1575,23 @@ export default function CafeteriaPage() {
   // they were written in CATEGORY_GROUPS so the sub-row can follow the printed
   // menu, and are matched case-insensitively against what the vendor actually
   // typed — the stored spelling is what gets selected.
+  const { groups: activeGroups, labelFor: groupLabelFor } = resolveGroups(cafeteria?.name, showVegFront)
+
   const groupMembersPresent = new Map<string, string[]>()
-  for (const group of CATEGORY_GROUPS) {
+  const groupByLabel = new Map<string, CategoryGroup>()
+  for (const group of activeGroups) {
     const present = group.members
       .map(member => categories.find(c => c.toLowerCase() === member.toLowerCase()))
       .filter((c): c is string => !!c)
-    if (present.length) groupMembersPresent.set(group.label, present)
+    if (present.length) {
+      groupMembersPresent.set(group.label, present)
+      groupByLabel.set(group.label, group)
+    }
   }
+  const currentISTHour = istHour()
 
   const topLevelCategories = [
-    ...categories.filter(c => !isGroupedCategory(c)),
+    ...categories.filter(c => groupLabelFor(c) === null),
     ...groupMembersPresent.keys(),
   ].sort((a, b) => a.localeCompare(b))
 
@@ -1117,12 +1632,24 @@ export default function CafeteriaPage() {
     cafeteria?.name
   )
 
-  // Keep the selected category valid when switching veg / non-veg
+  // Keep the selected category valid when switching veg / non-veg. Falls back
+  // to the first category alphabetically — which for The Punjabi House meant
+  // landing on "Appetizers & Soups" every time, an accident of the letter A
+  // rather than a choice anyone made. Biryani is the restaurant's actual
+  // headline dish and exists on both sides of the toggle, so it wins there
+  // instead. Every other restaurant is untouched.
+  const defaultCategory = (() => {
+    if (!categories.length) return null
+    const isPunjabiHouse = (cafeteria?.name ?? '').trim().toLowerCase() === 'the punjabi house'
+    if (isPunjabiHouse && categories.includes('Biryani')) return 'Biryani'
+    return categories[0]
+  })()
+
   useEffect(() => {
-    if (categories.length > 0 && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
-      setSelectedCategory(categories[0])
+    if (defaultCategory && !categories.includes(selectedCategory) && selectedCategory !== 'Combos') {
+      setSelectedCategory(defaultCategory)
     }
-  }, [categories.join('|'), selectedCategory])
+  }, [categories.join('|'), selectedCategory, defaultCategory])
 
   // Leaving the group puts every pill back on screen, so the row can't come
   // back collapsed the next time the group is opened.
@@ -1183,6 +1710,14 @@ export default function CafeteriaPage() {
   // re-tapping ADD on return is one action rather than a cart that silently
   // filled itself.
   const handleAddItem = async (item: MenuItem) => {
+    // The browse/home lists already block this by graying out the card and
+    // hijacking its onClick — but that's their gate, not this page's. Anyone
+    // who reached this page directly (a QR code on the table, a bookmark)
+    // never passed through it, so it has to be re-checked here too.
+    if (cafeteria?.is_closed) {
+      alert('This restaurant is currently closed')
+      return
+    }
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
@@ -1226,6 +1761,12 @@ export default function CafeteriaPage() {
   }
 
   const handlePlaceOrder = async () => {
+    // Same QR-code gap as handleAddItem: the checkout step can be reached
+    // directly without ever crossing the browse page's closed-cafe gate.
+    if (cafeteria?.is_closed) {
+      alert('This restaurant is currently closed')
+      return
+    }
     if (!formData.name || !formData.phone || !cartItem.length) {
       alert('Please fill in name and phone, and add items to cart')
       return
@@ -1517,7 +2058,12 @@ export default function CafeteriaPage() {
                         transition: 'all 0.2s'
                       }}
                     >
-                      {v.name} ₹{v.price}
+                      {/* Some dishes are printed as bare prices with no size
+                          against them — "79/159" — so the option is named by
+                          its own price. Showing name and price would read
+                          "₹79 ₹79". The name still has to be distinct, or two
+                          choices of one dish collapse into a single cart line. */}
+                      {v.name.includes('₹') ? v.name : `${v.name} ₹${v.price}`}
                     </button>
                   )
                 })}
@@ -1623,6 +2169,26 @@ export default function CafeteriaPage() {
       paddingBottom: 80,
       background: !showVegFront ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)' : 'transparent',
     }}>
+      {/* Sits on top of the menu below rather than gating the loading state,
+          so the menu finishes loading in the background while the customer
+          reads — by the time the doors open it is already there, not still
+          spinning. */}
+      <AnimatePresence>
+        {showPunjabiHouseIntro && (
+          <PunjabiHouseIntro cafeteriaId={cafeteriaId} onDone={() => setShowPunjabiHouseIntro(false)} />
+        )}
+      </AnimatePresence>
+
+      {gateMessage && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          background: '#E8334A', color: 'white', padding: '14px 24px', borderRadius: 8,
+          fontSize: 14, fontWeight: 600, zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        }}>
+          {gateMessage}
+        </div>
+      )}
+
       {/* HOME TAB - MENU */}
       {activeTab === 'home' && step === 'menu' && (
         <div>
@@ -1711,7 +2277,14 @@ export default function CafeteriaPage() {
                 ) : (cafeteria.image_emoji || '🍽️')}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontFamily: 'var(--font-head)', fontSize: 19, fontWeight: 800, letterSpacing: -0.3, color: 'var(--navy)' }}>{cafeteria.name}</div>
+                  {cafeteria.is_closed && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#991b1b', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>
+                      Closed
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>📍 {cafeteria.location}</div>
               </div>
               {/* Glass effect search icon button */}
@@ -1830,14 +2403,29 @@ export default function CafeteriaPage() {
                     const isGroup = !!groupMembers
                     const CategoryIcon = categoryIcon(cat)
                     const isActive = isGroup ? openGroupLabel === cat : selectedCategory === cat
+                    const group = isGroup ? groupByLabel.get(cat) : undefined
+                    const beforeOpen = !!group?.gatedHours && currentISTHour < group.gatedHours.from
+                    const afterClose = !!group?.gatedHours && currentISTHour >= group.gatedHours.to
+                    const isGated = beforeOpen || afterClose
                     return (
                       <button
                         key={cat}
                         className="cat-pill"
                         // Opening the group jumps to its first category so the
-                        // list below always has something in it.
-                        onClick={() => setSelectedCategory(isGroup ? groupMembers[0] : cat)}
-                        style={{ background: 'none', border: 'none', padding: 0 }}
+                        // list below always has something in it. A gated pill
+                        // never opens — it just surfaces its message instead.
+                        onClick={() => {
+                          if (isGated) {
+                            const message = afterClose
+                              ? group!.gatedClosedMessage ?? group!.gatedMessage ?? 'Not available right now'
+                              : group!.gatedMessage ?? 'Not available yet'
+                            setGateMessage(message)
+                            setTimeout(() => setGateMessage(null), 3000)
+                            return
+                          }
+                          setSelectedCategory(isGroup ? groupMembers![0] : cat)
+                        }}
+                        style={{ background: 'none', border: 'none', padding: 0, opacity: isGated ? 0.4 : 1 }}
                       >
                         <div className={`cat-pill-icon ${isActive ? 'active' : 'inactive'}`}>
                           <CategoryIcon size={24} strokeWidth={1.6} color="#1a1a1a" />
@@ -2392,11 +2980,17 @@ export default function CafeteriaPage() {
             </div>
           )}
 
+          {cafeteria?.is_closed && (
+            <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', padding: '12px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+              This restaurant is currently closed and cannot accept orders right now.
+            </div>
+          )}
+
           <motion.button
-            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
+            {...(!(!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100)) ? hoverScale : {})}
             onClick={handlePlaceOrder}
-            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100)}
-            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
+            disabled={!formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100)}
+            style={{ width: '100%', padding: '14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 'not-allowed' : 'pointer', opacity: !formData.name || !formData.phone || isPlacingOrder || deliveryBlocked || cafeteria?.is_closed || (cafeteria?.name === 'The Punjabi House' && total < 100) ? 0.6 : 1 }}
           >
             {isPlacingOrder ? '⏳ Processing...' : 'Proceed to Payment'}
           </motion.button>
