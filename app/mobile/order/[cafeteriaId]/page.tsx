@@ -1146,7 +1146,6 @@ const ITEM_IMAGES: { [key: string]: string } = {
 
   // THE PUNJABI HOUSE - SIDES/FRIES
   'Salted Fries':                 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
-  'Peri Peri Fries':              'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
   'Cheesy Fries':                 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
   'Paneer Tikka Loaded Fries':    'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
   'Chicken Tikka Loaded Fries':   'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&h=200&fit=crop',
