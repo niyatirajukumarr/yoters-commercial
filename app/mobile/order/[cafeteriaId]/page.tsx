@@ -671,6 +671,7 @@ const CATEGORY_EMOJI: { [key: string]: string } = {
   'Quick Bites': '🍟', 'Maggies': '🍜',
 }
 
+// Menu item images - mapped by exact item names for display on menu pages
 const ITEM_IMAGES: { [key: string]: string } = {
   // Fresh Juices
   'Lemon':                        'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop',
