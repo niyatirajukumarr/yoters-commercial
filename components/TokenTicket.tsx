@@ -47,7 +47,7 @@ function drawTicketImage(props: TokenTicketProps): Promise<Blob | null> {
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '900 140px sans-serif'
-  ctx.fillText(String(token).padStart(2, '0'), width / 2, 168)
+  ctx.fillText(String(token).padStart(3, '0'), width / 2, 168)
 
   ctx.font = '400 22px sans-serif'
   ctx.fillStyle = 'rgba(255,255,255,0.85)'
@@ -139,7 +139,7 @@ export function TokenTicket(props: TokenTicketProps) {
     try {
       const blob = await drawTicketImage(props)
       if (!blob) return
-      const filename = `yoters-token-${String(token).padStart(2, '0')}.png`
+      const filename = `yoters-token-${String(token).padStart(3, '0')}.png`
       const file = new File([blob], filename, { type: 'image/png' })
 
       // Web Share (with files) puts it straight into "Save Image"/Photos on
@@ -215,7 +215,7 @@ export function TokenTicket(props: TokenTicketProps) {
             fontSize: 80, fontWeight: 900, color: 'white', lineHeight: 1,
             fontFamily: 'var(--font-head)',
           }}>
-            {String(token).padStart(2, '0')}
+            {String(token).padStart(3, '0')}
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 8 }}>
             {cafeteriaName}
