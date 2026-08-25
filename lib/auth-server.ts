@@ -65,22 +65,27 @@ export async function requireVendorForOrder(
   req: Request,
   orderId: string
 ): Promise<{ ctx: VendorContext; order: any } | { error: 'unauthenticated' | 'forbidden' | 'not_found' }> {
-  const user = await getAuthedUser(req)
+  const admin = getAdminClient()
+
+  // getAuthedUser (a round-trip to the Auth server) and the order+cafeteria
+  // lookup are independent of each other — run them concurrently instead of
+  // three sequential round-trips (auth, then order, then cafeteria). The
+  // cafeteria comes along via the orders -> cafeterias FK embed instead of a
+  // separate query.
+  const [user, orderResult] = await Promise.all([
+    getAuthedUser(req),
+    admin
+      .from('orders')
+      .select('*, cafeterias(id, name, vendor_email)')
+      .eq('id', orderId)
+      .single(),
+  ])
   if (!user || !user.email) return { error: 'unauthenticated' }
 
-  const admin = getAdminClient()
-  const { data: order, error: orderError } = await admin
-    .from('orders')
-    .select('*')
-    .eq('id', orderId)
-    .single()
-  if (orderError || !order) return { error: 'not_found' }
+  const { data: orderRow, error: orderError } = orderResult
+  if (orderError || !orderRow) return { error: 'not_found' }
 
-  const { data: cafeteria } = await admin
-    .from('cafeterias')
-    .select('id, name, vendor_email')
-    .eq('id', order.cafeteria_id)
-    .single()
+  const { cafeterias: cafeteria, ...order } = orderRow as any
 
   const owns = cafeteria && cafeteria.vendor_email === user.email
   if (!owns && !isManager(user.email) && !isAdmin(user.email)) {

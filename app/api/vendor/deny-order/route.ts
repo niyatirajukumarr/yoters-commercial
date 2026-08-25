@@ -59,17 +59,24 @@ export async function POST(req: NextRequest) {
     // asynchronously. We mark the order `refund_initiated` and leave it there;
     // it is only promoted to `refund_successful` when the `refund.processed`
     // webhook confirms settlement (see app/api/razorpay/webhook/route.ts).
+    //
+    // The Razorpay call itself is a slow external request — kicked off
+    // without awaiting it so the vendor's "deny" click doesn't sit blocked
+    // on it. The order is already marked `refund_initiated` before this
+    // fires, and the webhook is what actually confirms settlement, so
+    // nothing downstream depends on this request finishing before the
+    // response goes back.
     if (order.payment_status === 'paid' && order.razorpay_payment_id) {
       await supabase.from('orders').update({ payment_status: 'refund_initiated' }).eq('id', orderId)
-      try {
-        const refundResult = await refundPayment(order.razorpay_payment_id, order.total_amount)
-        logger.debug('[deny-order] Refund requested for order', shortId(orderId), 'refund_id:', refundResult.id)
-      } catch (refundError: any) {
-        const errorMsg = refundError?.message || String(refundError)
-        logger.error('[deny-order] Refund request failed for order', shortId(orderId), '— will retry:', errorMsg)
-        // Keep as refund_initiated so webhook can retry when settlement completes.
-        // Log error but don't block the deny operation.
-      }
+      refundPayment(order.razorpay_payment_id, order.total_amount)
+        .then(refundResult => {
+          logger.debug('[deny-order] Refund requested for order', shortId(orderId), 'refund_id:', refundResult.id)
+        })
+        .catch((refundError: any) => {
+          const errorMsg = refundError?.message || String(refundError)
+          logger.error('[deny-order] Refund request failed for order', shortId(orderId), '— will retry:', errorMsg)
+          // Keep as refund_initiated so webhook can retry when settlement completes.
+        })
     }
 
     // Send notifications (non-blocking)
