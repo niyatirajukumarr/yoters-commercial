@@ -63,7 +63,11 @@ export async function proxy(req: NextRequest) {
     '/', '/splash', '/privacy', '/terms',
     '/browse', '/mobile', '/mobile/home',
   ]
-  const PUBLIC_PREFIX = ['/auth', '/vendor', '/mobile/order']
+  // '/delivery/[orderId]' is the no-login delivery bill-sheet a vendor
+  // shares with whoever's carrying the order — the unguessable order id is
+  // its access control (see app/api/delivery/[orderId]/route.ts), not a
+  // session, so it must stay reachable without one.
+  const PUBLIC_PREFIX = ['/auth', '/vendor', '/mobile/order', '/delivery']
   const isPublic =
     PUBLIC_EXACT.includes(path) ||
     PUBLIC_PREFIX.some(p => path === p || path.startsWith(p + '/'))
