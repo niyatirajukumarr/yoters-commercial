@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { Cafeteria, MenuItem, Order } from '@/lib/types'
 import { stagger, staggerItem, hoverLift, hoverScale, scaleIn } from '@/lib/motion'
 import { withTimeout } from '@/lib/utils/withTimeout'
+import { DeliveryBillSheet } from '@/components/DeliveryBillSheet'
 
 type Tab = 'orders' | 'queue' | 'menu' | 'today' | 'settings'
 
@@ -142,6 +143,8 @@ export default function VendorDashboard() {
   const [deliveryTime, setDeliveryTime] = useState('5')
   const [remindingOrderId, setRemindingOrderId] = useState<string | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
+  const [shareOrder, setShareOrder] = useState<Order | null>(null)
+  const [shareCopied, setShareCopied] = useState(false)
   const [timerSeconds, setTimerSeconds] = useState<Record<string, number>>({})
   const [menuSearchQuery, setMenuSearchQuery] = useState('')
 
@@ -515,6 +518,33 @@ export default function VendorDashboard() {
     // stale snapshot from before this order was collected.
     if (status === 'collected') setAllTimeOrders(null)
     setActionLoading(null)
+  }
+
+  // Hands the delivery bill-sheet link to whoever's carrying the order —
+  // no delivery-person account exists, so the link itself (an unguessable
+  // order id, same trust model as the customer's own tracking page) is the
+  // only thing standing in for a login.
+  async function shareDeliverySlip(order: Order) {
+    const url = `${window.location.origin}/delivery/${order.id}`
+    const text = `🛵 Delivery order${order.token_number != null ? ` — Token #${String(order.token_number).padStart(3, '0')}` : ''}\n${order.student_name}, ₹${order.total_amount}\nFull details:`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Delivery Slip', text, url })
+        return
+      } catch {
+        // User cancelled the share sheet — fall through to clipboard so
+        // they still have a way to get the link out.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2500)
+    } catch {
+      setMsg('Could not copy the link — long-press to copy it manually.')
+      setTimeout(() => setMsg(''), 3000)
+    }
   }
 
   async function toggleOpen() {
@@ -1111,6 +1141,17 @@ export default function VendorDashboard() {
                                 <a href={`mailto:${order.student_email}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#6d28d9', background: '#ede9fe', padding: '5px 10px', borderRadius: 6, textDecoration: 'none' }}>
                                   ✉️ Email
                                 </a>
+                              )}
+                              {/* Token isn't assigned until the order is marked ready — nothing
+                                  to hand a delivery person before then. */}
+                              {order.token_number != null && (
+                                <motion.button
+                                  {...hoverScale}
+                                  onClick={() => setShareOrder(order)}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#92400e', background: '#fef3c7', border: 'none', padding: '5px 10px', borderRadius: 6, cursor: 'pointer' }}
+                                >
+                                  📤 Share with Delivery
+                                </motion.button>
                               )}
                             </div>
                           </div>
@@ -2071,6 +2112,73 @@ export default function VendorDashboard() {
                 </motion.button>
               )}
             </div>
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DELIVERY SHARE MODAL */}
+      <AnimatePresence>
+        {shareOrder && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => setShareOrder(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 300, padding: 16,
+          }}
+        >
+          <motion.div
+            initial="hidden" animate="visible" exit="hidden" variants={scaleIn}
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 380, maxHeight: '88vh', overflow: 'auto', position: 'relative' }}
+          >
+            <motion.button
+              {...hoverScale}
+              onClick={() => setShareOrder(null)}
+              aria-label="Close"
+              style={{
+                position: 'absolute', top: 14, right: 14, zIndex: 1,
+                width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: 'rgba(0,0,0,0.35)', color: 'white', fontSize: 16, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              ✕
+            </motion.button>
+
+            <DeliveryBillSheet
+              cafeteriaName={cafeteria?.name ?? ''}
+              tokenNumber={shareOrder.token_number ?? null}
+              customerName={shareOrder.student_name}
+              phone={shareOrder.student_phone}
+              items={shareOrder.items as { name: string; quantity: number }[]}
+              totalAmount={shareOrder.total_amount}
+              isPrepaid={shareOrder.payment_status === 'paid'}
+              address={shareOrder.delivery_address ?? null}
+              mapsUrl={
+                shareOrder.delivery_latitude != null && shareOrder.delivery_longitude != null
+                  ? `https://www.google.com/maps/search/?api=1&query=${shareOrder.delivery_latitude},${shareOrder.delivery_longitude}`
+                  : shareOrder.delivery_address
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shareOrder.delivery_address)}`
+                    : null
+              }
+            />
+
+            <motion.button
+              {...hoverScale}
+              onClick={() => shareDeliverySlip(shareOrder)}
+              style={{
+                width: '100%', marginTop: 12, padding: 14, borderRadius: 12, border: 'none',
+                background: 'var(--accent, #E8334A)', color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer',
+              }}
+            >
+              {shareCopied ? '🔗 Link copied!' : '📤 Share with Delivery Person'}
+            </motion.button>
           </motion.div>
         </motion.div>
         )}
