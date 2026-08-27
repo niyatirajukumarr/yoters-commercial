@@ -353,7 +353,7 @@ export default function AuthPage() {
                   </div>
                   {mode === 'signup' && (
                     isPasswordError ? (
-                      <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 5, fontWeight: 600 }}>{error}</div>
+                      <div style={{ fontSize: 13, color: 'var(--red)', marginTop: 5, fontWeight: 700 }}>{error}</div>
                     ) : (
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
                     )
