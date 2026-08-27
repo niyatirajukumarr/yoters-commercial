@@ -12,6 +12,18 @@ import PenguinFace from '@/components/PenguinFace'
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
+// Every message (client-side validatePassword, or the server's
+// weak/leaked-password rejection) that means "the password itself is the
+// problem" — used to route `error` under the password field instead of the
+// generic box at the bottom, so it shows up where the fix actually happens.
+const PASSWORD_ERROR_PREFIXES = [
+  'Password is required.',
+  'Password must be at least 8 characters.',
+  'Password must be at most 72 characters.',
+  'Password must include at least one letter and one number.',
+  'That password is on a list of known leaked/weak passwords.',
+]
+
 export default function AuthPage() {
   const router = useRouter()
   const [mode, setMode] = useState<AuthMode>('login')
@@ -25,6 +37,8 @@ export default function AuthPage() {
   const [success, setSuccess] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
   const [consent, setConsent] = useState(false)
+
+  const isPasswordError = mode === 'signup' && PASSWORD_ERROR_PREFIXES.some(p => error.startsWith(p))
 
   // Open the correct tab when arriving from the landing page (?mode=signup)
   useEffect(() => {
@@ -338,7 +352,11 @@ export default function AuthPage() {
                     </button>
                   </div>
                   {mode === 'signup' && (
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
+                    isPasswordError ? (
+                      <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 5, fontWeight: 600 }}>{error}</div>
+                    ) : (
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
+                    )
                   )}
                 </div>
               )}
@@ -391,7 +409,7 @@ export default function AuthPage() {
                 </motion.label>
               )}
 
-              {error && (
+              {error && !isPasswordError && (
                 <div style={{ background: 'var(--red-bg)', border: '1px solid rgba(232,51,74,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--red)' }}>
                   {error}
                 </div>
