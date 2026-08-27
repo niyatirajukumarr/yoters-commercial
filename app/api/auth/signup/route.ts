@@ -45,6 +45,14 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.auth.signUp({ email, password })
 
   if (error) {
+    // 'weak_password' is Supabase Auth's own leaked/breached-password check
+    // (independent of and stricter than signupSchema's letter+number rule)
+    // — safe to name specifically since, unlike every other failure here, it
+    // reveals nothing about whether the email already has an account.
+    if (error.code === 'weak_password') {
+      logger.error('[auth/signup] weak/leaked password rejected for', shortId(email))
+      return NextResponse.json({ error: AUTH_MESSAGES.weakPassword }, { status: 400 })
+    }
     // Do NOT confirm whether the email already exists — generic failure only.
     logger.error('[auth/signup] sign-up failed for', shortId(email))
     return NextResponse.json({ error: AUTH_MESSAGES.signupFailed }, { status: 400 })

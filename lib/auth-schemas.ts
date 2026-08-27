@@ -15,6 +15,7 @@ export const AUTH_MESSAGES = {
   invalidInput: 'Please check your details and try again.',
   invalidCredentials: 'Incorrect email or password',
   signupFailed: 'Could not create your account. Please check your details and try again.',
+  weakPassword: 'That password is on a list of known leaked/weak passwords. Please choose a different one.',
   resetSent: "If that email is registered, you'll receive a reset link",
   rateLimited: 'Too many attempts. Please try again later.',
 } as const
