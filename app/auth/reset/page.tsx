@@ -169,7 +169,7 @@ function ResetPasswordContent() {
                     onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
                     style={inp}
                   />
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginTop: 5 }}>At least 8 characters, including a letter and a number</div>
                 </div>
 
                 <div>
