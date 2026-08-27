@@ -1985,7 +1985,13 @@ export default function CafeteriaPage() {
     const fav = isFavourite(item.id)
     const isVeg = itemIsVeg(item)
     const catImg = item.image_url || ITEM_IMAGES[item.name] || CATEGORY_IMAGES[item.category] || null
-    const showImg = catImg && !imgErrors.has(item.id)
+    // Keyed by id+url, not id alone: a stale cached menu can render an item
+    // with a since-fixed image_url, error once against the OLD url, then get
+    // overwritten by the background refetch with a working new url — keying
+    // on id alone would leave it stuck on the emoji fallback forever, since
+    // the Set entry from the old url never gets a reason to clear.
+    const imgErrorKey = `${item.id}:${catImg}`
+    const showImg = catImg && !imgErrors.has(imgErrorKey)
 
     // Real-time "highly ordered" indicator
     const count = popularity.byId[item.id] ?? popularity.byName[item.name.toLowerCase()] ?? 0
@@ -2084,7 +2090,7 @@ export default function CafeteriaPage() {
         {/* Big visible image on the right with ADD overlapping */}
         <div className="dish-right">
           {showImg
-            ? <img src={catImg!} alt={item.name} className="dish-img2" onError={() => setImgErrors(prev => new Set(prev).add(item.id))} />
+            ? <img src={catImg!} alt={item.name} className="dish-img2" onError={() => setImgErrors(prev => new Set(prev).add(imgErrorKey))} />
             : <div className="dish-img2-emoji">{CATEGORY_EMOJI[item.category] ?? '🍽️'}</div>}
           <div className="dish-add-float">
             {inCart ? (
