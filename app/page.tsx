@@ -219,9 +219,9 @@ export default function LandingPage() {
   const transitionEase = [0.22, 1, 0.36, 1] as const
 
   const whyCards = [
-    { n: '01', title: 'Know Your Meal in Advance', desc: 'Browse the menu, choose your meal, and schedule pickup before your break even begins.' },
-    { n: '02', title: 'No More Waiting', desc: 'Walk straight to the counter, collect your food, and leave — no queues, no rush.' },
-    { n: '03', title: 'Less Waste, Smarter Cooking', desc: 'Restaurants prepare food based on real demand, reducing waste and serving customers better.' },
+    { n: '1', title: 'Know Your Meal in Advance', desc: 'Browse the menu, choose your meal, and schedule pickup before your break even begins.' },
+    { n: '2', title: 'No More Waiting', desc: 'Walk straight to the counter, collect your food, and leave — no queues, no rush.' },
+    { n: '3', title: 'Less Waste, Smarter Cooking', desc: 'Restaurants prepare food based on real demand, reducing waste and serving customers better.' },
   ]
 
   const testimonials = [
@@ -281,11 +281,11 @@ export default function LandingPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { background: #fdf8f5; }
-        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'DM Sans', sans-serif; overflow-x: hidden; position: relative; }
+        .lp { background: #fdf8f5; color: #1a1f2e; font-family: 'Inter', sans-serif; overflow-x: hidden; position: relative; }
 
         .glitch { position: relative; display: inline-block; cursor: pointer; transition: color 0.2s; }
         .glitch:hover { color: #E8334A !important; }
@@ -306,17 +306,17 @@ export default function LandingPage() {
         .profile-menu-item:last-child { border-bottom: none; }
         .profile-menu-item:hover { background: #f8f8f8; }
         .profile-menu-item.logout { color: #E8334A; font-weight: 600; }
-        .lp-vendor-btn { padding: 9px 20px; border: 1.5px solid rgba(26,31,46,0.15); border-radius: 10px; background: transparent; color: #4a5068; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block; transition: all 0.2s; }
+        .lp-vendor-btn { padding: 9px 20px; border: 1.5px solid rgba(26,31,46,0.15); border-radius: 10px; background: transparent; color: #4a5068; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-block; transition: all 0.2s; }
         .lp-vendor-btn:hover { border-color: #E8334A; color: #E8334A; }
-        .lp-join-btn { padding: 10px 22px; background: #E8334A; color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
+        .lp-join-btn { padding: 10px 22px; background: #E8334A; color: white; border: none; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
         .lp-join-btn:hover { background: #c9293f; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,51,74,0.3); }
         .hamburger-btn { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
         .hamburger-btn span { display: block; width: 22px; height: 2px; background: #1a1f2e; margin: 5px 0; border-radius: 2px; }
 
-        .btn-primary { padding: 16px 40px; background: #E8334A; color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); box-shadow: 0 4px 12px rgba(232,51,74,0.15); letter-spacing: 0.3px; }
+        .btn-primary { padding: 16px 40px; background: #E8334A; color: white; border: none; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); box-shadow: 0 4px 12px rgba(232,51,74,0.15); letter-spacing: 0.3px; }
         .btn-primary:hover { background: #d42a40; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(232,51,74,0.35); }
         .btn-primary:active { transform: translateY(-1px); }
-        .btn-outline { padding: 16px 40px; background: transparent; color: #1a1f2e; border: 1.5px solid rgba(26,31,46,0.2); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); letter-spacing: 0.3px; }
+        .btn-outline { padding: 16px 40px; background: transparent; color: #1a1f2e; border: 1.5px solid rgba(26,31,46,0.2); font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 12px; transition: all 0.3s cubic-bezier(0.22,1,0.36,1); letter-spacing: 0.3px; }
         .btn-outline:hover { border-color: #E8334A; color: #E8334A; background: rgba(232,51,74,0.02); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(232,51,74,0.1); }
 
         .tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #E8334A; animation: pulse 2s infinite; display:inline-block; }
@@ -364,16 +364,16 @@ export default function LandingPage() {
         .why-card:hover { border-color: rgba(232,51,74,0.2); box-shadow: 0 16px 48px rgba(232,51,74,0.1); }
 
         .testimonial-card { background: white; border: 1px solid rgba(26,31,46,0.07); border-radius: 20px; padding: 32px 28px; display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(26,31,46,0.05); }
-        .testimonial-quote-mark { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 700; color: rgba(232,51,74,0.12); line-height: 1; margin-bottom: 4px; }
+        .testimonial-quote-mark { font-family: 'Fraunces', serif; font-size: 56px; font-weight: 700; color: rgba(232,51,74,0.12); line-height: 1; margin-bottom: 4px; }
         .testimonial-stars { display: flex; gap: 2px; margin-bottom: 16px; }
-        .testimonial-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0; }
+        .testimonial-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0; }
 
         .footer-3d-inner { width:72px; height:72px; border-radius:50%; background: linear-gradient(135deg, rgba(232,51,74,0.3), rgba(255,143,163,0.1)); border: 1px solid rgba(232,51,74,0.3); display:flex; align-items:center; justify-content:center; font-size:32px; animation: float3d 4s ease-in-out infinite; }
         @keyframes float3d { 0%,100%{transform:translateY(0) rotate(0deg)} 33%{transform:translateY(-8px) rotate(5deg)} 66%{transform:translateY(4px) rotate(-3deg)} }
 
-        .footer-back-btn { margin-top:16px; padding:11px 24px; border:1.5px solid rgba(255,255,255,0.15); border-radius:10px; background:transparent; color:rgba(255,255,255,0.5); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500; width:fit-content; }
+        .footer-back-btn { margin-top:16px; padding:11px 24px; border:1.5px solid rgba(255,255,255,0.15); border-radius:10px; background:transparent; color:rgba(255,255,255,0.5); font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500; width:fit-content; }
         .footer-back-btn:hover { border-color:#E8334A; color:#E8334A; }
-        .footer-nl-input { flex:1; padding:10px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white; font-family:'DM Sans',sans-serif; font-size:13px; outline:none; }
+        .footer-nl-input { flex:1; padding:10px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white; font-family:'Inter',sans-serif; font-size:13px; outline:none; }
         .footer-nl-input::placeholder { color:rgba(255,255,255,0.2); }
         .footer-nl-btn { padding:10px 16px; background:#E8334A; border:none; border-radius:8px; color:white; font-size:13px; font-weight:600; cursor:pointer; }
 
@@ -420,7 +420,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }} onClick={() => scrollTo('hero')}>
             <img src="/logo.png" alt="Yoters" style={{ width: 56, height: 56, objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, color: '#E8334A', lineHeight: 1 }}>Yoters</span>
+              <span style={{ fontFamily: 'Fraunces, serif', fontSize: 26, fontWeight: 700, color: '#E8334A', lineHeight: 1 }}>Yoters</span>
             </div>
           </div>
           <ul className="lp-nav-links">
@@ -469,7 +469,7 @@ export default function LandingPage() {
                 <motion.a key={item.id} className="glitch" data-text={item.label}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   onClick={() => scrollTo(item.id)}
-                  style={{ fontFamily: 'Playfair Display, serif', fontSize: 40, fontWeight: 700, color: '#1a1f2e', cursor: 'pointer' }}>
+                  style={{ fontFamily: 'Fraunces, serif', fontSize: 40, fontWeight: 700, color: '#1a1f2e', cursor: 'pointer' }}>
                   {item.label}
                 </motion.a>
               ))}
@@ -505,8 +505,8 @@ export default function LandingPage() {
           </video>
           <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 680, y: heroY, opacity: heroOpacity }}>
             <motion.h1 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22,1,0.36,1] }}
-              style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 700, lineHeight: 1, letterSpacing: -2, color: '#1a1f2e', marginBottom: 24 }}>
-              Skip the<br /><em style={{ fontStyle: 'italic', color: '#E8334A', fontWeight: 700 }}>Restaurant Rush.</em>
+              style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 700, lineHeight: 1, letterSpacing: -2, color: '#1a1f2e', marginBottom: 24 }}>
+              Skip the Restaurant<br /><span style={{ position: 'relative', display: 'inline-block' }}>Rush<span style={{ position: 'absolute', left: 4, right: 4, bottom: 6, height: 14, background: 'rgba(232,51,74,0.22)', zIndex: -1 }} />.</span>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
               style={{ fontSize: 20, color: '#5a6078', lineHeight: 1.8, maxWidth: 520, marginBottom: 40, fontWeight: 400 }}>
@@ -524,9 +524,11 @@ export default function LandingPage() {
         <section className="lp-section" style={{ padding: '80px 48px 60px 48px', background: '#fdf8f5', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Local Restaurants</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
-                Every Restaurant.<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>One App.</span>
+              <motion.p variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#E8334A', marginBottom: 16, padding: '6px 14px 6px 12px', border: '1px solid rgba(232,51,74,0.22)', borderRadius: 20, background: 'rgba(232,51,74,0.06)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8334A' }} />Local Restaurants
+              </motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Every Restaurant. <span style={{ color: '#E8334A', fontWeight: 700 }}>One App.</span>
               </motion.h2>
               <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
                 Browse all restaurants in real-time. Pre-order your meal with just a few taps, and pick it up when it's ready.
@@ -551,7 +553,7 @@ export default function LandingPage() {
                       {/* Content - Just the name */}
                       <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: 32, color: 'white' }}>
                         <div>
-                          <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, lineHeight: 1.2, maxWidth: '95%', letterSpacing: -0.5 }}>
+                          <h3 style={{ fontFamily: 'Fraunces, serif', fontSize: 28, fontWeight: 700, lineHeight: 1.2, maxWidth: '95%', letterSpacing: -0.5 }}>
                             {r.name}
                           </h3>
                         </div>
@@ -580,8 +582,12 @@ export default function LandingPage() {
 
         {/* FOOD TRACK */}
         <section style={{ padding: '80px 0', background: '#fdf8f5', overflow: 'hidden', borderTop: '1px solid rgba(26,31,46,0.06)', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 12 }}>Always Fresh</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', fontFamily: 'Playfair Display, serif', fontSize: 'clamp(22px,3vw,36px)', fontWeight: 700, color: '#1a1f2e', marginBottom: 8 }}>Every Cuisine. One Platform.</motion.h2>
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#E8334A', marginBottom: 12 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px 6px 12px', border: '1px solid rgba(232,51,74,0.22)', borderRadius: 20, background: 'rgba(232,51,74,0.06)' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8334A' }} />Always Fresh
+            </span>
+          </motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', fontFamily: 'Fraunces, serif', fontSize: 'clamp(22px,3vw,36px)', fontWeight: 700, color: '#1a1f2e', marginBottom: 8 }}>Every Cuisine. One Platform.</motion.h2>
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} style={{ textAlign: 'center', fontSize: 15, color: '#8a90a8', marginBottom: 40, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
             From South Indian breakfasts to multi-cuisine lunches — your entire local food scene, right here.
           </motion.p>
@@ -600,9 +606,11 @@ export default function LandingPage() {
         <section id="why" className="lp-section" style={{ padding: '100px 48px', background: '#fdf8f5', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Why Choose Us</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
-                Why Yoters<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Changes Everything.</span>
+              <motion.p variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#E8334A', marginBottom: 16, padding: '6px 14px 6px 12px', border: '1px solid rgba(232,51,74,0.22)', borderRadius: 20, background: 'rgba(232,51,74,0.06)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8334A' }} />Why Choose Us
+              </motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Why Yoters <span style={{ color: '#E8334A', fontWeight: 700, borderBottom: '3px solid rgba(232,51,74,0.35)' }}>Changes Everything.</span>
               </motion.h2>
               <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
                 Every break is precious. Every minute counts. Pre-order ensures you never waste another second waiting in line.
@@ -617,8 +625,8 @@ export default function LandingPage() {
                   transition={{ duration: 0.8, delay: i * 0.2, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ scale: 1.03, y: -6, transition: { duration: 0.3 } }}
                   style={{ boxShadow: '0 8px 24px rgba(26,31,46,0.05)', border: '1px solid rgba(26,31,46,0.06)', background: 'white' }}>
-                  <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 64, fontWeight: 700, color: 'rgba(232,51,74,0.08)', lineHeight: 1, marginBottom: 20 }}>{card.n}</div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 12, lineHeight: 1.3, fontFamily: 'Playfair Display, serif' }}>{card.title}</h3>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(232,51,74,0.1)', color: '#E8334A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, marginBottom: 20 }}>{card.n}</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1a1f2e', marginBottom: 12, lineHeight: 1.3, fontFamily: 'Fraunces, serif' }}>{card.title}</h3>
                   <p style={{ fontSize: 15, color: '#7a8296', lineHeight: 1.8, fontWeight: 400 }}>{card.desc}</p>
                 </motion.div>
               ))}
@@ -630,9 +638,11 @@ export default function LandingPage() {
         <section className="lp-section" style={{ padding: '100px 48px', background: '#faf9f7', borderBottom: '1px solid rgba(26,31,46,0.06)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>Loved By Our Community</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
-                Students & Restaurants,<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Both Winning.</span>
+              <motion.p variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#E8334A', marginBottom: 16, padding: '6px 14px 6px 12px', border: '1px solid rgba(232,51,74,0.22)', borderRadius: 20, background: 'rgba(232,51,74,0.06)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8334A' }} />Loved By Our Community
+              </motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 16 }}>
+                Students & Restaurants, <span style={{ color: '#E8334A', fontWeight: 700 }}>Both Winning.</span>
               </motion.h2>
               <motion.p variants={fadeUp} style={{ fontSize: 18, color: '#7a8296', maxWidth: 560, lineHeight: 1.8, marginBottom: 64, fontWeight: 400 }}>
                 Real feedback from the people ordering, cooking, and skipping the queue every day.
@@ -672,9 +682,11 @@ export default function LandingPage() {
           <div style={{ position: 'absolute', bottom: '-15%', left: '-8%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,51,74,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
           <motion.div style={{ position: 'relative', zIndex: 2, maxWidth: 700, margin: '0 auto' }}
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-            <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#ff8fa3', marginBottom: 20 }}>Get Started Now</motion.p>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(36px,5vw,64px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 20, letterSpacing: -1 }}>
-              Skip the<br /><em style={{ fontStyle: 'italic', color: '#ff8fa3', fontWeight: 700 }}>Queue Forever.</em>
+            <motion.p variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#ff8fa3', marginBottom: 20, padding: '6px 14px 6px 12px', border: '1px solid rgba(255,143,163,0.3)', borderRadius: 20, background: 'rgba(255,143,163,0.08)' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff8fa3' }} />Get Started Now
+            </motion.p>
+            <motion.h2 variants={fadeUp} style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(36px,5vw,64px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 20, letterSpacing: -1 }}>
+              Skip the Queue <span style={{ color: '#ff8fa3', fontWeight: 700 }}>Forever.</span>
             </motion.h2>
             <motion.p variants={fadeUp} style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginBottom: 48, fontWeight: 400 }}>
               Join hundreds of students already pre-ordering their meals. Fresh food. Zero waiting. Every break.
@@ -692,9 +704,11 @@ export default function LandingPage() {
         <section id="team" className="lp-section" style={{ padding: '100px 48px', background: 'white' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-              <motion.p variants={fadeUp} style={{ fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#E8334A', marginBottom: 16 }}>The People Behind It</motion.p>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 14 }}>
-                Meet the<br /><span style={{ color: '#E8334A', fontStyle: 'italic', fontWeight: 700 }}>Team.</span>
+              <motion.p variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#E8334A', marginBottom: 16, padding: '6px 14px 6px 12px', border: '1px solid rgba(232,51,74,0.22)', borderRadius: 20, background: 'rgba(232,51,74,0.06)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8334A' }} />The People Behind It
+              </motion.p>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: 'Fraunces, serif', fontSize: 'clamp(32px,4vw,56px)', fontWeight: 700, color: '#1a1f2e', lineHeight: 1.15, marginBottom: 14 }}>
+                Meet the Team<span style={{ color: '#E8334A' }}>.</span>
               </motion.h2>
               <motion.p variants={fadeUp} style={{ fontSize: 15, color: '#8a90a8', lineHeight: 1.7, fontWeight: 400, marginBottom: 24 }}>
                 Click on each photo to know more.
@@ -711,7 +725,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', marginBottom: 14 }} onClick={() => scrollTo('hero')}>
                 <img src="/logo.png" alt="Yoters" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: 'white' }}>Yoters</span>
+                  <span style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 700, color: 'white' }}>Yoters</span>
                 </div>
               </div>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, maxWidth: 260, marginBottom: 24 }}>Skip the queue. Pre-book your meal. Walk in, pick up, and enjoy your break.</p>
