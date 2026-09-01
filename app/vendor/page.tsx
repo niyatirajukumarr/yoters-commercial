@@ -313,6 +313,11 @@ export default function VendorDashboard() {
             if (notify && newPending.length > 0) {
               const newest = newPending[newPending.length - 1]
               setNewOrderAlert(`🔔 New order! ${newest?.items?.[0]?.name ?? 'Item'} — ₹${newest?.total_amount}`)
+              // The banner was otherwise set-and-forget — nothing ever
+              // cleared it, so it sat on screen indefinitely until the next
+              // new order overwrote its text. The sound already stops itself
+              // once nothing's pending; the banner should too.
+              setTimeout(() => setNewOrderAlert(null), 6000)
               startAlertSound()
             }
             seenPendingIdsRef.current = currentPendingIds
