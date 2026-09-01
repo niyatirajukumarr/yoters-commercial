@@ -291,11 +291,15 @@ export default function VendorDashboard() {
       const json = await res.json()
       const data = json.orders
       if (data) {
-        // Only the live "awaiting decision" fetch (no `date`) tracks new
-        // pending orders — a date-scoped fetch (the Today/Revenue tab) can
-        // include orders that were pending on some earlier day and long
-        // since resolved, which is not a "new order" by any useful meaning.
-        if (!date) {
+        // Track new pending orders on the undated "awaiting decision" fetch,
+        // and also on a date-scoped fetch when that date is today — the
+        // Today/Revenue tab defaults to today's date, so gating this on "no
+        // date at all" meant the alert silently never rang for a vendor
+        // sitting on that tab. Only a date-scoped fetch for a PAST day is
+        // skipped: those can include orders that were pending on some
+        // earlier day and long since resolved, which isn't a "new order" by
+        // any useful meaning.
+        if (!date || date === getISTDateString()) {
           const currentPendingIds = new Set(
             (data as Order[]).filter(o => o.status === 'pending_approval').map(o => o.id)
           )
@@ -404,7 +408,7 @@ export default function VendorDashboard() {
     if (!cafeteria) return
     const interval = setInterval(() => {
       if (tab === 'today') {
-        fetchOrdersRef.current?.(cafeteria.id, false, selectedDate)
+        fetchOrdersRef.current?.(cafeteria.id, true, selectedDate)
       } else {
         fetchOrdersRef.current?.(cafeteria.id, true)
       }
