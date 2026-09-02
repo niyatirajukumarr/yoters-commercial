@@ -1204,6 +1204,19 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Wraps': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/wraps.jpg',
   'Quick Bites': 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&h=400&fit=crop',
   'Maggies': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/maggie.jpg',
+
+  // The Punjabi House's veg group banners. The hero shown for a group pill
+  // is keyed by whichever sub-category becomes `selectedCategory` the
+  // moment that group opens — its first present member, per the click
+  // handler below — not by the group's own label, so each entry here is
+  // keyed by that first member rather than by the printed section name.
+  'Whole Wheat': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg', // Bread's & Paratha's
+  'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png', // Rice & Noodles
+  'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg', // Rice Bowls & Combos
+  'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes%20juice%20nd%20pasta.jpg', // Shake - Juice - Pasta
+  'Veg Tandoor Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/starters.jpg', // Starters
+  'Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/thalis%20and%20combos.jpg', // Thali's & Combo's
+  'Paneer': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/veg%20maincourse.png', // Veg Maincourse
 }
 
 // Banners used only while the non-veg toggle is on. Categories missing here
@@ -1217,6 +1230,17 @@ const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
   'Rolls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/rolls.webp',
   'Sandwiches': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/sandwiches.jpg',
   'Wraps': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/lethafi/hero-section/non%20veg/wraps.jpg',
+
+  // The Punjabi House's non-veg group banners — same first-present-member
+  // keying rule as the veg block above. 'Biryani' is ungrouped (ordinary
+  // top-level category, ungrouped on both sides) so it's keyed directly.
+  'Biryani': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/biryani.jpg',
+  'Chicken Delights': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20maincourse.jpg', // Non Veg Main Course
+  'Non-Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20thalis%20and%20combos.png', // Thali's & Combo's
+  'Fries': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/pasta-fries%20nonveg.png', // Shake - Juice - Pasta
+  'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png', // Rice & Noodles
+  'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20bowls%20and%20combos%20nonveg.png', // Rice Bowls & Combos
+  'Chicken Tandoori Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/starters%20non%20veg.jpg', // Starters
 }
 
 export default function CafeteriaPage() {
