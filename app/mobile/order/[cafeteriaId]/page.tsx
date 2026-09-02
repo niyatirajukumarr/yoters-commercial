@@ -134,7 +134,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     restaurants: ['the punjabi house'],
     members: [
       'Veg Tandoor Starters', 'Paneer Starters', 'Appetizers & Soups', 'Veg Chinese Starters',
-      'Chicken Tandoori Starters', 'Chicken Chinese Starters', 'Chicken Soups', 'Egg Delights',
+      'Chicken Tandoori Starters', 'Chicken Chinese Starters', 'Chicken Soups',
       'Tandoori Chicken', 'Grill | Alfham',
     ],
   },
@@ -169,16 +169,13 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     members: ['Paneer', 'Nawabi', 'Kofta', 'Punjabi', 'Dal', 'Veg Delights'],
   },
   {
-    // The card's own heading here is "Egg Delights", but that name is already
-    // a Starters section (Egg Chilly, Manchurian, Bhurji, the omelettes — kept
-    // there, not duplicated, per the owner). A category can only be in one
-    // group, so the five curries on this page are stored as 'Egg Curries'
-    // instead — a different name for a different set of dishes, even though
-    // the card prints the same words twice.
+    // Every egg dish (this page's curries and the Starters page's Egg
+    // Delights section alike) lives in its own flat 'Egg' category behind
+    // the Egg toggle instead, not here or under Starters — see foodMode.
     label: 'Non Veg Main Course',
     restaurants: ['the punjabi house'],
     side: 'nonveg',
-    members: ['Chicken Delights', 'Egg Curries', 'Mutton Delights'],
+    members: ['Chicken Delights', 'Mutton Delights'],
   },
   {
     label: "Bread's & Paratha's",
@@ -1254,7 +1251,13 @@ export default function CafeteriaPage() {
     const t = setInterval(() => setClockTick(n => n + 1), 60_000)
     return () => clearInterval(t)
   }, [])
-  const [showVegFront, setShowVegFront] = useState(true)
+  // Three-way instead of a veg/non-veg boolean so an 'Egg' item (is_veg is
+  // still false for these — egg isn't vegetarian) can have its own tab
+  // rather than being buried inside Non-Veg. showVegFront is kept as a
+  // derived boolean below for the handful of things (group side-scoping,
+  // category hero images) that only ever cared about veg vs. everything else.
+  const [foodMode, setFoodMode] = useState<'veg' | 'nonveg' | 'egg'>('veg')
+  const showVegFront = foodMode === 'veg'
   const [showFilter, setShowFilter] = useState(false)
   const [showSearchBar, setShowSearchBar] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -1558,7 +1561,16 @@ export default function CafeteriaPage() {
 
   // Treat items with no flag as veg by default
   const itemIsVeg = (m: MenuItem) => m.is_veg !== false
-  const visibleItems = menuItems.filter(m => (showVegFront && itemIsVeg(m)) || (!showVegFront && !itemIsVeg(m)))
+  // Egg dishes are is_veg: false in the DB (egg isn't vegetarian) but live
+  // in their own flat 'Egg' category rather than mixed into the regular
+  // non-veg categories — that category name is what routes them to the
+  // Egg tab instead of Non-Veg.
+  const isEggItem = (m: MenuItem) => m.category === 'Egg'
+  const visibleItems = menuItems.filter(m => {
+    if (foodMode === 'veg') return itemIsVeg(m)
+    if (foodMode === 'egg') return !itemIsVeg(m) && isEggItem(m)
+    return !itemIsVeg(m) && !isEggItem(m)
+  })
   // Alphabetical so the pill row has a predictable order, rather than
   // whatever order the rows happen to come back from the DB in.
   const categories = [...new Set(visibleItems.map(m => m.category))]
@@ -2167,7 +2179,11 @@ export default function CafeteriaPage() {
     <div style={{
       minHeight: '100vh',
       paddingBottom: 80,
-      background: !showVegFront ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)' : 'transparent',
+      background: foodMode === 'nonveg'
+        ? 'linear-gradient(135deg, rgba(255,200,200,0.08) 0%, rgba(255,150,150,0.05) 100%)'
+        : foodMode === 'egg'
+          ? 'linear-gradient(135deg, rgba(255,225,150,0.1) 0%, rgba(255,210,120,0.06) 100%)'
+          : 'transparent',
     }}>
       {/* Sits on top of the menu below rather than gating the loading state,
           so the menu finishes loading in the background while the customer
@@ -2362,36 +2378,57 @@ export default function CafeteriaPage() {
               {/* Veg button */}
               <motion.button
                 {...hoverScale}
-                onClick={() => setShowVegFront(true)}
+                onClick={() => setFoodMode('veg')}
                 style={{
                   padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
                   border: 'none',
-                  background: showVegFront ? '#22c55e' : '#f5f5f7',
+                  background: foodMode === 'veg' ? '#22c55e' : '#f5f5f7',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  boxShadow: showVegFront ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
-                  fontSize: 13, fontWeight: 600, color: showVegFront ? '#fff' : '#666',
+                  boxShadow: foodMode === 'veg' ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: foodMode === 'veg' ? '#fff' : '#666',
                 }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: showVegFront ? '#fff' : '#22c55e', flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: foodMode === 'veg' ? '#fff' : '#22c55e', flexShrink: 0 }} />
                 Veg
               </motion.button>
 
               {/* Non-veg button */}
               <motion.button
                 {...hoverScale}
-                onClick={() => setShowVegFront(false)}
+                onClick={() => setFoodMode('nonveg')}
                 style={{
                   padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
                   border: 'none',
-                  background: !showVegFront ? '#ef4444' : '#f5f5f7',
+                  background: foodMode === 'nonveg' ? '#ef4444' : '#f5f5f7',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  boxShadow: !showVegFront ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
-                  fontSize: 13, fontWeight: 600, color: !showVegFront ? '#fff' : '#666',
+                  boxShadow: foodMode === 'nonveg' ? '0 2px 8px rgba(239, 68, 68, 0.3)' : 'none',
+                  fontSize: 13, fontWeight: 600, color: foodMode === 'nonveg' ? '#fff' : '#666',
                 }}
               >
-                <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: '7px solid ' + (!showVegFront ? '#fff' : '#ef4444'), flexShrink: 0 }} />
+                <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: '7px solid ' + (foodMode === 'nonveg' ? '#fff' : '#ef4444'), flexShrink: 0 }} />
                 Non-Veg
               </motion.button>
+
+              {/* Egg button — only shown when this menu actually has any
+                  egg dishes (currently just The Punjabi House); other
+                  restaurants keep the plain Veg/Non-Veg pair. */}
+              {menuItems.some(m => m.category === 'Egg') && (
+                <motion.button
+                  {...hoverScale}
+                  onClick={() => setFoodMode('egg')}
+                  style={{
+                    padding: '6px 12px', height: 42, flexShrink: 0, borderRadius: 12, cursor: 'pointer',
+                    border: 'none',
+                    background: foodMode === 'egg' ? '#f59e0b' : '#f5f5f7',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    boxShadow: foodMode === 'egg' ? '0 2px 8px rgba(245, 158, 11, 0.35)' : 'none',
+                    fontSize: 13, fontWeight: 600, color: foodMode === 'egg' ? '#fff' : '#666',
+                  }}
+                >
+                  <div style={{ width: 8, height: 10, borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', background: foodMode === 'egg' ? '#fff' : '#f59e0b', flexShrink: 0 }} />
+                  Egg
+                </motion.button>
+              )}
             </div>
 
             {/* Category pills */}
