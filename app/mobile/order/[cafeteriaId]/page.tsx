@@ -1358,8 +1358,13 @@ export default function CafeteriaPage() {
         const { cafeteria: cachedCaf, menuItems: cachedMenu } = JSON.parse(cached)
         setCafeteria(cachedCaf)
         setMenuItems(cachedMenu)
-        const cats = [...new Set((cachedMenu as MenuItem[]).map((m: MenuItem) => m.category))]
-        if (cats.length > 0) setSelectedCategory(cats[0])
+        // Not setSelectedCategory(cats[0]) here — that forced whatever
+        // category happened to be first in raw DB order (e.g. "Noodles"),
+        // which then blocked the defaultCategory effect below from ever
+        // landing on Biryani for The Punjabi House: its guard only fires
+        // when selectedCategory ISN'T already a valid category, and cats[0]
+        // always is. Leaving it unset here lets that effect pick the real
+        // default once `categories` is computed from this data.
         setLoading(false)
       }
     } catch {}
@@ -1375,8 +1380,8 @@ export default function CafeteriaPage() {
           setCafeteria(cafRes.data as Cafeteria)
           const menu = (menuRes.data ?? []) as MenuItem[]
           setMenuItems(menu)
-          const cats = [...new Set(menu.map(m => m.category))]
-          if (cats.length > 0) setSelectedCategory(cats[0])
+          // See the matching comment on the cached-data branch above — the
+          // defaultCategory effect owns picking the initial category.
           sessionStorage.setItem(cacheKey, JSON.stringify({ cafeteria: cafRes.data, menuItems: menu }))
         }
       } catch {}
