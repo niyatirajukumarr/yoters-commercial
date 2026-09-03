@@ -1359,7 +1359,7 @@ export default function CafeteriaPage() {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' })
 
 
-  const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed'>('idle')
+  const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed' | 'denied'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
@@ -1979,7 +1979,15 @@ export default function CafeteriaPage() {
   // payment finishes.
   const fetchTokenData = async (attempt = 0) => {
     if (!orderId) return
-    const { data } = await supabase.from('orders').select('token_number, items, total_amount').eq('id', orderId).single()
+    const { data } = await supabase.from('orders').select('status, token_number, items, total_amount').eq('id', orderId).single()
+    if (data?.status === 'cancelled') {
+      setPaymentState('denied')
+      setTimeout(() => {
+        setPaymentState('idle')
+        setStep('menu')
+      }, 4000)
+      return
+    }
     if (data?.token_number != null) {
       setTokenData({ token: data.token_number, items: data.items as Array<{ name: string; quantity: number }>, total: data.total_amount, id: orderId })
       setShowTicket(true)
@@ -3078,6 +3086,14 @@ export default function CafeteriaPage() {
           <div style={{ fontSize: 48, marginBottom: 20 }}>✅</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Payment confirmed!</div>
           <div style={{ fontSize: 14, color: 'var(--muted)' }}>{cafeteria.name} is on it — we'll show your token the moment it's ready.</div>
+        </motion.div>
+      )}
+
+      {step === 'payment' && paymentState === 'denied' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: 'var(--mobile-spacing)', textAlign: 'center', paddingTop: 60 }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>❌</div>
+          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>The vendor has denied your order</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Your money will be refunded in a few minutes.</div>
         </motion.div>
       )}
 
