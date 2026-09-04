@@ -178,11 +178,14 @@ jobs:
       # arm64 — everything short of the signing step, which needs an Apple
       # Developer account. Installing on a device or TestFlight is a separate,
       # credentialled job to add once that account exists.
+      # -project, not -workspace. Capacitor 8 uses Swift Package Manager (the
+      # plugins come in through CapApp-SPM/Package.swift), so it never generates
+      # the App.xcworkspace that the older CocoaPods setup produced.
       - name: Build (unsigned)
         working-directory: ios/App
         run: |
           xcodebuild \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphoneos \
