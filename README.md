@@ -133,9 +133,12 @@ export ANDROID_KEY_PASSWORD=...
 cd android && ./gradlew bundleRelease      # .aab for Play Store
 ```
 
-If the variables are absent the signing block is skipped and Gradle falls back
-to the debug key, which Play rejects at upload — a missing secret fails loudly
-rather than shipping a wrongly-signed artifact.
+If the variables are absent the signing config is not applied and AGP emits an
+**unsigned** APK, which Play refuses at upload — a missing secret produces an
+obviously unusable artifact rather than a plausible-looking one signed with the
+wrong key. CI enforces this too: the verification job builds unsigned on every
+push, and the signed `release-android` job runs only on a `v*` tag or a manual
+dispatch, failing up front if a required secret is missing.
 
 ### Two route shapes
 

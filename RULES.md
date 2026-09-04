@@ -48,7 +48,9 @@ delete before pushing.
   `'use client'` file, it is already compromised.
 - Signing material (`*.keystore`, `*.jks`, `*.p12`, `google-services.json`)
   lives in a password manager and in CI secrets. `.gitignore` and the scanner
-  both block it.
+  both block it. The keystore reaches CI as `ANDROID_KEYSTORE_BASE64`, is
+  written to the runner's temp dir, and is deleted in an `always()` step so it
+  does not survive a failed build.
 
 `scripts/scan-secrets.mjs` decodes JWT payloads rather than matching on shape,
 so a Supabase **storage signed URL** passes and a **service-role key** does not.

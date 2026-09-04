@@ -19,10 +19,10 @@ android {
     // Release signing is driven entirely by environment variables so no
     // keystore, password or alias ever lands in the repository. CI provides
     // them from encrypted secrets; a local release build reads them from the
-    // shell. When they are absent the block is skipped and Gradle falls back to
-    // the debug key, which Play refuses to accept — a missing secret therefore
-    // fails at upload rather than silently shipping an unsigned-for-production
-    // artifact.
+    // shell. When they are absent the signingConfig is not applied and AGP
+    // emits an unsigned APK, which Play refuses at upload — so a missing secret
+    // produces an obviously unusable artifact rather than a plausible-looking
+    // one signed with the wrong key.
     signingConfigs {
         release {
             def storePath = System.getenv("ANDROID_KEYSTORE_PATH")
