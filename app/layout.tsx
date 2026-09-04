@@ -32,8 +32,21 @@ const IS_APP_BUILD = process.env.NEXT_PUBLIC_BUILD_TARGET === 'app'
 export const metadata: Metadata = {
   title: 'Yoters',
   description: 'Skip the restaurant rush. Pre-book your meal, walk in, pick up, leave.',
+  // apple-touch-icon is the ONLY icon iOS Safari uses for "Add to Home
+  // Screen" — it ignores the web manifest's icons entirely. Without it an
+  // iPhone shows a screenshot of the page instead of the logo.
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Yoters',
+    statusBarStyle: 'default',
   }
 }
 
