@@ -1210,7 +1210,14 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   // moment that group opens — its first present member, per the click
   // handler below — not by the group's own label, so each entry here is
   // keyed by that first member rather than by the printed section name.
-  'Whole Wheat': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg', // Bread's & Paratha's
+  // Bread's & Paratha's has 5 members but only its first-present one keys the
+  // hero lookup — so switching sub-category pills within the group (Whole
+  // Wheat / Parathe / Naan / Kulche) would otherwise blank the banner. Same
+  // image repeated under each so the banner stays put across the group.
+  'Whole Wheat': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
+  'Parathe': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
+  'Naan': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
+  'Kulche': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
   'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png', // Rice & Noodles
   'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg', // Rice Bowls & Combos
   'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes%20juice%20nd%20pasta.jpg', // Shake - Juice - Pasta
@@ -1241,6 +1248,13 @@ const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
   'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png', // Rice & Noodles
   'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20bowls%20and%20combos%20nonveg.png', // Rice Bowls & Combos
   'Chicken Tandoori Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/starters%20non%20veg.jpg', // Starters
+  // Bread's & Paratha's is currently veg-only in the DB, but the non-veg
+  // hero file exists in storage — wired here too so it's ready the moment
+  // a non-veg Whole Wheat/Parathe/Naan/Kulche category is added.
+  'Whole Wheat': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/bread\'s%20%26%20paratha\'s.jpg',
+  'Parathe': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/bread\'s%20%26%20paratha\'s.jpg',
+  'Naan': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/bread\'s%20%26%20paratha\'s.jpg',
+  'Kulche': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/bread\'s%20%26%20paratha\'s.jpg',
 }
 
 export default function CafeteriaPage() {
