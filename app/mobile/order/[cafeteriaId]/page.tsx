@@ -1356,7 +1356,12 @@ export default function CafeteriaPage() {
   const [showPunjabiHouseIntro, setShowPunjabiHouseIntro] = useState<boolean | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState('')
+  // Seeded from the URL so a round trip through /auth (add-to-cart or
+  // favourite while signed out) lands back on the exact category being
+  // browsed, not the restaurant's default. See handleAddItem/
+  // handleToggleFavourite, which put these on the `next` URL before
+  // redirecting to sign in.
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   // Whether the non-beverage pills are showing while the group is open.
   const [othersOpen, setOthersOpen] = useState(false)
   // Message shown when a time-gated pill (e.g. Shawarma before 1pm) is
@@ -1375,7 +1380,9 @@ export default function CafeteriaPage() {
   // rather than being buried inside Non-Veg. showVegFront is kept as a
   // derived boolean below for the handful of things (group side-scoping,
   // category hero images) that only ever cared about veg vs. everything else.
-  const [foodMode, setFoodMode] = useState<'veg' | 'nonveg' | 'egg'>('veg')
+  const [foodMode, setFoodMode] = useState<'veg' | 'nonveg' | 'egg'>(
+    (searchParams.get('foodMode') as 'veg' | 'nonveg' | 'egg') || 'veg'
+  )
   const showVegFront = foodMode === 'veg'
   const [showFilter, setShowFilter] = useState(false)
   const [showSearchBar, setShowSearchBar] = useState(false)
@@ -1838,6 +1845,16 @@ export default function CafeteriaPage() {
   const categoryDisplayMap: { [key: string]: string } = { 'Juice': 'Juice @59' }
   const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
 
+  // Where to send the customer back to after signing in — this exact menu,
+  // veg/non-veg/egg toggle and category included, not just the bare page
+  // path. Works the same for every restaurant since foodMode/selectedCategory
+  // aren't Punjabi-House-specific. Restored on mount by the searchParams
+  // reads on selectedCategory/foodMode's useState above.
+  const authRedirectNext = () => {
+    const qs = new URLSearchParams({ foodMode, category: selectedCategory })
+    return `${window.location.pathname}?${qs.toString()}`
+  }
+
   // Browsing this menu is open to anyone; the first add-to-cart is where we ask
   // who you are. `next` is this exact restaurant's URL, so signing in returns
   // you to the menu you were reading rather than to /browse.
@@ -1862,7 +1879,7 @@ export default function CafeteriaPage() {
     }
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
+      router.push(`/auth?mode=login&next=${encodeURIComponent(authRedirectNext())}`)
       return
     }
 
@@ -1896,7 +1913,7 @@ export default function CafeteriaPage() {
   const handleToggleFavourite = async (item: MenuItem) => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push(`/auth?mode=login&next=${encodeURIComponent(window.location.pathname)}`)
+      router.push(`/auth?mode=login&next=${encodeURIComponent(authRedirectNext())}`)
       return
     }
     toggleFavourite({ menuId: item.id, name: item.name, description: item.description, price: item.price, category: item.category, cafeteriaId, cafeteriaName: cafeteria?.name ?? '' })
