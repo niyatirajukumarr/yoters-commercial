@@ -1463,6 +1463,11 @@ export default function CafeteriaPage() {
 
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'confirmed' | 'failed' | 'denied'>('idle')
   const pollRef = useRef<NodeJS.Timeout>(undefined)
+  // Set right before redirecting to /auth so the unmount-cleanup below skips
+  // clearing the cart for that one trip — the cart is meant to survive a
+  // sign-in round trip; every other way of leaving this page (a different
+  // restaurant, going back to /browse) still wipes it, same as before.
+  const skipCartClearOnAuthRedirect = useRef(false)
   const [confirmedTotal, setConfirmedTotal] = useState(0)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [showCartSheet, setShowCartSheet] = useState(false)
@@ -1864,10 +1869,11 @@ export default function CafeteriaPage() {
   // there is no window early in the page's life where isAuthed is still null
   // and a guest could slip an item in.
   //
-  // The tapped item is deliberately not carried across. The cart is cleared
-  // when this page unmounts, so it could not survive the trip anyway, and
+  // The tapped item itself is deliberately not added before redirecting —
   // re-tapping ADD on return is one action rather than a cart that silently
-  // filled itself.
+  // filled itself. Whatever was already in the cart, though, does survive
+  // the trip: skipCartClearOnAuthRedirect stops the usual clear-on-unmount
+  // for this one navigation.
   const handleAddItem = async (item: MenuItem) => {
     // The browse/home lists already block this by graying out the card and
     // hijacking its onClick — but that's their gate, not this page's. Anyone
@@ -1879,6 +1885,7 @@ export default function CafeteriaPage() {
     }
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
+      skipCartClearOnAuthRedirect.current = true
       router.push(`/auth?mode=login&next=${encodeURIComponent(authRedirectNext())}`)
       return
     }
@@ -1913,6 +1920,7 @@ export default function CafeteriaPage() {
   const handleToggleFavourite = async (item: MenuItem) => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
+      skipCartClearOnAuthRedirect.current = true
       router.push(`/auth?mode=login&next=${encodeURIComponent(authRedirectNext())}`)
       return
     }
@@ -2151,9 +2159,11 @@ export default function CafeteriaPage() {
 
   useEffect(() => () => clearInterval(pollRef.current), [])
 
-  // Clear cart when user leaves this page
+  // Clear cart when user leaves this page — except the /auth round trip,
+  // which sets skipCartClearOnAuthRedirect first so the cart is there when
+  // they land back on this same menu.
   useEffect(() => {
-    return () => { clearCart() }
+    return () => { if (!skipCartClearOnAuthRedirect.current) clearCart() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
