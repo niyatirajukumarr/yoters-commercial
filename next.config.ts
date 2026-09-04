@@ -24,9 +24,6 @@ if (host) {
   remotePatterns.push({ protocol: 'https', hostname: host })
 }
 
-// Same-origin for API responses; overridable via env for a known frontend origin.
-const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || ''
-
 // Content-Security-Policy scoped to the integrations this app actually uses
 // (Razorpay checkout, Supabase REST/Realtime, Google Maps/Leaflet tiles).
 // 'unsafe-inline' is required because the app renders inline <style> blocks and
@@ -68,20 +65,11 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
-      // Scope CORS on API responses to the app origin instead of '*'.
-      ...(APP_ORIGIN
-        ? [
-            {
-              source: '/api/(.*)',
-              headers: [
-                { key: 'Access-Control-Allow-Origin', value: APP_ORIGIN },
-                { key: 'Vary', value: 'Origin' },
-                { key: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
-                { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
-              ],
-            },
-          ]
-        : []),
+      // CORS for /api is NOT set here. A static header can only carry one
+      // Access-Control-Allow-Origin value, and the API has to serve three
+      // callers: the website, and the mobile app's two device origins
+      // (https://localhost on Android, capacitor://localhost on iOS). Choosing
+      // the value per request needs lib/cors.ts, applied in proxy.ts.
     ]
   },
 }

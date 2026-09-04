@@ -130,6 +130,13 @@ one source of truth, two build targets. `README.md` has the build commands.
 - **Never call `fetch('/api/...')` directly.** Use `apiFetch` from `lib/api.ts`.
   A relative path resolves against the device in the app build. `apiFetch` also
   attaches the Supabase bearer token.
+- **Never add a CORS header in `next.config.ts`.** A static header carries one
+  origin; the API serves three (the site, plus `https://localhost` and
+  `capacitor://localhost` from the app). `lib/cors.ts` picks per request and
+  `proxy.ts` applies it. Adding a new allowed origin means
+  `API_ALLOWED_ORIGINS`, never a wildcard — and never
+  `Access-Control-Allow-Credentials`, since identity is a bearer token and
+  ambient credentials would let a hostile page ride a logged-in session.
 - Native code paths live behind `lib/native/index.ts` and return early on web,
   so the website is never affected by them.
 - `android/` is committed on purpose: the manifest, the network security config
