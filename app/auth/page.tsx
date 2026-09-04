@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -82,7 +84,7 @@ export default function AuthPage() {
     if (!email || !password) { setError('Incorrect email or password'); return }
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -112,7 +114,7 @@ export default function AuthPage() {
     if (!consent) { setError('Please agree to the Privacy Policy and Terms to continue.'); return }
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await apiFetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name, phone, consent: true, consentVersion: CONSENT_VERSION }),

@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useState, useEffect, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { motion } from 'framer-motion'
@@ -43,7 +45,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
   /** Resolve typed text to a point, so a manual address can still be delivered to. */
   const geocodeAddress = async (q: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const res = await apiFetch(`/api/geocode?q=${encodeURIComponent(q)}`)
       const d = await res.json()
       if (typeof d?.lat === 'number' && typeof d?.lng === 'number') {
         return { lat: d.lat, lng: d.lng }
@@ -54,7 +56,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+      const res = await apiFetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
       const d = await res.json()
       if (d?.address) return d.address as string
     } catch {}
@@ -229,7 +231,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
                   markerRef.current.setLatLng([lat, lng])
                   mapInstanceRef.current.setView([lat, lng], 17)
                 }
-                const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+                const res = await apiFetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
                 const d = await res.json()
                 if (d?.address) setAddress(d.address)
                 setCoords({ lat, lng })

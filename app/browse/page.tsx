@@ -1,5 +1,7 @@
 'use client'
 
+import { orderHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -379,7 +381,7 @@ export default function StudentHome() {
                         restaurant added later. */}
                     <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`} style={{ filter: c.is_closed ? 'grayscale(100%) brightness(0.7)' : 'none', opacity: c.is_closed ? 0.5 : 1, transition: 'all 0.2s' }}>
                       <Link
-                        href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`}
+                        href={c.is_closed ? '#' : orderHref(generateSlug(c.name))}
                         aria-label={`Open ${c.name}`}
                         style={{ display: 'block', width: '100%', height: '100%' }}
                         onClick={c.is_closed ? handleClosedCafeClick : undefined}
@@ -432,7 +434,7 @@ export default function StudentHome() {
                           </div>
                         </div>
                       )}
-                      <Link href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`} onClick={c.is_closed ? handleClosedCafeClick : undefined}>
+                      <Link href={c.is_closed ? '#' : orderHref(generateSlug(c.name))} onClick={c.is_closed ? handleClosedCafeClick : undefined}>
                         <motion.button
                           className="cafe-see-menu-btn"
                           whileHover={!c.is_closed ? { scale: 1.05, boxShadow: '0 8px 20px rgba(232,51,74,0.3)' } : {}}

@@ -1,5 +1,7 @@
 'use client'
 
+import { orderHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useRouter } from 'next/navigation'
@@ -16,7 +18,7 @@ export default function FavouritesPage() {
     sessionStorage.setItem('yoters_reorder', JSON.stringify({
       menuId: fav.menuId, name: fav.name, price: fav.price, quantity: 1
     }))
-    router.push(`/mobile/order/${fav.cafeteriaId}`)
+    router.push(orderHref(fav.cafeteriaId))
   }
 
   return (

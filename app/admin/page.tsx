@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -217,7 +219,7 @@ export default function AdminDashboard() {
       // Send the current session's access token so the API can verify the
       // caller is an authenticated admin server-side.
       const { data: { session } } = await supabase.auth.getSession()
-      const response = await fetch('/api/admin/initiate-payout', {
+      const response = await apiFetch('/api/admin/initiate-payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

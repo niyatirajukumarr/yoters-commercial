@@ -1,5 +1,9 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
+import { orderHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -107,7 +111,7 @@ function PaymentPageContent() {
 
         // Create Razorpay order
         const response = await withTimeout(
-          fetch('/api/razorpay/create-order', {
+          apiFetch('/api/razorpay/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -184,7 +188,7 @@ function PaymentPageContent() {
 
           setTimeout(() => {
             if (window.opener) window.close()
-            else router.push(slug ? `/mobile/order/${slug}` : `/mobile`)
+            else router.push(slug ? orderHref(slug) : '/mobile')
           }, 4000)
           return
         }
@@ -246,7 +250,7 @@ function PaymentPageContent() {
             razorpay_signature: response.razorpay_signature ? 'present' : 'MISSING',
           })
           // Verify signature server-side before trusting the payment, then mark order as paid
-          const verifyRes = await fetch('/api/razorpay/verify-payment', {
+          const verifyRes = await apiFetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -278,7 +282,7 @@ function PaymentPageContent() {
             setTimeout(() => window.close(), 3000)
           } else {
             const slug = cafeSlugRef.current || (orderId ? await getCafeSlug(orderId) : null)
-            setTimeout(() => router.push(slug ? `/mobile/order/${slug}` : `/mobile`), 3000)
+            setTimeout(() => router.push(slug ? orderHref(slug) : '/mobile'), 3000)
           }
         },
         modal: {

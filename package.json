@@ -7,7 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run lint && npm test",
+    "build:app": "node scripts/build-app.mjs",
+    "app:sync": "node scripts/build-app.mjs && npx cap sync",
+    "app:android": "npm run app:sync && npx cap open android",
+    "app:ios": "npm run app:sync && npx cap open ios",
+    "secrets:scan": "node scripts/scan-secrets.mjs",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

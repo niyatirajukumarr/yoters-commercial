@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -20,7 +22,7 @@ export default function Settings() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setMsg('Please sign in again to download your data.'); setBusy(null); return }
-      const res = await fetch('/api/account/export', {
+      const res = await apiFetch('/api/account/export', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
       if (!res.ok) { setMsg('Could not export your data. Please try again.'); setBusy(null); return }
@@ -41,7 +43,7 @@ export default function Settings() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setMsg('Please sign in again to delete your account.'); setBusy(null); return }
-      const res = await fetch('/api/account/delete', {
+      const res = await apiFetch('/api/account/delete', {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })

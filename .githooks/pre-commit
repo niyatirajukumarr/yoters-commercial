@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+# Yoters pre-commit gate. Enable once per clone with:
+#
+#   git config core.hooksPath .githooks
+#
+# (npm run prepare does this for you after npm install.)
+#
+# Ordered cheapest-first so the common failure is reported in seconds.
+set -e
+
+echo "→ scanning staged changes for secrets"
+node scripts/scan-secrets.mjs
+
+# Only worth running when code actually changed; a docs-only commit skips them.
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(ts|tsx|mjs|js)$'; then
+  echo "→ typecheck"
+  npm run typecheck --silent
+
+  echo "→ lint"
+  npm run lint --silent
+fi
+
+echo "✓ pre-commit checks passed"

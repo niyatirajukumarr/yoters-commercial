@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yoters</string>
+    <string name="title_activity_main">Yoters</string>
+    <string name="package_name">com.yoters.app</string>
+    <string name="custom_url_scheme">com.yoters.app</string>
+</resources>
