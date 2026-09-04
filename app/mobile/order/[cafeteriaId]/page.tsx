@@ -1225,9 +1225,9 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Rice Variety': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png',
   // Rice Bowls & Combos has 4 members; the first three share one hero,
   // Refreshment's gets its own dedicated banner.
-  'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg', // Rice Bowls & Combos
-  'TPH Rice Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg',
-  'TPH Chinese Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg',
+  'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/TPH%20Signature.jpg', // Rice Bowls & Combos
+  'TPH Rice Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/TPH%20Signature.jpg',
+  'TPH Chinese Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/TPH%20Signature.jpg',
   "Refreshment's": 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/refreshments.jpg',
   'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes%20juice%20nd%20pasta.jpg', // Shake - Juice - Pasta
   'Veg Tandoor Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/starters.jpg', // Starters
