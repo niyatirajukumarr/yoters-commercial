@@ -142,6 +142,10 @@ one source of truth, two build targets. `README.md` has the build commands.
 - `android/` is committed on purpose: the manifest, the network security config
   and the signing setup are security surface and belong in review. Its build
   output is ignored.
+- **iOS permissions live in `ios/App/App/Info.plist`, and a missing usage string
+  is a crash, not a warning** — iOS kills the app the moment it requests a
+  permission it has not declared. Any new native capability needs its string
+  added there in the same change, and its Android permission in the manifest.
 - Release builds run R8. Any new Capacitor plugin needs a keep rule in
   `android/app/proguard-rules.pro`, or it will build, install, and then silently
   do nothing at runtime.
