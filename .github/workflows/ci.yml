@@ -8,7 +8,12 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  # `labeled` is included so the `ios` label actually starts the iOS job.
+  # Without it, pull_request fires only on opened/synchronize/reopened, and
+  # adding the label does nothing until the next push — which is not what the
+  # job's own condition implies.
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
       release:
