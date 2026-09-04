@@ -70,7 +70,7 @@ export default function OrderTrackingPage() {
               sessionStorage.setItem(`track-${orderId}`, JSON.stringify({ order: payload.new, cafeteria: cafData }))
             })
           .subscribe()
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import _Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, MenuItem, Order } from '@/lib/types'
@@ -248,7 +248,7 @@ export default function VendorDashboard() {
     return istDate.toISOString().split('T')[0]
   }
   const [selectedDate, setSelectedDate] = useState<string>(getISTDateString())
-  const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
+  const [_ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
   const [loadingDate, setLoadingDate] = useState(false)
 
   const fetchSummary = useCallback(async (cafId: string, date?: string) => {
@@ -267,7 +267,7 @@ export default function VendorDashboard() {
       )
       if (!res.ok) return
       setSummary(await res.json())
-    } catch (error) {
+    } catch {
     }
   }, [])
 
@@ -334,7 +334,7 @@ export default function VendorDashboard() {
           setOrdersCache(prev => ({ ...prev, [date]: data as Order[] }))
         }
       }
-    } catch (error) {
+    } catch {
     }
   }, [startAlertSound, stopAlertSound])
 
@@ -362,7 +362,7 @@ export default function VendorDashboard() {
           'Menu fetch timed out'
         ) as any
         if (menu) setMenuItems(menu)
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -447,7 +447,7 @@ export default function VendorDashboard() {
       if (!res.ok) return
       const json = await res.json()
       if (json.orders) setAllTimeOrders(json.orders as Order[])
-    } catch (error) {
+    } catch {
     } finally {
       setLoadingAllTimeOrders(false)
     }
@@ -578,7 +578,7 @@ export default function VendorDashboard() {
         setMsg(`✅ Delivery ${newState ? 'enabled' : 'disabled'}`)
         setTimeout(() => setMsg(''), 2000)
       }
-    } catch (err) {
+    } catch {
       setMsg('❌ Failed to toggle delivery')
       setTimeout(() => setMsg(''), 2000)
     } finally {
@@ -1301,7 +1301,7 @@ export default function VendorDashboard() {
           {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
             // Filter orders by selected date (handle IST timezone)
-            const isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
+            const _isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
             const filterByDate = (order: Order) => {
               if (summaryRange === 'allTime') return true
               // Convert UTC created_at to IST date for comparison

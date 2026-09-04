@@ -12,15 +12,15 @@ import { generateSlug } from '@/lib/utils/slug'
 import { withTimeout } from '@/lib/utils/withTimeout'
 import { istHour } from '@/lib/day-window'
 import {
-  ChevronLeft, Plus, Minus, QrCode, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
+  ChevronLeft, Heart, Home, Search, ShoppingBag, User, SlidersHorizontal,
   MoreHorizontal,
   Citrus, Martini, Coffee, Milk, IceCreamCone, CupSoda, Hamburger, Sandwich, Utensils,
   Egg, Drumstick, Croissant, Soup, Sparkles, Zap, UtensilsCrossed, Gift, Flame,
 } from 'lucide-react'
 import { InteractiveMenu } from '@/components/ui/modern-mobile-menu'
 import { WrapIcon } from '@/components/icons/WrapIcon'
-import { FlipButton } from '@/components/ui/flip-button'
-import { focusPageSearch } from '@/lib/utils/focusPageSearch'
+
+
 import { useFavourites } from '@/lib/hooks/useFavourites'
 import DeliveryMapModal from '@/components/DeliveryMapModal'
 import { stagger, staggerItem, viewportOnce, hoverScale, transitionEase } from '@/lib/motion'
@@ -333,7 +333,7 @@ const addonsForCategory = (cat: string): CategoryAddOn[] => CATEGORY_ADDONS[cat.
 // The FSSAI veg/non-veg mark — square outline with a dot for veg, a triangle
 // for non-veg. Same shape and colours the dish cards use, at a size that suits
 // sitting inline next to a label.
-function VegMark({ veg = false }: { veg?: boolean }) {
+function _VegMark({ veg = false }: { veg?: boolean }) {
   const colour = veg ? '#2e9e6b' : '#b8321f'
   return (
     <span
@@ -1468,7 +1468,7 @@ export default function CafeteriaPage() {
   // sign-in round trip; every other way of leaving this page (a different
   // restaurant, going back to /browse) still wipes it, same as before.
   const skipCartClearOnAuthRedirect = useRef(false)
-  const [confirmedTotal, setConfirmedTotal] = useState(0)
+  const [_confirmedTotal, setConfirmedTotal] = useState(0)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [showCartSheet, setShowCartSheet] = useState(false)
 
@@ -1563,7 +1563,7 @@ export default function CafeteriaPage() {
           'Cafe orders fetch timed out'
         ) as any
         if (data) setCafeOrders(data as Order[])
-      } catch (error) {
+      } catch {
         // Error fetching orders - will retry
       } finally {
         setLoadingCafeOrders(false)
@@ -1607,7 +1607,7 @@ export default function CafeteriaPage() {
         if (active && res.ok) {
           setPopularity({ byName: data.byName || {}, byId: data.byId || {}, max: data.max || 0 })
         }
-      } catch (e) {
+      } catch {
         // Popularity fetch failed - using defaults
       }
     }
@@ -1670,7 +1670,7 @@ export default function CafeteriaPage() {
       setDeliveryDistance(chargeInfo.distance)
       setDeliveryCharge(chargeInfo.charge)
       setDeliveryChargeError(chargeInfo.message || null)
-    } catch (err) {
+    } catch {
       // Error calculating delivery charge - using default
       setDeliveryChargeError('Error calculating delivery charge')
     }
@@ -1848,7 +1848,7 @@ export default function CafeteriaPage() {
   })
 
   const categoryDisplayMap: { [key: string]: string } = { 'Juice': 'Juice @59' }
-  const displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
+  const _displayCategory = (cat: string) => categoryDisplayMap[cat] || cat
 
   // Where to send the customer back to after signing in — this exact menu,
   // veg/non-veg/egg toggle and category included, not just the bare page
@@ -1976,7 +1976,7 @@ export default function CafeteriaPage() {
         .gte('created_at', todayStart.toISOString())
       const tokenNumber = (count ?? 0) + 1
 
-      const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+      const _parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
       const orderTotal = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
 
       // Add 10-second timeout to prevent infinite loading
@@ -2077,7 +2077,7 @@ export default function CafeteriaPage() {
 
   // Payment modal handler
   function handleOpenUPI() {
-    const parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
+    const _parcelChargeAmount = orderType !== 'dine_in' ? dynamicParcelCharge : 0
     const paymentAmount = orderType === 'delivery' ? total + dynamicParcelCharge + deliveryCharge : orderType === 'takeaway' ? total + dynamicParcelCharge : total
     const paymentUrl = `/payment?orderId=${orderId}&amount=${paymentAmount}&name=${encodeURIComponent(formData.name)}`
     const isMobile = () => {
@@ -3093,7 +3093,7 @@ export default function CafeteriaPage() {
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Your Order Preview</h3>
             <motion.div initial="hidden" animate="visible" variants={stagger}>
               {cartItem.map(item => {
-                const menuItem = menuItems.find(m => m.id === item.menuId)
+                const _menuItem = menuItems.find(m => m.id === item.menuId)
                 return (
                   <motion.div key={cartLineKey(item)} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
                     <div style={{ width: 60, height: 60, borderRadius: 8, background: 'var(--surface2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>

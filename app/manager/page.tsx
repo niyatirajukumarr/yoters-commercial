@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import _Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Order, Cafeteria, Notification } from '@/lib/types'
 import { isManager } from '@/lib/config'
-import { LogOut, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { stagger, staggerItem, hoverScale, hoverLift } from '@/lib/motion'
 import { withTimeout } from '@/lib/utils/withTimeout'
 
@@ -64,7 +64,7 @@ export default function ManagerDashboard() {
           'Notifications fetch timed out'
         ) as any
         if (notifData) setActivities(notifData as Notification[])
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }

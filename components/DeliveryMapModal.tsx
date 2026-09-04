@@ -26,9 +26,9 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
 
   const [address, setAddress] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
-  const [loadingSearch, setLoadingSearch] = useState(false)
+  const [_searchQuery, setSearchQuery] = useState('')
+  const [_suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
+  const [_loadingSearch, setLoadingSearch] = useState(false)
   const [landmark, setLandmark] = useState('')
   const [locating, setLocating] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -37,7 +37,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
   // landmark is what placed it.
   const [landmarkPinnedFor, setLandmarkPinnedFor] = useState<string | null>(null)
   const [landmarkLocating, setLandmarkLocating] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const _debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const landmarkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /** Resolve typed text to a point, so a manual address can still be delivered to. */
@@ -61,7 +61,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   }
 
-  const searchAddress = async (q: string) => {
+  const _searchAddress = async (q: string) => {
     if (!q.trim()) { setSuggestions([]); return }
     setLoadingSearch(true)
     try {

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Bell, Leaf, HelpCircle, Info, Shield, Download, Trash2 } from 'lucide-react'
+import { ArrowLeft, Leaf, HelpCircle, Info, Shield, Download, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { stagger, staggerItem, hoverScale } from '@/lib/motion'

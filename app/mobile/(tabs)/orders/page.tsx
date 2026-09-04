@@ -49,7 +49,7 @@ export default function MobileOrders() {
           setCafeterias(map)
           sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
         }
-      } catch (error) {
+      } catch {
       }
     }
     fetch()
@@ -83,7 +83,7 @@ export default function MobileOrders() {
           setOrders(data as Order[])
           sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
         }
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }

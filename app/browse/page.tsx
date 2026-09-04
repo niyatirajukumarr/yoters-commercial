@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { generateSlug } from '@/lib/utils/slug'
-import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
+import { Cafeteria, CafeteriaQueue } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 import { withTimeout } from '@/lib/utils/withTimeout'
@@ -108,7 +108,7 @@ export default function StudentHome() {
         setCafeterias(combined as CafeteriaWithQueue[])
         sessionStorage.setItem('browse-cache', JSON.stringify(combined))
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false)
     }
@@ -135,7 +135,7 @@ export default function StudentHome() {
     c.location.toLowerCase().includes(search.toLowerCase())
   )
 
-  const waitColor = (level: string) => ({
+  const _waitColor = (level: string) => ({
     low: { bg: 'var(--green-bg)', color: 'var(--green)', border: 'rgba(46,158,107,0.2)' },
     mid: { bg: 'var(--yellow-bg)', color: 'var(--yellow)', border: 'rgba(212,130,26,0.2)' },
     high: { bg: 'var(--red-bg)', color: 'var(--red)', border: 'rgba(232,51,74,0.2)' },

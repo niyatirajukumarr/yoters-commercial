@@ -45,7 +45,7 @@ export default function MobileHome() {
         setCafeterias(dataWithQueues as CafeteriaWithQueue[])
         sessionStorage.setItem('home-cache', JSON.stringify(dataWithQueues))
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false)
     }

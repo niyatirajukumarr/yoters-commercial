@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import TeamShowcase from '@/components/ui/team-showcase'
 
@@ -14,7 +14,7 @@ export default function LandingPage() {
   const [isChecking, setIsChecking] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [user, setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
+  const [user, _setUser] = useState<{ id: string; name?: string; email?: string } | null>(null)
   const [restaurants, setRestaurants] = useState<{ name: string; image: string; image_url?: string }[]>([])
 
   // Safety timeout: Force page to render after 15 seconds max
@@ -82,7 +82,7 @@ export default function LandingPage() {
           // Unauthenticated → render landing (with Log in / Sign up)
           if (isMounted) setIsChecking(false)
         }
-      } catch (error) {
+      } catch {
         if (isMounted) setIsChecking(false)
       }
     }
@@ -120,7 +120,7 @@ export default function LandingPage() {
             setRestaurants(cafeList)
           }
         }
-      } catch (error) {
+      } catch {
         if (isMounted) setRestaurants([])
       }
     }
@@ -133,7 +133,7 @@ export default function LandingPage() {
     }
   }, [router])
 
-  async function handleLogout() {
+  async function _handleLogout() {
     await supabase.auth.signOut()
     router.push('/auth')
   }
@@ -155,7 +155,7 @@ export default function LandingPage() {
       if (video && video.paused) {
         const playPromise = video.play()
         if (playPromise !== undefined) {
-          playPromise.catch((error) => {
+          playPromise.catch((_error) => {
             // If autoplay fails, try again on first user interaction
             const playOnInteraction = () => {
               video.play().catch(() => {})
@@ -210,7 +210,7 @@ export default function LandingPage() {
   const goOrder = () => router.push(orderHref)
 
 
-  const aboutCards = [
+  const _aboutCards = [
     { icon: '📅', title: 'Pre-book Before Break', desc: "Order your meal before your break starts so it's ready the moment you walk in." },
     { icon: '⚡', title: 'Zero Queue Time', desc: 'Walk in, pick up your food, and leave — no waiting in lines, no wasted break time.' },
     { icon: '♻️', title: 'Reduce Food Waste', desc: 'Restaurants prepare based on real demand — exact quantities, fresher food, less waste.' },
@@ -242,12 +242,12 @@ export default function LandingPage() {
     visible: { transition: { staggerChildren: 0.12 } }
   }
 
-  const slideLeft = {
+  const _slideLeft = {
     hidden: { opacity: 0, x: -60 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: transitionEase } }
   }
 
-  const slideRight = {
+  const _slideRight = {
     hidden: { opacity: 0, x: 60 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: transitionEase } }
   }
@@ -257,22 +257,6 @@ export default function LandingPage() {
     visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease: transitionEase } }
   }
 
-  function Section({ children, className, id, style }: { children: React.ReactNode, className?: string, id?: string, style?: React.CSSProperties }) {
-    const ref = useRef(null)
-    const inView = useInView(ref, { once: true, margin: '-80px' })
-    return (
-      <motion.section
-        ref={ref}
-        id={id}
-        className={className}
-        style={style}
-        initial="hidden"
-        animate={inView ? 'visible' : 'hidden'}
-      >
-        {children}
-      </motion.section>
-    )
-  }
 
   if (isChecking) {
     return <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>

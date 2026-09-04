@@ -20,7 +20,7 @@ interface Cafeteria {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [_user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [cafeterias, setCafeterias] = useState<Cafeteria[]>([])
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
         setUser(session.user)
         setIsAuthorized(true)
         await fetchAllPayoutData()
-      } catch (error) {
+      } catch {
         setLoading(false)
       }
     }
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
       setCafeterias(Object.values(cafePayouts))
       setTotalReceived(grandTotal)
       setLoading(false)
-    } catch (error) {
+    } catch {
       setLoading(false)
     }
   }
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
     setEditingUPI({ ...editingUPI, [cafeId]: currentUPI || '' })
   }
 
-  const handleSaveUPI = async (cafeId: string, cafeName: string) => {
+  const handleSaveUPI = async (cafeId: string, _cafeName: string) => {
     const newUPI = editingUPI[cafeId]
 
     if (!newUPI) {
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleSendPayout = async (cafe: Cafeteria) => {
+  const _handleSendPayout = async (cafe: Cafeteria) => {
     if (!cafe.upi_id) {
       alert('Please add UPI ID for this cafeteria first')
       setEditingUPI({ ...editingUPI, [cafe.id]: '' })

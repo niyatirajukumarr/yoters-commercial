@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
+import { logger } from '@/lib/logger'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
@@ -20,7 +21,7 @@ function PaymentPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
-  const amount = searchParams.get('amount')
+  const _amount = searchParams.get('amount')
   const name = searchParams.get('name')
 
   const [loading, setLoading] = useState(true)
@@ -58,7 +59,7 @@ function PaymentPageContent() {
         }
       }
       return null
-    } catch (err) {
+    } catch {
       return null
     }
   }
@@ -187,7 +188,7 @@ function PaymentPageContent() {
           }, 4000)
           return
         }
-      } catch (err) {
+      } catch {
         // Polling error - continue retrying
       }
 
@@ -237,8 +238,8 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
-          console.log('[Razorpay Handler] Payment completed, response:', response)
-          console.log('[Razorpay Handler] Calling verify-payment with:', {
+          logger.debug('[Razorpay Handler] Payment completed, response:', response)
+          logger.debug('[Razorpay Handler] Calling verify-payment with:', {
             orderId,
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -256,19 +257,19 @@ function PaymentPageContent() {
             }),
           })
 
-          console.log('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
+          logger.debug('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
           const verifyData = await verifyRes.json()
-          console.log('[Razorpay Handler] verify-payment response data:', verifyData)
+          logger.debug('[Razorpay Handler] verify-payment response data:', verifyData)
 
           if (!verifyRes.ok) {
-            console.error('[Razorpay Handler] Verification failed:', verifyData)
+            logger.error('[Razorpay Handler] Verification failed:', verifyData)
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setProcessing(false)
             setError('Payment verification failed. If money was deducted, contact support.')
             return
           }
 
-          console.log('[Razorpay Handler] Payment verified successfully!')
+          logger.debug('[Razorpay Handler] Payment verified successfully!')
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)
           setPaymentConfirmed(true)

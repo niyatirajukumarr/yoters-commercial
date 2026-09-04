@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Cafeteria, CafeteriaQueue, MenuItem, Order, OrderItem, formatWait } from '@/lib/types'
+import { Cafeteria, CafeteriaQueue, MenuItem, Order, OrderItem } from '@/lib/types'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { isValidEmail, isValidPhone } from '@/lib/validation'
 import { TokenTicket } from '@/components/TokenTicket'
@@ -176,7 +176,7 @@ function StudentPageInner() {
         const newStock = Math.max(0, currentItem.stock_quantity - quantity)
         await supabase.from('cafeteria_menu').update({ stock_quantity: newStock }).eq('id', menuItemId)
       }
-    } catch (err) {
+    } catch {
     }
   }
 

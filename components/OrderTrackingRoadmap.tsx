@@ -11,7 +11,7 @@ interface OrderTrackingRoadmapProps {
   cafeteriaName?: string
 }
 
-export function OrderTrackingRoadmap({ order: initialOrder, cafeteriaName }: OrderTrackingRoadmapProps) {
+export function OrderTrackingRoadmap({ order: initialOrder }: OrderTrackingRoadmapProps) {
   const [order, setOrder] = useState<Order>(initialOrder)
 
   // Real-time subscription to order updates

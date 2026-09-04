@@ -60,7 +60,7 @@ export default function ProfilePage() {
         } else if (result.data) {
           setCafeterias(Object.fromEntries(result.data.map((c: any) => [c.id, c])))
         }
-      } catch (error) {
+      } catch {
       }
     }
     fetchCafeterias()
@@ -87,7 +87,7 @@ export default function ProfilePage() {
         } else if (result.data) {
           setOrders(result.data as Order[])
         }
-      } catch (error) {
+      } catch {
       } finally {
         setLoadingOrders(false)
       }
@@ -97,7 +97,7 @@ export default function ProfilePage() {
 
     // Real-time subscription for orders
     const channel = supabase.channel(`profile-orders-${user.phone}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `student_phone=eq.${user.phone}` }, (_payload) => {
         fetch() // Refetch orders on any change
       })
       .subscribe()

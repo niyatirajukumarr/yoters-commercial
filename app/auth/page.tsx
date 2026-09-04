@@ -35,7 +35,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [forgotSent, setForgotSent] = useState(false)
+  const [_forgotSent, setForgotSent] = useState(false)
   const [consent, setConsent] = useState(false)
 
   const isPasswordError = mode === 'signup' && PASSWORD_ERROR_PREFIXES.some(p => error.startsWith(p))
