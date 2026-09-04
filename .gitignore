@@ -81,3 +81,8 @@ GROWTH_STRATEGY.md
 
 # Stale worktree checkouts of this repo — 200MB+, and test runners walk them
 .claude/worktrees/
+
+# Internal growth & marketing strategy (local only — pricing, margins, CAC)
+GROWTH_STRATEGY.md
+MARKETING_*.md
+*_STRATEGY.md
