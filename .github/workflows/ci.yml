@@ -10,6 +10,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Also build a signed Play bundle (needs the release secrets)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -135,9 +140,15 @@ jobs:
 
   release-android:
     name: Android release bundle (signed)
-    # Only on an explicit run or a version tag. This is the job that touches the
-    # keystore, so it never runs on a pull request.
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    # A v* tag, or a manual run that explicitly ticks the release box. Running
+    # on every manual dispatch was wrong: the commonest reason to press "Run
+    # workflow" is to rebuild the APK after changing a secret, and that would
+    # fail here on the missing keystore and paint the whole run red for no
+    # reason. This job touches signing material, so it also never runs on a
+    # pull request.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && inputs.release)
     runs-on: ubuntu-latest
     environment: release
     steps:
