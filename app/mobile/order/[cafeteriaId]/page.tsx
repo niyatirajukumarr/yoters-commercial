@@ -1218,8 +1218,17 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Parathe': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
   'Naan': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
   'Kulche': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/bread%27s%20%26%20paratha%27s.jpg',
+  // Rice & Noodles (veg) has 3 members — same repeated-image treatment as
+  // Bread's & Paratha's above, so Fried Rice/Rice Variety don't blank out.
   'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png', // Rice & Noodles
+  'Fried Rice': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png',
+  'Rice Variety': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20and%20noodles%20veg.png',
+  // Rice Bowls & Combos has 4 members; the first three share one hero,
+  // Refreshment's gets its own dedicated banner.
   'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg', // Rice Bowls & Combos
+  'TPH Rice Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg',
+  'TPH Chinese Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos.jpg',
+  "Refreshment's": 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/refreshments.jpg',
   'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes%20juice%20nd%20pasta.jpg', // Shake - Juice - Pasta
   'Veg Tandoor Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/starters.jpg', // Starters
   'Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/thalis%20and%20combos.jpg', // Thali's & Combo's
@@ -1245,8 +1254,14 @@ const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
   'Chicken Delights': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20maincourse.jpg', // Non Veg Main Course
   'Non-Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20thalis%20and%20combos.png', // Thali's & Combo's
   'Fries': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/pasta-fries%20nonveg.png', // Shake - Juice - Pasta
+  // Rice & Noodles (non-veg) has 2 members, same image repeated.
   'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png', // Rice & Noodles
+  'Fried Rice': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png',
+  // Rice Bowls & Combos: first three members share one hero (Refreshment's
+  // has no non-veg dishes, per the group definition, so no entry here).
   'TPH Signature Combos': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20bowls%20and%20combos%20nonveg.png', // Rice Bowls & Combos
+  'TPH Rice Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20bowls%20and%20combos%20nonveg.png',
+  'TPH Chinese Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20bowls%20and%20combos%20nonveg.png',
   'Chicken Tandoori Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/starters%20non%20veg.jpg', // Starters
   // Bread's & Paratha's is currently veg-only in the DB, but the non-veg
   // hero file exists in storage — wired here too so it's ready the moment
