@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { apiUrl } from '@/lib/api'
 
 export interface TeamMember {
   id: string
@@ -16,7 +17,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     id: 'gowtham',
     name: 'BM Gowtham',
     role: 'Chief Executive Officer',
-    image: '/api/team-photo/gowtham',
+    image: apiUrl('/api/team-photo/gowtham'),
     column: 1,
     row: 1,
   },
@@ -24,7 +25,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     id: 'niyati',
     name: 'Niyati R',
     role: 'Chief Technical Officer',
-    image: '/api/team-photo/niyati',
+    image: apiUrl('/api/team-photo/niyati'),
     column: 2,
     row: 1,
   },
@@ -32,7 +33,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     id: 'shreyas',
     name: 'Shreyas D J',
     role: 'Head of External Affairs',
-    image: '/api/team-photo/shreyas',
+    image: apiUrl('/api/team-photo/shreyas'),
     column: 3,
     row: 2,
   },
@@ -40,7 +41,7 @@ const DEFAULT_MEMBERS: TeamMember[] = [
     id: 'rahul',
     name: 'Rahul B S',
     role: 'Founding Software Engineer',
-    image: '/api/team-photo/rahul',
+    image: apiUrl('/api/team-photo/rahul'),
     column: 3,
     row: 1,
   },
