@@ -24,6 +24,25 @@ android {
     // produces an obviously unusable artifact rather than a plausible-looking
     // one signed with the wrong key.
     signingConfigs {
+        // A stable key for the testing APK. Without one, every CI runner is a
+        // fresh machine and Gradle auto-creates a RANDOM ~/.android/debug.keystore,
+        // so each build is signed with a different key — and Android refuses to
+        // update an installed app whose signature changed ("App not installed").
+        // Testers would have to uninstall before every single update.
+        //
+        // Unset (a local build), this block is skipped and Gradle falls back to
+        // its own debug keystore, which is correct: on one machine that key is
+        // stable across builds anyway.
+        debug {
+            def debugStore = System.getenv("ANDROID_DEBUG_KEYSTORE_PATH")
+            if (debugStore) {
+                storeFile file(debugStore)
+                storePassword System.getenv("ANDROID_DEBUG_KEYSTORE_PASSWORD") ?: "android"
+                keyAlias System.getenv("ANDROID_DEBUG_KEY_ALIAS") ?: "androiddebugkey"
+                keyPassword System.getenv("ANDROID_DEBUG_KEY_PASSWORD") ?: "android"
+            }
+        }
+
         release {
             def storePath = System.getenv("ANDROID_KEYSTORE_PATH")
             if (storePath) {
@@ -51,6 +70,9 @@ android {
             // Keeps a side-loaded debug build from overwriting a store install.
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
+            if (System.getenv("ANDROID_DEBUG_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.debug
+            }
         }
     }
 }
