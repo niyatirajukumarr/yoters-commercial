@@ -98,17 +98,37 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # assembleRelease rather than assembleDebug on purpose: the release build
-      # is the one that runs R8, and a missing Capacitor keep rule only shows up
-      # there. No keystore is present, so this produces an unsigned APK — which
-      # is the right outcome for a check that must run on untrusted forks.
-      - name: Assemble (unsigned)
+      # Two APKs, because one artifact cannot do both jobs.
+      #
+      # assembleRelease is the build that runs R8, so it is the only one that
+      # proves a Capacitor keep rule is not missing. With no keystore it emits
+      # an UNSIGNED apk — correct for a check that must run on untrusted forks,
+      # but Android refuses to install an unsigned package
+      # (INSTALL_PARSE_FAILED_NO_CERTIFICATES), so it cannot be tested on a
+      # phone.
+      #
+      # assembleDebug is signed automatically with the local debug keystore, so
+      # it installs and runs. It carries the .debug applicationIdSuffix, so it
+      # sits alongside a store build rather than replacing it.
+      - name: Assemble release (R8 verification, unsigned)
         working-directory: android
         run: ./gradlew --no-daemon assembleRelease
 
+      - name: Assemble debug (installable for testing)
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      # The one to download and put on a phone.
       - uses: actions/upload-artifact@v4
         with:
-          name: yoters-unsigned-verification-apk
+          name: yoters-debug-apk-installable
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yoters-release-apk-unsigned-do-not-install
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 7

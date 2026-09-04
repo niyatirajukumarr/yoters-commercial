@@ -121,6 +121,27 @@ npx cap open ios             # opens Xcode
 to the web code; Capacitor copies from `out/`, so skipping it ships the previous
 bundle.
 
+### Getting a build onto a phone
+
+Every push produces two APKs, under the workflow run's **Artifacts**:
+
+| Artifact | Use |
+|---|---|
+| `yoters-debug-apk-installable` | **This is the one to install.** Signed with the debug keystore, so a phone will accept it. Installs as `com.yoters.app.debug`, alongside any store build. |
+| `yoters-release-apk-unsigned-do-not-install` | Proof that R8 did not strip anything. Unsigned, so Android rejects it with `INSTALL_PARSE_FAILED_NO_CERTIFICATES`. |
+
+Download the debug one, transfer it to the phone, and allow install from unknown
+sources when prompted.
+
+For it to reach a real backend, these repository secrets must be set
+(Settings → Secrets and variables → Actions) *before* the build runs — they are
+compiled into the APK, so a build made without them talks to placeholders:
+`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`.
+
+Note that `NEXT_PUBLIC_APP_URL` is *not* one of them: it is read server-side by
+lib/cors.ts, so it belongs in Vercel's environment variables, not here.
+
 ### Release signing
 
 Driven entirely by environment variables, so no keystore is ever in the repo:
