@@ -1,5 +1,9 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
+import { trackHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
@@ -49,7 +53,7 @@ export default function MobileOrders() {
           setCafeterias(map)
           sessionStorage.setItem('cafeterias-map', JSON.stringify(map))
         }
-      } catch (error) {
+      } catch {
       }
     }
     fetch()
@@ -83,7 +87,7 @@ export default function MobileOrders() {
           setOrders(data as Order[])
           sessionStorage.setItem(`orders-${user.phone}`, JSON.stringify(data))
         }
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -213,7 +217,7 @@ export default function MobileOrders() {
                       key={order.id}
                       variants={staggerItem}
                       {...hoverLift}
-                      onClick={() => router.push(`/mobile/track/${order.id}`)}
+                      onClick={() => router.push(trackHref(order.id))}
                       style={{
                         background: 'white',
                         border: '1px solid rgba(26,31,46,0.08)',
@@ -303,7 +307,7 @@ export default function MobileOrders() {
                             whileHover={{ x: 2 }}
                             onClick={(e) => {
                               e.stopPropagation()
-                              router.push(`/mobile/track/${order.id}`)
+                              router.push(trackHref(order.id))
                             }}
                             style={{
                               fontSize: 12,
@@ -326,7 +330,7 @@ export default function MobileOrders() {
                               e.stopPropagation()
                               if (!confirm('Delete this order?')) return
                               setDeleting(order.id)
-                              const res = await fetch('/api/delete-order', {
+                              const res = await apiFetch('/api/delete-order', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ orderId: order.id, studentPhone: user?.phone })

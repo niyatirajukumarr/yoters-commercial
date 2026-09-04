@@ -89,6 +89,81 @@ app/
 4. Vendor sees in dashboard → Accepts and prepares
 5. User notified → Picks up when ready
 
+## Mobile app (Android / iOS)
+
+The app is not a separate codebase. It is a Capacitor shell around a **static
+export of the customer screens** — same components, same Supabase client, same
+API. `scripts/build-app.mjs` copies the sources into `.app-build/`, drops what
+`output: 'export'` cannot represent (route handlers, `proxy.ts`, dynamic
+segments, staff screens), builds, and lifts the result into `out/`. The working
+tree is never modified, so a failed build costs nothing.
+
+The API stays on Vercel. The app reaches it over `NEXT_PUBLIC_API_BASE_URL`, and
+every protected route already authenticates from an `Authorization: Bearer`
+header rather than a cookie — which is what makes a device-hosted bundle work at
+all.
+
+### Build
+
+```bash
+# One-time, after cloning
+npm install
+npx cap add android          # and: npx cap add ios   (needs macOS + Xcode)
+
+# Every build
+NEXT_PUBLIC_API_BASE_URL=https://yoters.app npm run app:sync
+
+npx cap open android         # opens Android Studio
+npx cap open ios             # opens Xcode
+```
+
+`npm run app:sync` = static export + `npx cap sync`. Run it after **any** change
+to the web code; Capacitor copies from `out/`, so skipping it ships the previous
+bundle.
+
+### Release signing
+
+Driven entirely by environment variables, so no keystore is ever in the repo:
+
+```bash
+export ANDROID_KEYSTORE_PATH=/secure/path/yoters-release.jks
+export ANDROID_KEYSTORE_PASSWORD=...
+export ANDROID_KEY_ALIAS=yoters
+export ANDROID_KEY_PASSWORD=...
+cd android && ./gradlew bundleRelease      # .aab for Play Store
+```
+
+If the variables are absent the signing config is not applied and AGP emits an
+**unsigned** APK, which Play refuses at upload — a missing secret produces an
+obviously unusable artifact rather than a plausible-looking one signed with the
+wrong key. CI enforces this too: the verification job builds unsigned on every
+push, and the signed `release-android` job runs only on a `v*` tag or a manual
+dispatch, failing up front if a required secret is missing.
+
+### Two route shapes
+
+A static export has no server to resolve `/mobile/track/<id>`, and order ids do
+not exist at build time. The app therefore addresses those screens by query
+string. Both shapes render the identical component, and `lib/routes.ts` picks
+the right one per target — so **always link through `orderHref` / `trackHref` /
+`deliveryHref`**, never with a hardcoded template literal.
+
+| Screen | Web | App |
+|---|---|---|
+| Cafeteria menu | `/mobile/order/<slug>` | `/mobile/order?cafe=<slug>` |
+| Order tracking | `/mobile/track/<id>` | `/mobile/track?order=<id>` |
+| Delivery slip | `/delivery/<id>` | `/delivery?order=<id>` |
+
+## Checks
+
+```bash
+npm run verify        # typecheck + lint + tests
+npm run secrets:scan  # staged changes;  --all for the whole tree
+```
+
+`git config core.hooksPath .githooks` (done by `npm install`) runs the secret
+scan, typecheck and lint before every commit. See `RULES.md`.
+
 ## Deployment
 
 Deploy to Vercel:

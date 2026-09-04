@@ -1,8 +1,12 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
+import { deliveryHref } from '@/lib/routes'
+
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import _Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Cafeteria, MenuItem, Order } from '@/lib/types'
@@ -248,7 +252,7 @@ export default function VendorDashboard() {
     return istDate.toISOString().split('T')[0]
   }
   const [selectedDate, setSelectedDate] = useState<string>(getISTDateString())
-  const [ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
+  const [_ordersCache, setOrdersCache] = useState<Record<string, Order[]>>({})
   const [loadingDate, setLoadingDate] = useState(false)
 
   const fetchSummary = useCallback(async (cafId: string, date?: string) => {
@@ -267,7 +271,7 @@ export default function VendorDashboard() {
       )
       if (!res.ok) return
       setSummary(await res.json())
-    } catch (error) {
+    } catch {
     }
   }, [])
 
@@ -334,7 +338,7 @@ export default function VendorDashboard() {
           setOrdersCache(prev => ({ ...prev, [date]: data as Order[] }))
         }
       }
-    } catch (error) {
+    } catch {
     }
   }, [startAlertSound, stopAlertSound])
 
@@ -362,7 +366,7 @@ export default function VendorDashboard() {
           'Menu fetch timed out'
         ) as any
         if (menu) setMenuItems(menu)
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -438,7 +442,7 @@ export default function VendorDashboard() {
       const { data: { session } } = await withTimeout(supabase.auth.getSession(), 8000, 'Session check timed out')
       if (!session?.access_token) return
       const res = await withTimeout(
-        fetch(`/api/vendor/orders?cafeteriaId=${cafId}&range=allTime`, {
+        apiFetch(`/api/vendor/orders?cafeteriaId=${cafId}&range=allTime`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         }),
         15000,
@@ -447,7 +451,7 @@ export default function VendorDashboard() {
       if (!res.ok) return
       const json = await res.json()
       if (json.orders) setAllTimeOrders(json.orders as Order[])
-    } catch (error) {
+    } catch {
     } finally {
       setLoadingAllTimeOrders(false)
     }
@@ -534,7 +538,7 @@ export default function VendorDashboard() {
   // order id, same trust model as the customer's own tracking page) is the
   // only thing standing in for a login.
   async function shareDeliverySlip(order: Order) {
-    const url = `${window.location.origin}/delivery/${order.id}`
+    const url = `${window.location.origin}${deliveryHref(order.id)}`
     const text = `🛵 Delivery order${order.token_number != null ? ` — Token #${String(order.token_number).padStart(3, '0')}` : ''}\n${order.student_name}, ₹${order.total_amount}\nFull details:`
 
     if (navigator.share) {
@@ -568,7 +572,7 @@ export default function VendorDashboard() {
     setTogglingDelivery(true)
     try {
       const newState = !deliveryAvailable
-      const res = await fetch('/api/admin/toggle-delivery', {
+      const res = await apiFetch('/api/admin/toggle-delivery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cafeteriaId: cafeteria.id, delivery_available: newState }),
@@ -578,7 +582,7 @@ export default function VendorDashboard() {
         setMsg(`✅ Delivery ${newState ? 'enabled' : 'disabled'}`)
         setTimeout(() => setMsg(''), 2000)
       }
-    } catch (err) {
+    } catch {
       setMsg('❌ Failed to toggle delivery')
       setTimeout(() => setMsg(''), 2000)
     } finally {
@@ -747,7 +751,7 @@ export default function VendorDashboard() {
         body.deliveryTimeMinutes = parseInt(deliveryTime)
       }
 
-      const response = await fetch('/api/vendor/approve-order', {
+      const response = await apiFetch('/api/vendor/approve-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -793,7 +797,7 @@ export default function VendorDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) return
 
-      const response = await fetch('/api/vendor/deny-order', {
+      const response = await apiFetch('/api/vendor/deny-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -834,7 +838,7 @@ export default function VendorDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) return
-      const response = await fetch('/api/vendor/remind-payment', {
+      const response = await apiFetch('/api/vendor/remind-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ orderId: order.id }),
@@ -1301,7 +1305,7 @@ export default function VendorDashboard() {
           {/* SALES SUMMARY — today or all time */}
           {tab === 'today' && (() => {
             // Filter orders by selected date (handle IST timezone)
-            const isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
+            const _isSelectedDateToday = selectedDate === new Date().toISOString().split('T')[0]
             const filterByDate = (order: Order) => {
               if (summaryRange === 'allTime') return true
               // Convert UTC created_at to IST date for comparison

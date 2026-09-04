@@ -1,0 +1,186 @@
+name: CI
+
+on:
+  # Branch pushes are covered by the pull_request trigger. Listing '**' here as
+  # well ran every job twice on each push to a PR branch — and the two runs did
+  # not cancel each other, because the concurrency key below is github.ref,
+  # which differs between a push event and a pull_request event.
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, lint, tests, secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # scan-secrets --all reads the working tree, but a full history lets
+          # the scan be pointed at a range later without a second fetch.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Secret scan
+        run: node scripts/scan-secrets.mjs --all
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+  build-web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build
+        # Placeholder values: the build only needs these to be present and
+        # well-formed. Nothing here reaches a real project.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_APP_URL: https://example.com
+        run: npm run build
+
+  build-android:
+    name: Android build (verification)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      # Verification, not a shippable artifact: this proves the export builds,
+      # Gradle assembles and R8 does not strip anything the app needs at
+      # runtime. It deliberately does NOT require the production secrets, so it
+      # runs on every push and on pull requests from forks. Placeholders are
+      # only substituted when a secret is absent, so a configured repository
+      # verifies against its real values.
+      - name: Build static app bundle
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder' }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://placeholder.invalid' }}
+        run: npm run build:app
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # assembleRelease rather than assembleDebug on purpose: the release build
+      # is the one that runs R8, and a missing Capacitor keep rule only shows up
+      # there. No keystore is present, so this produces an unsigned APK — which
+      # is the right outcome for a check that must run on untrusted forks.
+      - name: Assemble (unsigned)
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yoters-unsigned-verification-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  release-android:
+    name: Android release bundle (signed)
+    # Only on an explicit run or a version tag. This is the job that touches the
+    # keystore, so it never runs on a pull request.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      # Fail before doing any work if a required secret is missing, rather than
+      # producing an artifact that is quietly wrong.
+      - name: Check release configuration
+        env:
+          API_BASE: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          missing=""
+          [ -n "$API_BASE" ] || missing="$missing NEXT_PUBLIC_API_BASE_URL"
+          [ -n "$KEYSTORE" ] || missing="$missing ANDROID_KEYSTORE_BASE64"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required release secret(s):$missing"
+            exit 1
+          fi
+
+      - name: Restore keystore
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build static app bundle
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+        run: npm run build:app
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Bundle for Play
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yoters-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

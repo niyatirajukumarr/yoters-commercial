@@ -29,7 +29,7 @@ export default function SplashPage() {
         ) as any
 
         router.push(cafeteria ? '/vendor' : '/?splash=true')
-      } catch (error) {
+      } catch {
         router.push('/?splash=true')
       }
     }, 3500)

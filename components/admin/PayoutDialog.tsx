@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { buildUpiLink, buildUpiQrPayload, UPI_APPS, type UpiApp } from '@/lib/upi'
@@ -57,7 +59,7 @@ export function PayoutDialog({ cafe, onClose, onRecorded }: Props) {
     try {
       const { supabase } = await import('@/lib/supabase')
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/admin/record-payout', {
+      const res = await apiFetch('/api/admin/record-payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

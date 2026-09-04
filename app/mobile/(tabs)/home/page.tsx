@@ -1,5 +1,7 @@
 'use client'
 
+import { orderHref } from '@/lib/routes'
+
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -45,7 +47,7 @@ export default function MobileHome() {
         setCafeterias(dataWithQueues as CafeteriaWithQueue[])
         sessionStorage.setItem('home-cache', JSON.stringify(dataWithQueues))
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false)
     }
@@ -151,7 +153,7 @@ export default function MobileHome() {
               const qColor = getQueueColor(cafe.queue?.avg_wait_mins ?? 0)
               const slug = generateSlug(cafe.name)
               return (
-                <Link key={cafe.id} href={cafe.is_closed ? '#' : `/mobile/order/${slug}`} onClick={cafe.is_closed ? handleClosedCafeClick : undefined} style={{ textDecoration: 'none' }}>
+                <Link key={cafe.id} href={cafe.is_closed ? '#' : orderHref(slug)} onClick={cafe.is_closed ? handleClosedCafeClick : undefined} style={{ textDecoration: 'none' }}>
                   <motion.div className="cafe-item" variants={staggerItem} whileHover={!cafe.is_closed ? { y: -3 } : {}} whileTap={!cafe.is_closed ? { scale: 0.98 } : {}} style={{ filter: cafe.is_closed ? 'grayscale(100%) brightness(0.7)' : 'none', opacity: cafe.is_closed ? 0.5 : 1, transition: 'all 0.2s' }}>
                     <div className="cafe-image">{cafe.image_emoji}</div>
                     <div className="cafe-info">

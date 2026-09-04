@@ -1,8 +1,13 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
+import { orderHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
+import { logger } from '@/lib/logger'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
@@ -20,7 +25,7 @@ function PaymentPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
-  const amount = searchParams.get('amount')
+  const _amount = searchParams.get('amount')
   const name = searchParams.get('name')
 
   const [loading, setLoading] = useState(true)
@@ -58,7 +63,7 @@ function PaymentPageContent() {
         }
       }
       return null
-    } catch (err) {
+    } catch {
       return null
     }
   }
@@ -106,7 +111,7 @@ function PaymentPageContent() {
 
         // Create Razorpay order
         const response = await withTimeout(
-          fetch('/api/razorpay/create-order', {
+          apiFetch('/api/razorpay/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -183,11 +188,11 @@ function PaymentPageContent() {
 
           setTimeout(() => {
             if (window.opener) window.close()
-            else router.push(slug ? `/mobile/order/${slug}` : `/mobile`)
+            else router.push(slug ? orderHref(slug) : '/mobile')
           }, 4000)
           return
         }
-      } catch (err) {
+      } catch {
         // Polling error - continue retrying
       }
 
@@ -237,15 +242,15 @@ function PaymentPageContent() {
           wallet: false,
         },
         handler: async function (response: any) {
-          console.log('[Razorpay Handler] Payment completed, response:', response)
-          console.log('[Razorpay Handler] Calling verify-payment with:', {
+          logger.debug('[Razorpay Handler] Payment completed, response:', response)
+          logger.debug('[Razorpay Handler] Calling verify-payment with:', {
             orderId,
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature ? 'present' : 'MISSING',
           })
           // Verify signature server-side before trusting the payment, then mark order as paid
-          const verifyRes = await fetch('/api/razorpay/verify-payment', {
+          const verifyRes = await apiFetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -256,19 +261,19 @@ function PaymentPageContent() {
             }),
           })
 
-          console.log('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
+          logger.debug('[Razorpay Handler] verify-payment response status:', verifyRes.status, verifyRes.ok)
           const verifyData = await verifyRes.json()
-          console.log('[Razorpay Handler] verify-payment response data:', verifyData)
+          logger.debug('[Razorpay Handler] verify-payment response data:', verifyData)
 
           if (!verifyRes.ok) {
-            console.error('[Razorpay Handler] Verification failed:', verifyData)
+            logger.error('[Razorpay Handler] Verification failed:', verifyData)
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setProcessing(false)
             setError('Payment verification failed. If money was deducted, contact support.')
             return
           }
 
-          console.log('[Razorpay Handler] Payment verified successfully!')
+          logger.debug('[Razorpay Handler] Payment verified successfully!')
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
           setProcessing(false)
           setPaymentConfirmed(true)
@@ -277,7 +282,7 @@ function PaymentPageContent() {
             setTimeout(() => window.close(), 3000)
           } else {
             const slug = cafeSlugRef.current || (orderId ? await getCafeSlug(orderId) : null)
-            setTimeout(() => router.push(slug ? `/mobile/order/${slug}` : `/mobile`), 3000)
+            setTimeout(() => router.push(slug ? orderHref(slug) : '/mobile'), 3000)
           }
         },
         modal: {

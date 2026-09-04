@@ -1,5 +1,7 @@
 'use client'
 
+import { orderHref } from '@/lib/routes'
+
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -9,7 +11,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useUserInfo } from '@/lib/hooks/useUserInfo'
 import { generateSlug } from '@/lib/utils/slug'
-import { Cafeteria, CafeteriaQueue, formatWait, getWaitLevel } from '@/lib/types'
+import { Cafeteria, CafeteriaQueue } from '@/lib/types'
 import { slideLeft, slideRight, viewportOnce } from '@/lib/motion'
 import RestaurantMapLoader from '@/components/RestaurantMap.loader'
 import { withTimeout } from '@/lib/utils/withTimeout'
@@ -108,7 +110,7 @@ export default function StudentHome() {
         setCafeterias(combined as CafeteriaWithQueue[])
         sessionStorage.setItem('browse-cache', JSON.stringify(combined))
       }
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false)
     }
@@ -135,7 +137,7 @@ export default function StudentHome() {
     c.location.toLowerCase().includes(search.toLowerCase())
   )
 
-  const waitColor = (level: string) => ({
+  const _waitColor = (level: string) => ({
     low: { bg: 'var(--green-bg)', color: 'var(--green)', border: 'rgba(46,158,107,0.2)' },
     mid: { bg: 'var(--yellow-bg)', color: 'var(--yellow)', border: 'rgba(212,130,26,0.2)' },
     high: { bg: 'var(--red-bg)', color: 'var(--red)', border: 'rgba(232,51,74,0.2)' },
@@ -379,7 +381,7 @@ export default function StudentHome() {
                         restaurant added later. */}
                     <div className={`cafe-menu-image ${CAFETERIA_LOGOS[c.name] ? 'cafe-menu-image-logo' : ''}`} style={{ filter: c.is_closed ? 'grayscale(100%) brightness(0.7)' : 'none', opacity: c.is_closed ? 0.5 : 1, transition: 'all 0.2s' }}>
                       <Link
-                        href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`}
+                        href={c.is_closed ? '#' : orderHref(generateSlug(c.name))}
                         aria-label={`Open ${c.name}`}
                         style={{ display: 'block', width: '100%', height: '100%' }}
                         onClick={c.is_closed ? handleClosedCafeClick : undefined}
@@ -432,7 +434,7 @@ export default function StudentHome() {
                           </div>
                         </div>
                       )}
-                      <Link href={c.is_closed ? '#' : `/mobile/order/${generateSlug(c.name)}`} onClick={c.is_closed ? handleClosedCafeClick : undefined}>
+                      <Link href={c.is_closed ? '#' : orderHref(generateSlug(c.name))} onClick={c.is_closed ? handleClosedCafeClick : undefined}>
                         <motion.button
                           className="cafe-see-menu-btn"
                           whileHover={!c.is_closed ? { scale: 1.05, boxShadow: '0 8px 20px rgba(232,51,74,0.3)' } : {}}

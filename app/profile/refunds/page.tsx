@@ -52,7 +52,7 @@ export default function Refunds() {
             cafeteria_name: o.cafeterias?.name ?? 'Restaurant',
           })))
         }
-      } catch (error) {
+      } catch {
       } finally {
         setLoading(false)
       }

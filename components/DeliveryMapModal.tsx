@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useState, useEffect, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { motion } from 'framer-motion'
@@ -26,9 +28,9 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
 
   const [address, setAddress] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
-  const [loadingSearch, setLoadingSearch] = useState(false)
+  const [_searchQuery, setSearchQuery] = useState('')
+  const [_suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([])
+  const [_loadingSearch, setLoadingSearch] = useState(false)
   const [landmark, setLandmark] = useState('')
   const [locating, setLocating] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -37,13 +39,13 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
   // landmark is what placed it.
   const [landmarkPinnedFor, setLandmarkPinnedFor] = useState<string | null>(null)
   const [landmarkLocating, setLandmarkLocating] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const _debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const landmarkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /** Resolve typed text to a point, so a manual address can still be delivered to. */
   const geocodeAddress = async (q: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const res = await apiFetch(`/api/geocode?q=${encodeURIComponent(q)}`)
       const d = await res.json()
       if (typeof d?.lat === 'number' && typeof d?.lng === 'number') {
         return { lat: d.lat, lng: d.lng }
@@ -54,14 +56,14 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+      const res = await apiFetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
       const d = await res.json()
       if (d?.address) return d.address as string
     } catch {}
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   }
 
-  const searchAddress = async (q: string) => {
+  const _searchAddress = async (q: string) => {
     if (!q.trim()) { setSuggestions([]); return }
     setLoadingSearch(true)
     try {
@@ -229,7 +231,7 @@ export default function DeliveryMapModal({ onConfirm, onClose, center }: Props) 
                   markerRef.current.setLatLng([lat, lng])
                   mapInstanceRef.current.setView([lat, lng], 17)
                 }
-                const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+                const res = await apiFetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
                 const d = await res.json()
                 if (d?.address) setAddress(d.address)
                 setCoords({ lat, lng })

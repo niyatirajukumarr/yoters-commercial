@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Transport rules for the packaged app. The web build gets the equivalent from
+  the Strict-Transport-Security header in next.config.ts; a static export has no
+  server to send one, so the platform enforces it instead.
+
+  cleartextTrafficPermitted="false" everywhere: every backend this app talks to
+  (Vercel, Supabase, Razorpay, Google Maps) is https, so an http request can
+  only mean a downgrade attempt or a misconfiguration, and both should fail
+  loudly rather than send an order over plaintext.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

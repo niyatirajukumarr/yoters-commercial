@@ -1,5 +1,7 @@
 'use client'
 
+import { apiFetch } from '@/lib/api'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -20,7 +22,7 @@ interface Cafeteria {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [_user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [cafeterias, setCafeterias] = useState<Cafeteria[]>([])
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -50,7 +52,7 @@ export default function AdminDashboard() {
         setUser(session.user)
         setIsAuthorized(true)
         await fetchAllPayoutData()
-      } catch (error) {
+      } catch {
         setLoading(false)
       }
     }
@@ -142,7 +144,7 @@ export default function AdminDashboard() {
       setCafeterias(Object.values(cafePayouts))
       setTotalReceived(grandTotal)
       setLoading(false)
-    } catch (error) {
+    } catch {
       setLoading(false)
     }
   }
@@ -156,7 +158,7 @@ export default function AdminDashboard() {
     setEditingUPI({ ...editingUPI, [cafeId]: currentUPI || '' })
   }
 
-  const handleSaveUPI = async (cafeId: string, cafeName: string) => {
+  const handleSaveUPI = async (cafeId: string, _cafeName: string) => {
     const newUPI = editingUPI[cafeId]
 
     if (!newUPI) {
@@ -194,7 +196,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleSendPayout = async (cafe: Cafeteria) => {
+  const _handleSendPayout = async (cafe: Cafeteria) => {
     if (!cafe.upi_id) {
       alert('Please add UPI ID for this cafeteria first')
       setEditingUPI({ ...editingUPI, [cafe.id]: '' })
@@ -217,7 +219,7 @@ export default function AdminDashboard() {
       // Send the current session's access token so the API can verify the
       // caller is an authenticated admin server-side.
       const { data: { session } } = await supabase.auth.getSession()
-      const response = await fetch('/api/admin/initiate-payout', {
+      const response = await apiFetch('/api/admin/initiate-payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
