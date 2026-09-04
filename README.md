@@ -133,6 +133,34 @@ Every push produces two APKs, under the workflow run's **Artifacts**:
 Download the debug one, transfer it to the phone, and allow install from unknown
 sources when prompted.
 
+#### Make updates installable (one-time setup)
+
+Each CI runner is a fresh machine, so with no key configured Gradle invents a
+random debug keystore per build. Android then refuses to install the new APK
+over the old one — **"App not installed"** — because the signature changed, and
+every update means uninstalling first.
+
+Fix it once by generating a stable testing key and storing it as a secret. It is
+a *debug* key: it can never publish to Play, and it is deliberately kept out of
+the repository anyway.
+
+```bash
+keytool -genkey -v -keystore yoters-debug.jks -alias androiddebugkey \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storepass android -keypass android \
+  -dname "CN=Yoters Debug, O=Yoters, C=IN"
+
+base64 -w0 yoters-debug.jks    # macOS: base64 -i yoters-debug.jks
+```
+
+Add the output as the repository secret `ANDROID_DEBUG_KEYSTORE_BASE64`, then
+`ANDROID_DEBUG_KEYSTORE_PASSWORD=android`, `ANDROID_DEBUG_KEY_ALIAS=androiddebugkey`
+and `ANDROID_DEBUG_KEY_PASSWORD=android`. Keep `yoters-debug.jks` in a password
+manager and out of the repo — `.gitignore` and the secret scanner both block it.
+
+Until that secret exists the build still succeeds, but logs a warning and every
+install needs a prior uninstall.
+
 Secrets are read when the build runs and compiled into the APK, so **changing a
 secret does nothing to an APK that already exists** — trigger a fresh run
 afterwards. Actions → CI → *Run workflow*. Leave the "Also build a signed Play
