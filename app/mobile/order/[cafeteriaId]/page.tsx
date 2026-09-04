@@ -1173,7 +1173,6 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'Burger': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/burger.jpg',
   'Roll': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/roll.jpg',
   'Alfaham': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=600&h=400&fit=crop',
-  'Fries': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/fries.jpg',
   'Drinks': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/drinks.jpg',
   'Momos': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/momos.jpg',
   'Coffee': 'https://qbvwcpjjattwebdzexni.supabase.co/storage/v1/object/public/menu-images/lit%20bites%20cafe/coffee.cms',
@@ -1229,7 +1228,21 @@ const CATEGORY_IMAGES: { [key: string]: string } = {
   'TPH Rice Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/TPH%20Signature.jpg',
   'TPH Chinese Bowls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/TPH%20Signature.jpg',
   "Refreshment's": 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/rice%20bowls%20and%20combos/refreshments.jpg',
-  'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes%20juice%20nd%20pasta.jpg', // Shake - Juice - Pasta
+  // Shake - Juice - Pasta: Shakes/Juice/Signature Shake share one hero;
+  // Fries, Pasta and Ice Cream each get their own dedicated banner.
+  // 'Mojitos' is deliberately NOT keyed here — LETHAFI already owns that
+  // key in this same shared, restaurant-unscoped map (see its 'Mojitos'
+  // entry above), and Punjabi House's Mojitos pill would silently
+  // overwrite LETHAFI's live banner if added. It falls back to no image
+  // until this map is restaurant-scoped.
+  // (The old flat 'shakes juice nd pasta.jpg' file was moved into a
+  // 'shakes-juices-pasta' subfolder and renamed 'shakes.jpg'.)
+  'Shakes': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/shakes.jpg',
+  'Juice': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/shakes.jpg',
+  'Signature Shake': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/shakes.jpg',
+  'Pasta': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/pasta.png',
+  'Fries': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/fries.jpg',
+  'Ice Cream': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/shakes-juices-pasta/ice%20cream.jpg',
   'Veg Tandoor Starters': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/starters.jpg', // Starters
   'Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/thalis%20and%20combos.jpg', // Thali's & Combo's
   'Paneer': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/veg/veg%20maincourse.png', // Veg Maincourse
@@ -1251,9 +1264,14 @@ const CATEGORY_IMAGES_NONVEG: { [key: string]: string } = {
   // keying rule as the veg block above. 'Biryani' is ungrouped (ordinary
   // top-level category, ungrouped on both sides) so it's keyed directly.
   'Biryani': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/biryani.jpg',
+  'Shawarma Rolls': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/shawarma/shawarma.jpg', // Shawarma
+  'Shawarma Plate': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/shawarma/shawarma%20plate.png',
   'Chicken Delights': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20maincourse.jpg', // Non Veg Main Course
   'Non-Veg Thali': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/non%20veg%20thalis%20and%20combos.png', // Thali's & Combo's
+  // Fries and Pasta are the only Shake - Juice - Pasta members with non-veg
+  // dishes; both share this banner.
   'Fries': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/pasta-fries%20nonveg.png', // Shake - Juice - Pasta
+  'Pasta': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/pasta-fries%20nonveg.png',
   // Rice & Noodles (non-veg) has 2 members, same image repeated.
   'Noodles': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png', // Rice & Noodles
   'Fried Rice': 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/hero/non%20veg/rice%20and%20noodles%20non%20veg.png',
