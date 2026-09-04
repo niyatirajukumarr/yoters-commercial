@@ -138,6 +138,55 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  build-ios:
+    name: iOS build (verification)
+    # macOS runners cost roughly 10x a Linux minute, so this does not run on
+    # every push: it runs on main, on a manual dispatch, and on a PR that
+    # actually touches the iOS project or the shared app pipeline.
+    if: >-
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'ios')
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build static app bundle
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder' }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://placeholder.invalid' }}
+        run: npm run build:app
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      # Compiles and links the real app without signing it. That catches a
+      # broken Info.plist, a missing pod, or a plugin that does not build for
+      # arm64 — everything short of the signing step, which needs an Apple
+      # Developer account. Installing on a device or TestFlight is a separate,
+      # credentialled job to add once that account exists.
+      - name: Build (unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
   release-android:
     name: Android release bundle (signed)
     # A v* tag, or a manual run that explicitly ticks the release box. Running

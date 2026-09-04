@@ -148,6 +148,30 @@ compiled into the APK, so a build made without them talks to placeholders:
 Note that `NEXT_PUBLIC_APP_URL` is *not* one of them: it is read server-side by
 lib/cors.ts, so it belongs in Vercel's environment variables, not here.
 
+### iOS
+
+The iOS project is committed alongside the Android one, and CI builds it
+unsigned on a macOS runner (`build-ios`) — so a broken Info.plist, a missing
+pod or a plugin that will not compile for arm64 is caught without anyone owning
+a Mac. That job runs on `main`, on a manual dispatch, and on a PR labelled
+`ios`, because macOS runner minutes cost roughly 10x a Linux one.
+
+What CI **cannot** do is sign. Putting the app on a real iPhone needs an Apple
+Developer Program membership (99 USD/year); after that, TestFlight distributes
+to testers and a Mac with Xcode is needed to debug anything on-device.
+
+Three Info.plist entries are load-bearing and must not be dropped:
+
+- `NSLocationWhenInUseUsageDescription` — iOS **terminates the app** the instant
+  it requests a permission with no usage string. This is a crash, not a warning.
+- `LSApplicationQueriesSchemes` — iOS refuses `canOpenURL` for undeclared
+  schemes, so without the UPI entries Razorpay cannot detect PhonePe, Google Pay
+  or Paytm and the payment silently fails. Counterpart to `<queries>` in
+  AndroidManifest.xml.
+- `ITSAppUsesNonExemptEncryption = false` — the app uses only standard HTTPS,
+  which is exempt; declaring it answers the export-compliance prompt once
+  instead of on every TestFlight upload.
+
 ### Release signing
 
 Driven entirely by environment variables, so no keystore is ever in the repo:
