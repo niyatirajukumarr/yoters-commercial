@@ -133,6 +133,12 @@ Every push produces two APKs, under the workflow run's **Artifacts**:
 Download the debug one, transfer it to the phone, and allow install from unknown
 sources when prompted.
 
+Secrets are read when the build runs and compiled into the APK, so **changing a
+secret does nothing to an APK that already exists** — trigger a fresh run
+afterwards. Actions → CI → *Run workflow*. Leave the "Also build a signed Play
+bundle" box unticked unless the release signing secrets are configured; ticking
+it without them fails the run on purpose.
+
 For it to reach a real backend, these repository secrets must be set
 (Settings → Secrets and variables → Actions) *before* the build runs — they are
 compiled into the APK, so a build made without them talks to placeholders:
