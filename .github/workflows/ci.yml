@@ -1,8 +1,12 @@
 name: CI
 
 on:
+  # Branch pushes are covered by the pull_request trigger. Listing '**' here as
+  # well ran every job twice on each push to a PR branch — and the two runs did
+  # not cancel each other, because the concurrency key below is github.ref,
+  # which differs between a push event and a pull_request event.
   push:
-    branches: ['**']
+    branches: [main]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
