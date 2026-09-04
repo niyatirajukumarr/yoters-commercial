@@ -282,6 +282,54 @@ const CATEGORY_NOTES: { [key: string]: string } = {
 
 const categoryNoteFor = (cat: string): string | null => CATEGORY_NOTES[cat.toLowerCase()] ?? null
 
+interface CategoryAddOn {
+  name: string
+  price: number
+  image: string
+}
+
+const ADDON_IMG = 'https://kohhtpksodebzglofckn.supabase.co/storage/v1/object/public/Punjabi%20house/extra%20add-ons/'
+
+/**
+ * The paid add-ons behind each CATEGORY_NOTES footnote, structured for the
+ * "Extra add-ons?" prompt shown on the order-details screen — same keying
+ * rule as CATEGORY_NOTES (lowercase category name). 'tph rice bowls' has no
+ * entry here: its note ("served along with boondi raita") isn't a paid
+ * add-on, just information.
+ */
+const CATEGORY_ADDONS: { [key: string]: CategoryAddOn[] } = {
+  'paneer starters': [{ name: 'Gravy', price: 20, image: ADDON_IMG + 'gravy.png' }],
+  'veg chinese starters': [{ name: 'Gravy', price: 20, image: ADDON_IMG + 'gravy.png' }],
+  'chicken chinese starters': [{ name: 'Gravy', price: 20, image: ADDON_IMG + 'gravy.png' }],
+  'appetizers & soups': [{ name: '1 by 2 Soup', price: 20, image: ADDON_IMG + '1%20by%202%20soup.jpg' }],
+  'chicken soups': [{ name: '1 by 2 Soup', price: 20, image: ADDON_IMG + '1%20by%202%20soup.jpg' }],
+  'tandoori chicken': [
+    { name: 'Extra Mayonnaise (Half)', price: 18, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Extra Mayonnaise (Full)', price: 35, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Kuboos', price: 18, image: ADDON_IMG + 'kuboos.jpeg' },
+  ],
+  'grill | alfham': [
+    { name: 'Extra Mayonnaise (Half)', price: 18, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Extra Mayonnaise (Full)', price: 35, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Kuboos', price: 18, image: ADDON_IMG + 'kuboos.jpeg' },
+  ],
+  'shawarma rolls': [{ name: 'Whole Meat Shawarma Roll', price: 25, image: ADDON_IMG + 'whole%20meat%20shawarma.png' }],
+  'shawarma plate': [
+    { name: 'Extra Mayonnaise (Half)', price: 18, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Extra Mayonnaise (Full)', price: 35, image: ADDON_IMG + 'mayonnaise.jpg' },
+    { name: 'Whole Meat Shawarma Plate', price: 35, image: ADDON_IMG + "whole%20meat%20shawarma%20plate%20.png" },
+  ],
+  'pasta': [{ name: 'Extra Cheese', price: 20, image: ADDON_IMG + 'cheese.jpg' }],
+  'noodles': [{ name: 'Schezwan Noodles', price: 20, image: ADDON_IMG + 'noodles.png' }],
+  'fried rice': [{ name: 'Schezwan Rice', price: 20, image: ADDON_IMG + 'fried%20rice.png' }],
+  'tph chinese bowls': [
+    { name: 'Schezwan', price: 20, image: ADDON_IMG + 'TPH%20Chinesebowls/schezwan.jpg' },
+    { name: 'Chilly Garlic', price: 20, image: ADDON_IMG + 'TPH%20Chinesebowls/chilly%20garlic.png' },
+  ],
+}
+
+const addonsForCategory = (cat: string): CategoryAddOn[] => CATEGORY_ADDONS[cat.toLowerCase()] ?? []
+
 // The FSSAI veg/non-veg mark — square outline with a dot for veg, a triangle
 // for non-veg. Same shape and colours the dish cards use, at a size that suits
 // sitting inline next to a label.
@@ -1709,6 +1757,23 @@ export default function CafeteriaPage() {
     cafeteria?.name
   )
 
+  // Paid add-ons offered by whichever categories are actually in the cart
+  // right now, deduped by name (Paneer Starters and Veg Chinese Starters both
+  // offer "Gravy" — show it once, not twice). Shown on the order-details
+  // screen so the customer sees it right where the "extra ₹X" note already
+  // applies, before they pay.
+  const cartAddOns: CategoryAddOn[] = (() => {
+    const seen = new Map<string, CategoryAddOn>()
+    for (const item of cartItem) {
+      const cat = categoryByMenuId.get(item.menuId)
+      if (!cat) continue
+      for (const addOn of addonsForCategory(cat)) {
+        if (!seen.has(addOn.name)) seen.set(addOn.name, addOn)
+      }
+    }
+    return [...seen.values()]
+  })()
+
   // Keep the selected category valid when switching veg / non-veg. Falls back
   // to the first category alphabetically — which for The Punjabi House meant
   // landing on "Appetizers & Soups" every time, an accident of the letter A
@@ -3036,6 +3101,34 @@ export default function CafeteriaPage() {
               })}
             </motion.div>
           </div>
+
+          {cartAddOns.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Extra add-ons?</h3>
+              <motion.div initial="hidden" animate="visible" variants={stagger}>
+                {cartAddOns.map(addOn => {
+                  const addOnMenuId = 'addon-' + addOn.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                  const inCartQty = cartItem.find(i => i.menuId === addOnMenuId)?.quantity ?? 0
+                  return (
+                    <motion.div key={addOnMenuId} variants={staggerItem} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <img src={addOn.image} alt={addOn.name} style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{addOn.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>₹{addOn.price}</div>
+                      </div>
+                      <motion.button
+                        {...hoverScale}
+                        onClick={() => addItem(cafeteriaId, { menuId: addOnMenuId, name: addOn.name, price: addOn.price, quantity: 1 })}
+                        style={{ padding: '8px 14px', background: inCartQty > 0 ? 'var(--accent-light)' : 'var(--accent)', color: inCartQty > 0 ? 'var(--accent)' : 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {inCartQty > 0 ? `Added ×${inCartQty}` : '+ Add'}
+                      </motion.button>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
+            </div>
+          )}
 
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
             {(orderType === 'delivery' || orderType === 'takeaway' || orderType !== null) && (
