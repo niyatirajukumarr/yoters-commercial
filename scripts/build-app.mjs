@@ -49,6 +49,21 @@ const PRUNE = [
   // and managers keep using the web dashboard, and shipping their screens would
   // put staff-only code on every customer's device.
   'app/admin', 'app/manager', 'app/vendor', 'app/student',
+  // The marketing landing page. Someone who installed the app is already past
+  // the pitch, so the app opens on the ordering home instead (see the redirect
+  // index.html written after the build). Dropping the route also drops the
+  // 3.5 MB hero video below, which nothing else references.
+  'app/page.tsx',
+]
+
+// Assets only the pruned routes referenced. They are copied wholesale with
+// public/, and each one is dead weight inside the APK: the hero video belongs
+// to the landing page, the notification sound to the vendor dashboard, and
+// friends-bg.jpg is referenced by nothing at all.
+const PRUNE_ASSETS = [
+  'public/hero-video.mp4',
+  'public/sound beat.mp3',
+  'public/friends-bg.jpg',
 ]
 
 function run(cmd, args, opts = {}) {
@@ -81,7 +96,7 @@ for (const src of SOURCES) {
   cpSync(from, join(WORK, src), { recursive: true })
 }
 
-for (const p of PRUNE) {
+for (const p of [...PRUNE, ...PRUNE_ASSETS]) {
   rmSync(join(WORK, p), { recursive: true, force: true })
 }
 
@@ -124,6 +139,41 @@ if (!existsSync(exported)) {
   console.error('\nBuild finished but .app-build/out is missing — nothing to package.')
   process.exit(1)
 }
+
+// Capacitor loads index.html from the bundle root, and with the landing page
+// pruned there is no longer a page at '/'. This sends the webview straight to
+// the ordering home.
+//
+// location.replace rather than a link or a history push, so the back button
+// from the home screen exits the app instead of returning to a blank redirect.
+// The <meta refresh> is a fallback for the case where script has not run yet;
+// the noscript copy keeps it honest if scripting is off entirely.
+const HOME = '/mobile/home/'
+
+// Fail loudly if the destination is not in the bundle. Without this a renamed
+// or pruned route would leave the app opening on a redirect to nothing — a
+// blank screen on launch, with no error anywhere.
+const homeFile = join(exported, HOME.replace(/^\/|\/$/g, ''), 'index.html')
+if (!existsSync(homeFile)) {
+  console.error(`\nThe app opens on ${HOME}, but ${homeFile} was not exported.`)
+  console.error('Either that route moved, or PRUNE removed it. Fix one or the other —')
+  console.error('shipping this would launch the app onto a blank page.')
+  process.exit(1)
+}
+
+writeFileSync(join(exported, 'index.html'), `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="refresh" content="0; url=${HOME}">
+<title>Yoters</title>
+<style>html,body{margin:0;height:100%;background:#FFF5F7}</style>
+<script>location.replace(${JSON.stringify(HOME)})</script>
+</head>
+<body><noscript><a href="${HOME}">Continue to Yoters</a></noscript></body>
+</html>
+`)
 
 rmSync(OUT, { recursive: true, force: true })
 cpSync(exported, OUT, { recursive: true })

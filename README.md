@@ -219,6 +219,27 @@ wrong key. CI enforces this too: the verification job builds unsigned on every
 push, and the signed `release-android` job runs only on a `v*` tag or a manual
 dispatch, failing up front if a required secret is missing.
 
+### What the app opens on
+
+Capacitor loads `index.html` from the bundle root. The marketing landing page is
+pruned from the app build — whoever installed the app is past the pitch — and
+`scripts/build-app.mjs` writes a redirect in its place that sends the webview
+straight to `/mobile/home/`. The build *fails* if that route is not in the
+bundle, so a rename cannot quietly ship an app that launches onto a blank page.
+
+Pruning the landing page also drops the assets only it referenced, which is most
+of the bundle's weight:
+
+| Asset | Size | Belonged to |
+|---|---|---|
+| `hero-video.mp4` | 3.5 MB | the landing page |
+| `sound beat.mp3` | 32 KB | the vendor dashboard (already pruned) |
+| `friends-bg.jpg` | 16 KB | nothing at all |
+
+The 3D penguin stays: `/auth` and `PenguinFace` use it, and both ship in the app.
+
+The website is unaffected — `/` still serves the landing page there.
+
 ### Two route shapes
 
 A static export has no server to resolve `/mobile/track/<id>`, and order ids do

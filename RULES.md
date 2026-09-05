@@ -130,6 +130,11 @@ one source of truth, two build targets. `README.md` has the build commands.
 - **Never call `fetch('/api/...')` directly.** Use `apiFetch` from `lib/api.ts`.
   A relative path resolves against the device in the app build. `apiFetch` also
   attaches the Supabase bearer token.
+- **The app opens on `/mobile/home/`, not `/`.** The landing page is pruned from
+  the app build and `scripts/build-app.mjs` writes a redirect as `index.html`.
+  Renaming or moving that route fails the app build on purpose — do not "fix" it
+  by deleting the check, since the alternative is an app that launches onto a
+  blank screen.
 - **Never add a CORS header in `next.config.ts`.** A static header carries one
   origin; the API serves three (the site, plus `https://localhost` and
   `capacitor://localhost` from the app). `lib/cors.ts` picks per request and
